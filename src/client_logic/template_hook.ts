@@ -1,0 +1,46 @@
+import { ipc } from "@/ipc/types";
+import { getAppPort } from "../../shared/ports";
+
+import { v4 as uuidv4 } from "uuid";
+
+export async function neonTemplateHook({
+  appId,
+  appName,
+}: {
+  appId: number;
+  appName: string;
+}) {
+  console.log("Creating Neon project");
+  const neonProject = await ipc.neon.createProject({
+    name: appName,
+    appId: appId,
+  });
+
+  console.log("Neon project created", neonProject);
+  await ipc.misc.setAppEnvVars({
+    appId: appId,
+    envVars: [
+      {
+        key: "POSTGRES_URL",
+        value: neonProject.connectionString,
+      },
+      {
+        key: "PAYLOAD_SECRET",
+        value: uuidv4(),
+      },
+      {
+        key: "NEXT_PUBLIC_SERVER_URL",
+        value: `http://localhost:${getAppPort(appId)}`,
+      },
+      {
+        key: "GMAIL_USER",
+        value: "example@gmail.com",
+      },
+      {
+        key: "GOOGLE_APP_PASSWORD",
+        value: "GENERATE AT https://myaccount.google.com/apppasswords",
+      },
+    ],
+  });
+  console.log("App env vars set");
+}

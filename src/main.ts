@@ -1,0 +1,757 @@
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  Menu,
+  protocol,
+  net,
+  session,
+} from "electron";
+import * as path from "node:path";
+import { registerIpcHandlers } from "./ipc/ipc_host";
+import dotenv from "dotenv";
+// @ts-ignore
+import started from "electron-squirrel-startup";
+import { updateElectronApp, UpdateSourceType } from "update-electron-app";
+import log from "electron-log";
+import {
+  getSettingsFilePath,
+  writeSettings,
+  readEffectiveSettings,
+} from "./main/settings";
+import { handleSupabaseOAuthReturn } from "./supabase_admin/supabase_return_handler";
+import { handleDyadProReturn } from "./main/pro";
+import { IS_TEST_BUILD } from "./ipc/utils/test_utils";
+import { BackupManager } from "./backup_manager";
+import { getDatabasePath, initializeDatabase } from "./db";
+import { UserSettings } from "./lib/schemas";
+import { handleNeonOAuthReturn } from "./neon_admin/neon_return_handler";
+import {
+  AddMcpServerConfigSchema,
+  AddMcpServerPayload,
+  AddPromptDataSchema,
+  AddPromptPayload,
+} from "./ipc/deep_link_data";
+import {
+  startPerformanceMonitoring,
+  stopPerformanceMonitoring,
+} from "./utils/performance_monitor";
+import {
+  stopAllAppsSync,
+  stopAppGarbageCollection,
+} from "./ipc/utils/process_manager";
+import { cleanupOldAiMessagesJson } from "./pro/main/ipc/handlers/local_agent/ai_messages_cleanup";
+import { cleanupOldMediaFiles } from "./ipc/utils/media_cleanup";
+import fs from "fs";
+import { gitAddSafeDirectory } from "./ipc/utils/git_utils";
+import { getDyadAppsBaseDirectory, getDyadAppPath } from "./paths/paths";
+import {
+  DYAD_MEDIA_DIR_NAME,
+  isWithinDyadMediaDir,
+} from "./ipc/utils/media_path_utils";
+
+log.errorHandler.startCatching();
+log.eventLogger.startLogging();
+log.scope.labelPadding = false;
+
+const logger = log.scope("main");
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Register IPC handlers before app is ready
+registerIpcHandlers();
+
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (started) {
+  app.quit();
+}
+
+// Decide the git directory depending on environment
+function resolveLocalGitDirectory() {
+  if (!app.isPackaged) {
+    // Dev: app.getAppPath() is the project root
+    return path.join(app.getAppPath(), "node_modules/dugite/git");
+  }
+
+  // Packaged app: git is bundled via extraResource
+  return path.join(process.resourcesPath, "git");
+}
+
+const gitDir = resolveLocalGitDirectory();
+if (fs.existsSync(gitDir)) {
+  process.env.LOCAL_GIT_DIRECTORY = gitDir;
+}
+
+// https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app#main-process-mainjs
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient("dyad", process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient("dyad");
+}
+
+export async function onReady() {
+  // Load React DevTools extension in development
+  if (process.env.NODE_ENV === "development") {
+    let chromeUserData: string;
+    // Determine Chrome extensions path based on platform
+    if (process.platform === "win32") {
+      chromeUserData = path.join(
+        process.env.LOCALAPPDATA || "",
+        "Google",
+        "Chrome",
+        "User Data",
+        "Default",
+        "Extensions",
+      );
+    } else if (process.platform === "darwin") {
+      // macOS
+      chromeUserData = path.join(
+        process.env.HOME || "",
+        "Library",
+        "Application Support",
+        "Google",
+        "Chrome",
+        "Default",
+        "Extensions",
+      );
+    } else {
+      // Linux
+      chromeUserData = path.join(
+        process.env.HOME || "",
+        ".config",
+        "google-chrome",
+        "Default",
+        "Extensions",
+      );
+    }
+
+    // React DevTools extension ID
+    const reactDevToolsId = "fmkadmapgofadopljbjfkapdkoienihi";
+    const extensionsDir = path.join(chromeUserData, reactDevToolsId);
+
+    if (fs.existsSync(extensionsDir)) {
+      try {
+        const versions = fs.readdirSync(extensionsDir);
+        if (versions.length > 0) {
+          // Get the latest version using numeric sort to handle version boundaries (e.g., 9.0.0 vs 10.0.0)
+          const latestVersion = versions
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+            .reverse()[0];
+          const extensionPath = path.join(extensionsDir, latestVersion);
+          await session.defaultSession.loadExtension(extensionPath, {
+            allowFileAccess: true,
+          });
+          logger.info("React DevTools loaded successfully");
+        } else {
+          logger.warn(
+            "React DevTools extension directory is empty. Install it in Chrome first.",
+          );
+        }
+      } catch (err) {
+        logger.error("Failed to load React DevTools:", err);
+      }
+    } else {
+      logger.warn(
+        "React DevTools extension not found. Install it in Chrome first.",
+      );
+    }
+  }
+
+  try {
+    const backupManager = new BackupManager({
+      settingsFile: getSettingsFilePath(),
+      dbFile: getDatabasePath(),
+    });
+    await backupManager.initialize();
+  } catch (e) {
+    logger.error("Error initializing backup manager", e);
+  }
+  initializeDatabase();
+
+  // Cleanup old ai_messages_json entries to prevent database bloat
+  cleanupOldAiMessagesJson();
+
+  // Cleanup old media files to reclaim disk space
+  cleanupOldMediaFiles();
+
+  const settings = await readEffectiveSettings();
+
+  // Add dyad-apps directory to git safe.directory (required for Windows).
+  // The trailing /* allows access to all repositories under the named directory.
+  // See: https://git-scm.com/docs/git-config#Documentation/git-config.txt-safedirectory
+  if (settings.enableNativeGit) {
+    // Don't need to await because this only needs to run before
+    // the user starts interacting with Dyad app and uses a git-related feature.
+    gitAddSafeDirectory(`${getDyadAppsBaseDirectory()}/*`);
+  }
+
+  // Check if app was force-closed
+  if (settings.isRunning) {
+    logger.warn("App was force-closed on previous run");
+
+    // Store performance data to send after window is created
+    if (settings.lastKnownPerformance) {
+      logger.warn("Last known performance:", settings.lastKnownPerformance);
+      pendingForceCloseData = settings.lastKnownPerformance;
+    }
+  }
+
+  // Set isRunning to true at startup
+  writeSettings({ isRunning: true });
+
+  // Start performance monitoring
+  startPerformanceMonitoring();
+
+  // Handle dyad-media:// protocol requests to serve persistent media files.
+  protocol.handle("dyad-media", async (request) => {
+    const url = new URL(request.url);
+    // Format: dyad-media://media/{app-path}/.dyad/media/{filename}
+    //   Uses a fixed hostname to avoid URL hostname normalization (lowercasing).
+    //   The app-path segment is URI-encoded, so split on "/" before decoding
+    //   to correctly handle absolute paths (which contain encoded slashes).
+    const pathSegments = url.pathname.slice(1).split("/");
+    if (
+      pathSegments.length !== 4 ||
+      pathSegments[1] !== ".dyad" ||
+      pathSegments[2] !== "media"
+    ) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    const appPathRaw = decodeURIComponent(pathSegments[0]);
+    const filename = decodeURIComponent(pathSegments[3]);
+
+    // Defense-in-depth: reject filenames with path separators or traversal
+    if (
+      filename.includes("..") ||
+      filename.includes("/") ||
+      filename.includes("\\")
+    ) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    // Resolve the app directory, handling both relative names and absolute
+    // paths from imported apps (skipCopy).
+    const appPath = getDyadAppPath(appPathRaw);
+    const mediaDir = path.resolve(path.join(appPath, DYAD_MEDIA_DIR_NAME));
+    const resolvedPath = path.resolve(path.join(mediaDir, filename));
+
+    // Security: ensure the resolved path stays within the app's .dyad/media directory
+    if (!isWithinDyadMediaDir(resolvedPath, appPath)) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    try {
+      return await net.fetch(
+        require("node:url").pathToFileURL(resolvedPath).href,
+      );
+    } catch {
+      return new Response("Not Found", { status: 404 });
+    }
+  });
+
+  await onFirstRunMaybe(settings);
+  createWindow();
+  createApplicationMenu();
+
+  logger.info("Auto-update enabled=", settings.enableAutoUpdate);
+  if (settings.enableAutoUpdate) {
+    // Technically we could just pass the releaseChannel directly to the host,
+    // but this is more explicit and falls back to stable if there's an unknown
+    // release channel.
+    const postfix = settings.releaseChannel === "beta" ? "beta" : "stable";
+    const host = `https://api.dyad.sh/v1/update/${postfix}`;
+    logger.info("Auto-update release channel=", postfix);
+    updateElectronApp({
+      logger,
+      updateSource: {
+        type: UpdateSourceType.ElectronPublicUpdateService,
+        repo: "dyad-sh/dyad",
+        host,
+      },
+    }); // additional configuration options available
+  }
+}
+
+export async function onFirstRunMaybe(settings: UserSettings) {
+  if (!settings.hasRunBefore) {
+    await promptMoveToApplicationsFolder();
+    writeSettings({
+      hasRunBefore: true,
+    });
+  }
+  if (IS_TEST_BUILD) {
+    writeSettings({
+      isTestMode: true,
+    });
+  }
+}
+
+/**
+ * Ask the user if the app should be moved to the
+ * applications folder.
+ */
+async function promptMoveToApplicationsFolder(): Promise<void> {
+  // Why not in e2e tests?
+  // There's no way to stub this dialog in time, so we just skip it
+  // in e2e testing mode.
+  if (IS_TEST_BUILD) return;
+  if (process.platform !== "darwin") return;
+  if (app.isInApplicationsFolder()) return;
+  logger.log("Prompting user to move to applications folder");
+
+  const { response } = await dialog.showMessageBox({
+    type: "question",
+    buttons: ["Move to Applications Folder", "Do Not Move"],
+    defaultId: 0,
+    message: "Move to Applications Folder? (required for auto-update)",
+  });
+
+  if (response === 0) {
+    logger.log("User chose to move to applications folder");
+    app.moveToApplicationsFolder();
+  } else {
+    logger.log("User chose not to move to applications folder");
+  }
+}
+
+declare global {
+  const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+}
+
+let mainWindow: BrowserWindow | null = null;
+let pendingForceCloseData: any = null;
+
+const createWindow = () => {
+  // Create the browser window.
+  mainWindow = new BrowserWindow({
+    width: process.env.NODE_ENV === "development" ? 1280 : 960,
+    minWidth: 800,
+    height: 700,
+    minHeight: 500,
+    titleBarStyle: "hidden",
+    titleBarOverlay: false,
+    trafficLightPosition: {
+      x: 13,
+      y: 13,
+    },
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
+      // transparent: true,
+    },
+    icon: path.join(app.getAppPath(), "assets/icon/logo.png"),
+    // backgroundColor: "#00000001",
+    // frame: false,
+  });
+  // In development, wait for DevTools to open, then reload the page once so React DevTools initializes correctly
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.webContents.once("devtools-opened", () => {
+      setTimeout(() => {
+        const windowRef = mainWindow;
+        if (!windowRef?.isDestroyed()) {
+          windowRef?.webContents.reloadIgnoringCache();
+        }
+      }, 300);
+    });
+    mainWindow.webContents.openDevTools();
+  }
+
+  // and load the index.html of the app.
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+  } else {
+    mainWindow.loadFile(
+      path.join(__dirname, "../renderer/main_window/index.html"),
+    );
+  }
+
+  // Handle force-close message and development reload coordination
+  let forceCloseMessageSent = false;
+  let devToolsReloadedCount = 0;
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    if (process.env.NODE_ENV === "development") {
+      // In dev, wait until AFTER the DevTools-triggered reload before sending the message
+      if (devToolsReloadedCount === 0) {
+        devToolsReloadedCount++;
+        return; // Ignore first load, we will reload momentarily
+      }
+    }
+
+    // Send force-close once after the correct load
+    if (pendingForceCloseData && !forceCloseMessageSent) {
+      forceCloseMessageSent = true;
+      const windowRef = mainWindow;
+      if (!windowRef?.isDestroyed()) {
+        windowRef?.webContents.send("force-close-detected", {
+          performanceData: pendingForceCloseData,
+        });
+      }
+      pendingForceCloseData = null;
+    }
+  });
+
+  // Enable native context menu on right-click
+  mainWindow.webContents.on("context-menu", (event, params) => {
+    // Prevent any default behavior and show our own menu
+    event.preventDefault();
+
+    const template: Electron.MenuItemConstructorOptions[] = [];
+    if (params.isEditable) {
+      template.push(
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "delete" },
+      );
+      if (params.misspelledWord) {
+        const suggestions: Electron.MenuItemConstructorOptions[] =
+          params.dictionarySuggestions.slice(0, 5).map((suggestion) => ({
+            label: suggestion,
+            click: () => {
+              try {
+                mainWindow?.webContents.replaceMisspelling(suggestion);
+              } catch (error) {
+                logger.error("Failed to replace misspelling:", error);
+              }
+            },
+          }));
+        template.push(
+          { type: "separator" },
+          {
+            type: "submenu",
+            label: `Correct "${params.misspelledWord}"`,
+            submenu: suggestions,
+          },
+        );
+      }
+      template.push({ type: "separator" }, { role: "selectAll" });
+    } else {
+      if (params.selectionText && params.selectionText.length > 0) {
+        template.push({ role: "copy" });
+      }
+      template.push({ role: "selectAll" });
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      template.push(
+        { type: "separator" },
+        {
+          label: "Inspect Element",
+          click: () =>
+            mainWindow?.webContents.inspectElement(params.x, params.y),
+        },
+      );
+    }
+
+    const menu = Menu.buildFromTemplate(template);
+    menu.popup({ window: mainWindow! });
+  });
+};
+
+/**
+ * Create application menu with Edit shortcuts (Undo, Redo, Cut, Copy, Paste, etc.)
+ * This enables standard keyboard shortcuts like Cmd/Ctrl+C, Cmd/Ctrl+V, etc.
+ */
+const createApplicationMenu = () => {
+  const isMac = process.platform === "darwin";
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    // App menu (macOS only)
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: "about" as const },
+              { type: "separator" as const },
+              { role: "services" as const },
+              { type: "separator" as const },
+              { role: "hide" as const },
+              { role: "hideOthers" as const },
+              { role: "unhide" as const },
+              { type: "separator" as const },
+              { role: "quit" as const },
+            ],
+          },
+        ]
+      : []),
+    // Edit menu - enables keyboard shortcuts for clipboard operations
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" as const },
+        { role: "redo" as const },
+        { type: "separator" as const },
+        { role: "cut" as const },
+        { role: "copy" as const },
+        { role: "paste" as const },
+        { role: "delete" as const },
+        { type: "separator" as const },
+        { role: "selectAll" as const },
+      ],
+    },
+    // View menu
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" as const },
+        { role: "forceReload" as const },
+        ...(process.env.NODE_ENV === "development"
+          ? [{ role: "toggleDevTools" as const }]
+          : []),
+        { type: "separator" as const },
+        { role: "togglefullscreen" as const },
+      ],
+    },
+    // Window menu
+    {
+      label: "Window",
+      submenu: [
+        { role: "minimize" as const },
+        { role: "zoom" as const },
+        ...(isMac
+          ? [
+              { type: "separator" as const },
+              { role: "front" as const },
+              { type: "separator" as const },
+              { role: "window" as const },
+            ]
+          : [{ role: "close" as const }]),
+      ],
+    },
+  ];
+
+  const appMenu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(appMenu);
+};
+
+// Register dyad-media:// protocol for serving persistent media attachments.
+// Must be called before app.whenReady().
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "dyad-media",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+    },
+  },
+]);
+
+// Skip singleton lock for E2E test builds to allow parallel test execution.
+// Deep link handling still works via the 'open-url' event registered below.
+// The 'second-instance' handler is intentionally omitted since it requires the singleton lock.
+if (IS_TEST_BUILD) {
+  app.whenReady().then(onReady);
+} else {
+  const gotTheLock = app.requestSingleInstanceLock();
+
+  if (!gotTheLock) {
+    app.quit();
+  } else {
+    app.on("second-instance", (_event, commandLine, _workingDirectory) => {
+      // Someone tried to run a second instance, we should focus our window.
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+      }
+      // the commandLine is array of strings in which last element is deep link url
+      const url = commandLine.at(-1);
+      if (url) {
+        handleDeepLinkReturn(url);
+      }
+    });
+    app.whenReady().then(onReady);
+  }
+}
+
+// Handle the protocol. In this case, we choose to show an Error Box.
+app.on("open-url", (event, url) => {
+  handleDeepLinkReturn(url);
+});
+
+async function handleDeepLinkReturn(url: string) {
+  // example url: "dyad://supabase-oauth-return?token=a&refreshToken=b"
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    log.info("Invalid deep link URL", url);
+    return;
+  }
+
+  // Intentionally do NOT log the full URL which may contain sensitive tokens.
+  log.log(
+    "Handling deep link: protocol",
+    parsed.protocol,
+    "hostname",
+    parsed.hostname,
+  );
+  if (parsed.protocol !== "dyad:") {
+    dialog.showErrorBox(
+      "Invalid Protocol",
+      `Expected dyad://, got ${parsed.protocol}. Full URL: ${url}`,
+    );
+    return;
+  }
+  if (parsed.hostname === "neon-oauth-return") {
+    const token = parsed.searchParams.get("token");
+    const refreshToken = parsed.searchParams.get("refreshToken");
+    const expiresIn = Number(parsed.searchParams.get("expiresIn"));
+    if (!token || !refreshToken || !expiresIn) {
+      dialog.showErrorBox(
+        "Invalid URL",
+        "Expected token, refreshToken, and expiresIn",
+      );
+      return;
+    }
+    handleNeonOAuthReturn({ token, refreshToken, expiresIn });
+    // Send message to renderer to trigger re-render
+    mainWindow?.webContents.send("deep-link-received", {
+      type: parsed.hostname,
+    });
+    return;
+  }
+  if (parsed.hostname === "supabase-oauth-return") {
+    const token = parsed.searchParams.get("token");
+    const refreshToken = parsed.searchParams.get("refreshToken");
+    const expiresIn = Number(parsed.searchParams.get("expiresIn"));
+    if (!token || !refreshToken || !expiresIn) {
+      dialog.showErrorBox(
+        "Invalid URL",
+        "Expected token, refreshToken, and expiresIn",
+      );
+      return;
+    }
+    await handleSupabaseOAuthReturn({ token, refreshToken, expiresIn });
+    // Send message to renderer to trigger re-render
+    mainWindow?.webContents.send("deep-link-received", {
+      type: parsed.hostname,
+    });
+    return;
+  }
+  // dyad://dyad-pro-return?key=123&budget_reset_at=2025-05-26T16:31:13.492000Z&max_budget=100
+  if (parsed.hostname === "dyad-pro-return") {
+    const apiKey = parsed.searchParams.get("key");
+    if (!apiKey) {
+      dialog.showErrorBox("Invalid URL", "Expected key");
+      return;
+    }
+    handleDyadProReturn({
+      apiKey,
+    });
+    // Send message to renderer to trigger re-render
+    mainWindow?.webContents.send("deep-link-received", {
+      type: parsed.hostname,
+    });
+    return;
+  }
+  // dyad://add-mcp-server?name=Chrome%20DevTools&config=eyJjb21tYW5kIjpudWxsLCJ0eXBlIjoic3RkaW8ifQ%3D%3D
+  if (parsed.hostname === "add-mcp-server") {
+    const name = parsed.searchParams.get("name");
+    const config = parsed.searchParams.get("config");
+    if (!name || !config) {
+      dialog.showErrorBox("Invalid URL", "Expected name and config");
+      return;
+    }
+
+    try {
+      const decodedConfigJson = atob(config);
+      const decodedConfig = JSON.parse(decodedConfigJson);
+      const parsedConfig = AddMcpServerConfigSchema.parse(decodedConfig);
+
+      mainWindow?.webContents.send("deep-link-received", {
+        type: parsed.hostname,
+        payload: {
+          name,
+          config: parsedConfig,
+        } as AddMcpServerPayload,
+      });
+    } catch (error) {
+      logger.error("Failed to parse add-mcp-server deep link:", error);
+      dialog.showErrorBox(
+        "Invalid MCP Server Configuration",
+        "The deep link contains malformed configuration data. Please check the URL and try again.",
+      );
+    }
+    return;
+  }
+  // dyad://add-prompt?data=<base64-encoded-json>
+  if (parsed.hostname === "add-prompt") {
+    const data = parsed.searchParams.get("data");
+    if (!data) {
+      dialog.showErrorBox("Invalid URL", "Expected data parameter");
+      return;
+    }
+
+    try {
+      const decodedJson = atob(data);
+      const decoded = JSON.parse(decodedJson);
+      const parsedData = AddPromptDataSchema.parse(decoded);
+
+      mainWindow?.webContents.send("deep-link-received", {
+        type: parsed.hostname,
+        payload: parsedData as AddPromptPayload,
+      });
+    } catch (error) {
+      logger.error("Failed to parse add-prompt deep link:", error);
+      dialog.showErrorBox(
+        "Invalid Prompt Data",
+        "The deep link contains malformed data. Please check the URL and try again.",
+      );
+    }
+    return;
+  }
+  dialog.showErrorBox("Invalid deep link URL", url);
+}
+
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+// Only set isRunning to false when the app is properly quit by the user.
+// IMPORTANT: This handler must be synchronous because Electron's EventEmitter
+// does not await async callbacks — the returned Promise would be silently ignored.
+app.on("will-quit", () => {
+  logger.info("App is quitting, setting isRunning to false");
+
+  // Stop the garbage collection timer
+  stopAppGarbageCollection();
+
+  // Synchronously send kill signals to all running apps (fire-and-forget).
+  // We cannot use async/await here because Electron won't wait for it.
+  stopAllAppsSync();
+
+  // Stop performance monitoring and capture final metrics
+  stopPerformanceMonitoring();
+
+  writeSettings({ isRunning: false });
+});
+
+app.on("activate", () => {
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
+
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and import them here.

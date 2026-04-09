@@ -1,0 +1,2 @@
+- "thinkingBudget": "low"
++ "thinkingBudget": "medium"

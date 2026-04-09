@@ -1,0 +1,88 @@
+name: Claude Deflake E2E
+
+on:
+  schedule:
+    # Weekdays at 10:00 UTC (2 AM PST / 3 AM PDT due to DST)
+    - cron: "0 10 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      commit_count:
+        description: "Number of recent commits on main to scan for flaky tests"
+        required: false
+        default: "10"
+        type: string
+
+jobs:
+  deflake:
+    environment: ai-bots
+    runs-on:
+      - self-hosted
+      - macOS
+      - ARM64
+    permissions: {}
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.DYAD_GITHUB_APP_ID }}
+          private-key: ${{ secrets.DYAD_GITHUB_APP_PRIVATE_KEY }}
+          permission-actions: write
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Initialize environment
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install npm 11.8.0
+        run: npm install -g npm@11.8.0
+      - name: Install node modules
+        run: npm ci --no-audit --no-fund --progress=false
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: latest
+
+      - name: Clone nextjs-template
+        run: git clone --depth 1 https://github.com/dyad-sh/nextjs-template.git nextjs-template
+
+      - name: Install scaffold dependencies
+        run: cd scaffold && pnpm install
+
+      - name: Install nextjs-template dependencies
+        run: cd nextjs-template && pnpm install
+
+      - name: Install Chromium browser for Playwright
+        run: npx playwright install chromium --with-deps
+
+      - name: Build fake LLM server
+        run: cd testing/fake-llm-server && npm install && npm run build
+
+      - name: Deflake E2E tests
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          CLAUDE_CODE_MAX_OUTPUT_TOKENS: 48000
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          claude_args: --model claude-opus-4-6
+          display_report: true
+          prompt: |
+            /dyad:deflake-e2e-recent-commits ${{ inputs.commit_count || '10' }}
+      - name: Cleanup (self-hosted macOS)
+        if: always()
+        run: bash scripts/ci-cleanup-macos.sh

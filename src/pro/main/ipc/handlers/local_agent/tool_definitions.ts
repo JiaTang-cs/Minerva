@@ -1,0 +1,511 @@
+/**
+ * Tool definitions for Local Agent v2
+ * Each tool includes a zod schema, description, and execute function
+ */
+
+import { IpcMainInvokeEvent } from "electron";
+import crypto from "node:crypto";
+import { readSettings, writeSettings } from "@/main/settings";
+import { writeFileTool } from "./tools/write_file";
+import { deleteFileTool } from "./tools/delete_file";
+import { renameFileTool } from "./tools/rename_file";
+import { copyFileTool } from "./tools/copy_file";
+import { addDependencyTool } from "./tools/add_dependency";
+import { executeSqlTool } from "./tools/execute_sql";
+
+import { readFileTool } from "./tools/read_file";
+import { listFilesTool } from "./tools/list_files";
+import { getSupabaseProjectInfoTool } from "./tools/get_supabase_project_info";
+import { getSupabaseTableSchemaTool } from "./tools/get_supabase_table_schema";
+import { setChatSummaryTool } from "./tools/set_chat_summary";
+import { addIntegrationTool } from "./tools/add_integration";
+import { readLogsTool } from "./tools/read_logs";
+import { editFileTool } from "./tools/edit_file";
+import { searchReplaceTool } from "./tools/search_replace";
+import { webSearchTool } from "./tools/web_search";
+import { webCrawlTool } from "./tools/web_crawl";
+import { webFetchTool } from "./tools/web_fetch";
+import { generateImageTool } from "./tools/generate_image";
+import { updateTodosTool } from "./tools/update_todos";
+import { runTypeChecksTool } from "./tools/run_type_checks";
+import { grepTool } from "./tools/grep";
+import { codeSearchTool } from "./tools/code_search";
+import { planningQuestionnaireTool } from "./tools/planning_questionnaire";
+import { writePlanTool } from "./tools/write_plan";
+import { exitPlanTool } from "./tools/exit_plan";
+import type { LanguageModelV3ToolResultOutput } from "@ai-sdk/provider";
+import {
+  escapeXmlAttr,
+  escapeXmlContent,
+  type ToolDefinition,
+  type AgentContext,
+  type ToolResult,
+  type FileEditToolName,
+  FILE_EDIT_TOOL_NAMES,
+} from "./tools/types";
+import { AgentToolConsent } from "@/lib/schemas";
+import { getSupabaseClientCode } from "@/supabase_admin/supabase_context";
+import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { ExecuteAddDependencyError } from "@/ipc/processors/executeAddDependency";
+
+function getToolErrorDisplayDetails(error: unknown): string {
+  if (error instanceof ExecuteAddDependencyError) {
+    return error.displayDetails;
+  }
+
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getToolErrorSummary(error: unknown): string {
+  if (error instanceof ExecuteAddDependencyError) {
+    return error.displaySummary;
+  }
+
+  return error instanceof Error ? error.message : String(error);
+}
+
+// Combined tool definitions array
+export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
+  writeFileTool,
+  editFileTool,
+  searchReplaceTool,
+  copyFileTool,
+  deleteFileTool,
+  renameFileTool,
+  addDependencyTool,
+  executeSqlTool,
+  readFileTool,
+  listFilesTool,
+  grepTool,
+  codeSearchTool,
+  getSupabaseProjectInfoTool,
+  getSupabaseTableSchemaTool,
+  setChatSummaryTool,
+  addIntegrationTool,
+  readLogsTool,
+  webSearchTool,
+  webCrawlTool,
+  webFetchTool,
+  generateImageTool,
+  updateTodosTool,
+  runTypeChecksTool,
+  // Plan mode tools
+  planningQuestionnaireTool,
+  writePlanTool,
+  exitPlanTool,
+];
+// ============================================================================
+// Agent Tool Name Type (derived from TOOL_DEFINITIONS)
+// ============================================================================
+
+export type AgentToolName = (typeof TOOL_DEFINITIONS)[number]["name"];
+
+// ============================================================================
+// Agent Tool Consent Management
+// ============================================================================
+
+interface PendingConsentEntry {
+  chatId: number;
+  resolve: (d: "accept-once" | "accept-always" | "decline") => void;
+}
+
+const pendingConsentResolvers = new Map<string, PendingConsentEntry>();
+
+export function waitForAgentToolConsent(
+  requestId: string,
+  chatId: number,
+): Promise<"accept-once" | "accept-always" | "decline"> {
+  return new Promise((resolve) => {
+    pendingConsentResolvers.set(requestId, { chatId, resolve });
+  });
+}
+
+export function resolveAgentToolConsent(
+  requestId: string,
+  decision: "accept-once" | "accept-always" | "decline",
+) {
+  const entry = pendingConsentResolvers.get(requestId);
+  if (entry) {
+    pendingConsentResolvers.delete(requestId);
+    entry.resolve(decision);
+  }
+}
+
+/**
+ * Clean up all pending consent requests for a given chat.
+ * Called when a stream is cancelled/aborted to prevent orphaned promises
+ * and stale UI banners.
+ */
+export function clearPendingConsentsForChat(chatId: number): void {
+  for (const [requestId, entry] of pendingConsentResolvers) {
+    if (entry.chatId === chatId) {
+      pendingConsentResolvers.delete(requestId);
+      // Resolve with decline so the tool execution fails gracefully
+      entry.resolve("decline");
+    }
+  }
+}
+
+// ============================================================================
+// Questionnaire Response Management
+// ============================================================================
+
+interface PendingQuestionnaireEntry {
+  chatId: number;
+  resolve: (answers: Record<string, string> | null) => void;
+}
+
+const pendingQuestionnaireResolvers = new Map<
+  string,
+  PendingQuestionnaireEntry
+>();
+
+const QUESTIONNAIRE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+export function waitForQuestionnaireResponse(
+  requestId: string,
+  chatId: number,
+): Promise<Record<string, string> | null> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      const entry = pendingQuestionnaireResolvers.get(requestId);
+      if (entry) {
+        pendingQuestionnaireResolvers.delete(requestId);
+        entry.resolve(null);
+      }
+    }, QUESTIONNAIRE_TIMEOUT_MS);
+
+    pendingQuestionnaireResolvers.set(requestId, {
+      chatId,
+      resolve: (answers) => {
+        clearTimeout(timeout);
+        resolve(answers);
+      },
+    });
+  });
+}
+
+export function resolveQuestionnaireResponse(
+  requestId: string,
+  answers: Record<string, string> | null,
+) {
+  const entry = pendingQuestionnaireResolvers.get(requestId);
+  if (entry) {
+    pendingQuestionnaireResolvers.delete(requestId);
+    entry.resolve(answers);
+  }
+}
+
+/**
+ * Clean up all pending questionnaire requests for a given chat.
+ * Called when a stream is cancelled/aborted to prevent orphaned promises.
+ */
+export function clearPendingQuestionnairesForChat(chatId: number): void {
+  for (const [requestId, entry] of pendingQuestionnaireResolvers) {
+    if (entry.chatId === chatId) {
+      pendingQuestionnaireResolvers.delete(requestId);
+      entry.resolve(null);
+    }
+  }
+}
+
+export function getDefaultConsent(toolName: AgentToolName): AgentToolConsent {
+  const tool = TOOL_DEFINITIONS.find((t) => t.name === toolName);
+  return tool?.defaultConsent ?? "ask";
+}
+
+export function getAgentToolConsent(toolName: AgentToolName): AgentToolConsent {
+  const settings = readSettings();
+  const stored = settings.agentToolConsents?.[toolName];
+  if (stored) {
+    return stored;
+  }
+  return getDefaultConsent(toolName);
+}
+
+export function setAgentToolConsent(
+  toolName: AgentToolName,
+  consent: AgentToolConsent,
+): void {
+  const settings = readSettings();
+  writeSettings({
+    agentToolConsents: {
+      ...settings.agentToolConsents,
+      [toolName]: consent,
+    },
+  });
+}
+
+export function getAllAgentToolConsents(): Record<
+  AgentToolName,
+  AgentToolConsent
+> {
+  const settings = readSettings();
+  const stored = settings.agentToolConsents ?? {};
+  const result: Record<string, AgentToolConsent> = {};
+
+  // Start with defaults, override with stored values
+  for (const tool of TOOL_DEFINITIONS) {
+    const storedConsent = stored[tool.name];
+    if (storedConsent) {
+      result[tool.name] = storedConsent;
+    } else {
+      result[tool.name] = getDefaultConsent(tool.name as AgentToolName);
+    }
+  }
+
+  return result as Record<AgentToolName, AgentToolConsent>;
+}
+
+export async function requireAgentToolConsent(
+  event: IpcMainInvokeEvent,
+  params: {
+    chatId: number;
+    toolName: AgentToolName;
+    toolDescription?: string | null;
+    inputPreview?: string | null;
+  },
+): Promise<boolean> {
+  const current = getAgentToolConsent(params.toolName);
+
+  if (current === "always") return true;
+  if (current === "never")
+    throw new DyadError(
+      "Should not ask for consent for a tool marked as 'never'",
+      DyadErrorKind.Internal,
+    );
+
+  // Ask renderer for a decision via event bridge
+  const requestId = `agent:${params.toolName}:${crypto.randomUUID()}`;
+  (event.sender as any).send("agent-tool:consent-request", {
+    requestId,
+    ...params,
+  });
+
+  const response = await waitForAgentToolConsent(requestId, params.chatId);
+
+  if (response === "accept-always") {
+    setAgentToolConsent(params.toolName, "always");
+    return true;
+  }
+  if (response === "decline") {
+    return false;
+  }
+  return response === "accept-once";
+}
+
+// ============================================================================
+// Build Agent Tool Set
+// ============================================================================
+
+/**
+ * Process placeholders in tool args (e.g. $$SUPABASE_CLIENT_CODE$$)
+ * Recursively processes all string values in the args object.
+ */
+async function processArgPlaceholders<T extends Record<string, any>>(
+  args: T,
+  ctx: AgentContext,
+): Promise<T> {
+  if (!ctx.supabaseProjectId) {
+    return args;
+  }
+
+  // Check if any string values contain the placeholder
+  const argsStr = JSON.stringify(args);
+  if (!argsStr.includes("$$SUPABASE_CLIENT_CODE$$")) {
+    return args;
+  }
+
+  // Fetch the replacement value once
+  const supabaseClientCode = await getSupabaseClientCode({
+    projectId: ctx.supabaseProjectId,
+    organizationSlug: ctx.supabaseOrganizationSlug ?? null,
+  });
+
+  // Process all string values in args
+  const processValue = (value: any): any => {
+    if (typeof value === "string") {
+      return value.replace(/\$\$SUPABASE_CLIENT_CODE\$\$/g, supabaseClientCode);
+    }
+    if (Array.isArray(value)) {
+      return value.map(processValue);
+    }
+    if (value && typeof value === "object") {
+      const result: Record<string, any> = {};
+      for (const [k, v] of Object.entries(value)) {
+        result[k] = processValue(v);
+      }
+      return result;
+    }
+    return value;
+  };
+
+  return processValue(args) as T;
+}
+
+/**
+ * Convert our ToolResult to AI SDK format
+ */
+function convertToolResultForAiSdk(
+  result: ToolResult,
+): LanguageModelV3ToolResultOutput {
+  if (typeof result === "string") {
+    return { type: "text", value: result };
+  }
+  throw new DyadError(
+    `Unsupported tool result type: ${typeof result}`,
+    DyadErrorKind.Internal,
+  );
+}
+
+export interface BuildAgentToolSetOptions {
+  /**
+   * If true, exclude tools that modify state (files, database, etc.).
+   * Used for read-only modes like "ask" mode.
+   */
+  readOnly?: boolean;
+  /**
+   * If true, only include tools that are allowed in plan mode.
+   * Plan mode has access to read-only tools plus planning-specific tools.
+   */
+  planModeOnly?: boolean;
+  /**
+   * If true, exclude Pro-only tools.
+   * Used for basic agent mode where some tools may not be available.
+   */
+  basicAgentMode?: boolean;
+}
+
+const FILE_EDIT_TOOLS: Set<FileEditToolName> = new Set(FILE_EDIT_TOOL_NAMES);
+
+/**
+ * Track file edit tool usage for telemetry
+ */
+function trackFileEditTool(
+  ctx: AgentContext,
+  toolName: string,
+  args: { file_path?: string; path?: string },
+): void {
+  if (!FILE_EDIT_TOOLS.has(toolName as FileEditToolName)) {
+    return;
+  }
+  const filePath = args.file_path ?? args.path;
+  if (!filePath) {
+    return;
+  }
+  if (!ctx.fileEditTracker[filePath]) {
+    ctx.fileEditTracker[filePath] = {
+      write_file: 0,
+      edit_file: 0,
+      search_replace: 0,
+    };
+  }
+  ctx.fileEditTracker[filePath][toolName as FileEditToolName]++;
+}
+
+/**
+ * Tools that should ONLY be available in plan mode (excluded from normal agent mode).
+ * Note: planning_questionnaire is intentionally omitted so it's available in pro agent mode too.
+ */
+const PLAN_MODE_ONLY_TOOLS = new Set(["write_plan", "exit_plan"]);
+
+/**
+ * Planning-specific tools that are allowed in plan mode despite modifying state.
+ * Superset of PLAN_MODE_ONLY_TOOLS plus tools that participate in planning
+ * but are also available in normal (pro) agent mode.
+ */
+const PLANNING_SPECIFIC_TOOLS = new Set([
+  ...PLAN_MODE_ONLY_TOOLS,
+  "planning_questionnaire",
+]);
+
+/**
+ * Tools only available in Pro agent mode (excluded from basic agent mode).
+ */
+const PRO_AGENT_ONLY_TOOLS = new Set<string>();
+
+/**
+ * Build ToolSet for AI SDK from tool definitions
+ */
+export function buildAgentToolSet(
+  ctx: AgentContext,
+  options: BuildAgentToolSetOptions = {},
+) {
+  const toolSet: Record<string, any> = {};
+
+  for (const tool of TOOL_DEFINITIONS) {
+    const consent = getAgentToolConsent(tool.name);
+    if (consent === "never") {
+      continue;
+    }
+
+    // In plan mode, skip state-modifying tools unless they're planning-specific
+    if (
+      options.planModeOnly &&
+      tool.modifiesState &&
+      !PLANNING_SPECIFIC_TOOLS.has(tool.name)
+    ) {
+      continue;
+    }
+
+    // Skip plan-mode-only tools when NOT in plan mode
+    if (!options.planModeOnly && PLAN_MODE_ONLY_TOOLS.has(tool.name)) {
+      continue;
+    }
+
+    // Skip Pro-only tools in basic agent mode
+    if (options.basicAgentMode && PRO_AGENT_ONLY_TOOLS.has(tool.name)) {
+      continue;
+    }
+
+    // In read-only mode, skip tools that modify state
+    if (options.readOnly && tool.modifiesState) {
+      continue;
+    }
+
+    if (tool.isEnabled && !tool.isEnabled(ctx)) {
+      continue;
+    }
+
+    toolSet[tool.name] = {
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+      execute: async (args: any) => {
+        try {
+          const processedArgs = await processArgPlaceholders(args, ctx);
+
+          // Check consent before executing the tool
+          const allowed = await ctx.requireConsent({
+            toolName: tool.name,
+            toolDescription: tool.description,
+            inputPreview: tool.getConsentPreview?.(processedArgs) ?? null,
+          });
+          if (!allowed) {
+            throw new DyadError(
+              `User denied permission for ${tool.name}`,
+              DyadErrorKind.UserCancelled,
+            );
+          }
+
+          // Track file edit tool usage before execution to capture all attempts
+          // (including failures) for retry/fallback telemetry
+          trackFileEditTool(ctx, tool.name, processedArgs);
+
+          const result = await tool.execute(processedArgs, ctx);
+
+          return convertToolResultForAiSdk(result);
+        } catch (error) {
+          const errorMessage = getToolErrorSummary(error);
+          const errorDetails = getToolErrorDisplayDetails(error);
+
+          ctx.onXmlComplete(
+            `<dyad-output type="error" message="Tool '${tool.name}' failed: ${escapeXmlAttr(errorMessage)}">${escapeXmlContent(errorDetails)}</dyad-output>`,
+          );
+          throw error;
+        }
+      },
+    };
+  }
+
+  return toolSet;
+}

@@ -1,0 +1,74 @@
+name: Claude PR Review
+
+# https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-comprehensive.yml
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+# Restrict default permissions; each job declares only what it needs.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    # Has Anthropic API key, etc.
+    environment: ai-bots
+    # Only review code from regular contributors since claude code has non-trivial costs.
+    # It's also a safe-guard for preventing malicious PRs from doing bad things although we restrict
+    # the permissions and tools allowed in this job.
+    # https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-filtered-authors.yml
+    if: >-
+      contains(
+        fromJSON('["wwwillchen","keppo-bot","keppo-bot[bot]","dyad-assistant","azizmejri1","princeaden1","nourzakhama2003","ryangroch"]'),
+        github.event.pull_request.user.login
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.DYAD_GITHUB_APP_ID }}
+          private-key: ${{ secrets.DYAD_GITHUB_APP_PRIVATE_KEY }}
+          permission-pull-requests: write
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: PR Review
+        uses: anthropics/claude-code-action@v1
+        env:
+          # Default is 32,000 which Claude willl sometimes hit.
+          # https://code.claude.com/docs/en/settings
+          CLAUDE_CODE_MAX_OUTPUT_TOKENS: 48000
+        with:
+          # anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # See: https://github.com/anthropics/claude-code-action/blob/v1/docs/security.md
+          github_token: ${{ steps.app-token.outputs.token }}
+          allowed_non_write_users: "princeaden1,nourzakhama2003,ryangroch" # remember, we already filter above.
+          allowed_bots: "keppo-bot[bot]"
+
+          # Disable progress tracking (try to save tokens)
+          track_progress: false
+          display_report: true
+
+          prompt: |
+            /dyad:multi-pr-review ${{ github.event.pull_request.number }}
+
+          # Uses .claude/settings.json for permissions; only add MCP tool not in settings
+          claude_args: |
+            --model claude-opus-4-6 --allowedTools "mcp__github_inline_comment__create_inline_comment"

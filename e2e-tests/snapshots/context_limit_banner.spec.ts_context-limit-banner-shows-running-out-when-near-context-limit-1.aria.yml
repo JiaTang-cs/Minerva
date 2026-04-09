@@ -1,0 +1,13 @@
+- paragraph: Summarize from chat-id=1
+- button "file1.txt file1.txt Edit"
+- paragraph: More EOM
+- button "Copy":
+  - img
+- img
+- text: test-model
+- img
+- text: less than a minute ago
+- button "Undo":
+  - img
+- button "Retry":
+  - img

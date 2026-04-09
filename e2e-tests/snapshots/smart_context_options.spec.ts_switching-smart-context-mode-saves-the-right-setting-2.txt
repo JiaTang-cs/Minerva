@@ -1,0 +1,3 @@
+- "enableProSmartFilesContextMode": true
++ "enableProSmartFilesContextMode": false
+- "proSmartContextOption": "balanced"

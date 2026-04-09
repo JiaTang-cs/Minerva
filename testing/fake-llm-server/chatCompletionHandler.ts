@@ -1,0 +1,551 @@
+import { Request, Response } from "express";
+import fs from "fs";
+import path from "path";
+import { CANNED_MESSAGE, createStreamChunk } from ".";
+import {
+  handleLocalAgentFixture,
+  extractLocalAgentFixture,
+} from "./localAgentHandler";
+
+let globalCounter = 0;
+
+export const createChatCompletionHandler =
+  (prefix: string) => async (req: Request, res: Response) => {
+    const { stream = false, messages = [] } = req.body;
+    console.log("* Received messages", messages);
+
+    // Check if the last message contains "[429]" to simulate rate limiting
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.content === "[429]") {
+      return res.status(429).json({
+        error: {
+          message: "Too many requests. Please try again later.",
+          type: "rate_limit_error",
+          param: null,
+          code: "rate_limit_exceeded",
+        },
+      });
+    }
+
+    // Check for local-agent fixture requests (tc=local-agent/*)
+    // We need to check ALL user messages, not just the last one, because
+    // outer loop follow-up requests inject a todo reminder as the last user message.
+    // The fixture trigger (tc=local-agent/...) will be in an earlier user message.
+    const userMessages = messages.filter((m: any) => m.role === "user");
+
+    // Helper to extract text content from a message (handles both string and array content)
+    const getTextContent = (msg: any): string => {
+      if (typeof msg.content === "string") {
+        return msg.content;
+      } else if (Array.isArray(msg.content)) {
+        const textPart = msg.content.find((p: any) => p.type === "text");
+        return textPart ? textPart.text : "";
+      }
+      return "";
+    };
+
+    // Get the last user message's text content for other checks
+    const lastUserMessage = userMessages[userMessages.length - 1];
+    const userTextContent = lastUserMessage
+      ? getTextContent(lastUserMessage)
+      : "";
+
+    // First, check if the LAST user message is a fixture trigger
+    let localAgentFixture = extractLocalAgentFixture(userTextContent);
+
+    // If the last user message is synthetic (e.g., todo reminder or retry
+    // continuation instruction), search earlier user messages for the original
+    // fixture trigger.
+    if (
+      !localAgentFixture &&
+      (userTextContent.includes("incomplete todo(s)") ||
+        userTextContent.includes("previous response stream was interrupted") ||
+        userTextContent.includes("did not finish completely"))
+    ) {
+      for (const msg of userMessages) {
+        const textContent = getTextContent(msg);
+        const fixture = extractLocalAgentFixture(textContent);
+        if (fixture) {
+          localAgentFixture = fixture;
+          break; // Use the first (original) fixture trigger found
+        }
+      }
+    }
+
+    console.error(
+      `[local-agent] Checking message: "${userTextContent.slice(0, 50)}", fixture: ${localAgentFixture}`,
+    );
+    if (localAgentFixture) {
+      return handleLocalAgentFixture(req, res, localAgentFixture);
+    }
+
+    // Route plan acceptance message to exit-plan fixture
+    if (userTextContent.includes("I accept this plan")) {
+      return handleLocalAgentFixture(req, res, "exit-plan");
+    }
+
+    let messageContent = CANNED_MESSAGE;
+
+    // Route plan comment messages to generate dump for testing
+    if (userTextContent.includes("I have the following comments on the plan")) {
+      messageContent =
+        "I'll update the plan based on your comments.\n\n" + generateDump(req);
+    }
+
+    // Handle compaction summary requests (from generateText() in compaction_handler)
+    if (
+      userTextContent.startsWith("Please summarize the following conversation:")
+    ) {
+      messageContent =
+        "## Key Decisions Made\n- Completed initial task as requested\n\n## Current Task State\nConversation was compacted to save context space.";
+    }
+
+    // Check for upload image to codebase using lastUserMessage (which already handles both string and array content)
+    if (userTextContent.includes("[[UPLOAD_IMAGE_TO_CODEBASE]]")) {
+      // Extract the attachment path from the user message (format: "path: /path/to/app/.dyad/media/...")
+      const pathMatch = userTextContent.match(/\(path: ([^\s)]+)\)/);
+      const attachmentPath = pathMatch?.[1] ?? ".dyad/media/unknown.png";
+      messageContent = `Uploading image to codebase
+<dyad-copy from="${attachmentPath}" to="new/image/file.png" description="Uploaded image to codebase"></dyad-copy>
+`;
+      messageContent += "\n\n" + generateDump(req);
+    }
+
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.includes("[sleep=medium]")
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 10_000));
+    }
+
+    // Handle merge conflict resolution prompts (both old and new formats)
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      (lastMessage.content.includes("Resolve the Git conflict(s) in ") ||
+        lastMessage.content.includes(
+          "Please resolve the Git merge conflicts in the following file",
+        ))
+    ) {
+      // Extract conflict file path from different prompt formats
+      let conflictPath = "conflict.txt";
+      if (lastMessage.content.includes("Resolve the Git conflict(s) in ")) {
+        conflictPath =
+          lastMessage.content
+            .split("Resolve the Git conflict(s) in ")[1]
+            ?.split("\n")[0]
+            ?.replace(/\.$/, "")
+            .trim() || "conflict.txt";
+      } else {
+        // New format: "Please resolve the Git merge conflicts in the following file(s):\n\n- conflict.txt"
+        const fileListMatch = lastMessage.content.match(/^- (.+)$/m);
+        if (fileListMatch) {
+          conflictPath = fileListMatch[1].trim();
+        }
+      }
+      messageContent = `Resolved conflicts in ${conflictPath}.
+<dyad-write path="${conflictPath}" description="Resolve merge conflicts.">
+Line 1
+Line 2 Modified Feature
+Line 3
+</dyad-write>
+`;
+    }
+
+    // TS auto-fix prefixes
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.startsWith(
+        "Fix these 2 TypeScript compile-time error",
+      )
+    ) {
+      // Fix errors in create-ts-errors.md and introduce a new error
+      messageContent = `
+<dyad-write path="src/bad-file.ts" description="Fix 2 errors and introduce a new error.">
+// Import doesn't exist
+// import NonExistentClass from 'non-existent-class';
+
+
+const x = new Object();
+x.nonExistentMethod2();
+</dyad-write>
+
+      `;
+    }
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.startsWith(
+        "Fix these 1 TypeScript compile-time error",
+      )
+    ) {
+      // Fix errors in create-ts-errors.md and introduce a new error
+      messageContent = `
+<dyad-write path="src/bad-file.ts" description="Fix remaining error.">
+// Import doesn't exist
+// import NonExistentClass from 'non-existent-class';
+
+
+const x = new Object();
+x.toString(); // replaced with existing method
+</dyad-write>
+
+      `;
+    }
+
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.includes("TypeScript compile-time error")
+    ) {
+      messageContent += "\n\n" + generateDump(req);
+    }
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.startsWith("Fix error: Error Line 6 error")
+    ) {
+      messageContent = `
+      Fixing the error...
+      <dyad-write path="src/pages/Index.tsx">
+      
+
+import { MadeWithDyad } from "@/components/made-with-dyad";
+
+const Index = () => {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">No more errors!</h1>
+      </div>
+      <MadeWithDyad />
+    </div>
+  );
+};
+
+export default Index;
+
+      </dyad-write>
+      `;
+    }
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.startsWith(
+        "There was an issue with the following `dyad-search-replace` tags.",
+      )
+    ) {
+      if (lastMessage.content.includes("Make sure you use `dyad-read`")) {
+        // Fix errors in create-ts-errors.md and introduce a new error
+        messageContent =
+          `
+<dyad-read path="src/pages/Index.tsx"></dyad-read>
+
+<dyad-search-replace path="src/pages/Index.tsx">
+<<<<<<< SEARCH
+        // STILL Intentionally DO NOT MATCH ANYTHING TO TRIGGER FALLBACK
+        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
+=======
+        <h1 className="text-4xl font-bold mb-4">Welcome to the UPDATED App</h1>
+>>>>>>> REPLACE
+</dyad-search-replace>
+` +
+          "\n\n" +
+          generateDump(req);
+      } else {
+        // Fix errors in create-ts-errors.md and introduce a new error
+        messageContent =
+          `
+<dyad-write path="src/pages/Index.tsx" description="Rewrite file.">
+// FILE IS REPLACED WITH FALLBACK WRITE.
+</dyad-write>` +
+          "\n\n" +
+          generateDump(req);
+      }
+    }
+
+    console.error("LASTMESSAGE", lastMessage);
+    // Check if the last message is "[dump]" to write messages to file and return path
+    if (
+      lastMessage &&
+      (Array.isArray(lastMessage.content)
+        ? lastMessage.content.some(
+            (part: { type: string; text: string }) =>
+              part.type === "text" && part.text.includes("[dump]"),
+          )
+        : lastMessage.content.includes("[dump]"))
+    ) {
+      messageContent = generateDump(req);
+    }
+
+    if (
+      lastMessage &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.startsWith("/security-review")
+    ) {
+      messageContent = fs.readFileSync(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "..",
+          "e2e-tests",
+          "fixtures",
+          "security-review",
+          "findings.md",
+        ),
+        "utf-8",
+      );
+      messageContent += "\n\n" + generateDump(req);
+    }
+
+    if (lastMessage && lastMessage.content === "[increment]") {
+      globalCounter++;
+      messageContent = `counter=${globalCounter}`;
+    }
+
+    // Check if the last message starts with "tc=" to load test case file
+    if (
+      lastMessage &&
+      lastMessage.content &&
+      typeof lastMessage.content === "string" &&
+      lastMessage.content.startsWith("tc=") &&
+      !lastMessage.content.startsWith("tc=local-agent/")
+    ) {
+      const testCaseName = lastMessage.content.slice(3).split("[")[0].trim(); // Remove "tc=" prefix
+      console.error(`* Loading test case: ${testCaseName}`);
+      const testFilePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "e2e-tests",
+        "fixtures",
+        prefix,
+        `${testCaseName}.md`,
+      );
+
+      try {
+        if (fs.existsSync(testFilePath)) {
+          messageContent = fs.readFileSync(testFilePath, "utf-8");
+          console.log(`* Loaded test case: ${testCaseName}`);
+        } else {
+          console.error(`* Test case file not found: ${testFilePath}`);
+          messageContent = `Error: Test case file not found: ${testCaseName}.md`;
+        }
+      } catch (error) {
+        console.error(`* Error reading test case file: ${error}`);
+        messageContent = `Error: Could not read test case file: ${testCaseName}.md`;
+      }
+    }
+
+    // Continuation requests: the partial assistant output is in a preceding assistant
+    // message, then a user message asks to continue ("did not finish completely").
+    // Check any message for the marker. See chat_stream_handlers continuation prompt.
+    if (
+      messages.some((m: any) =>
+        getTextContent(m).includes("[[STRING_TO_BE_FINISHED]]"),
+      )
+    ) {
+      messageContent = `[[STRING_IS_FINISHED]]";</dyad-write>\nFinished writing file.`;
+      messageContent += "\n\n" + generateDump(req);
+    }
+    const isToolCall = !!(
+      lastMessage &&
+      lastMessage.content &&
+      lastMessage.content.includes("[call_tool=calculator_add]")
+    );
+    let message = {
+      role: "assistant",
+      content: messageContent,
+    } as any;
+
+    // Non-streaming response
+    if (!stream) {
+      if (isToolCall) {
+        const toolCallId = `call_${Date.now()}`;
+        return res.json({
+          id: `chatcmpl-${Date.now()}`,
+          object: "chat.completion",
+          created: Math.floor(Date.now() / 1000),
+          model: "fake-model",
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: "assistant",
+                tool_calls: [
+                  {
+                    id: toolCallId,
+                    type: "function",
+                    function: {
+                      name: "calculator_add",
+                      arguments: JSON.stringify({ a: 1, b: 2 }),
+                    },
+                  },
+                ],
+              },
+              finish_reason: "tool_calls",
+            },
+          ],
+        });
+      }
+      return res.json({
+        id: `chatcmpl-${Date.now()}`,
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model: "fake-model",
+        choices: [
+          {
+            index: 0,
+            message,
+            finish_reason: "stop",
+          },
+        ],
+      });
+    }
+
+    // Streaming response
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    // Tool call streaming (OpenAI-style)
+    if (isToolCall) {
+      const now = Date.now();
+      const mkChunk = (delta: any, finish: null | string = null) => {
+        const chunk = {
+          id: `chatcmpl-${now}`,
+          object: "chat.completion.chunk",
+          created: Math.floor(now / 1000),
+          model: "fake-model",
+          choices: [
+            {
+              index: 0,
+              delta,
+              finish_reason: finish,
+            },
+          ],
+        };
+        return `data: ${JSON.stringify(chunk)}\n\n`;
+      };
+
+      // 1) Send role
+      res.write(mkChunk({ role: "assistant" }));
+
+      // 2) Send tool_calls init with id + name + empty args
+      const toolCallId = `call_${now}`;
+      res.write(
+        mkChunk({
+          tool_calls: [
+            {
+              index: 0,
+              id: toolCallId,
+              type: "function",
+              function: {
+                name: "testing-mcp-server__calculator_add",
+                arguments: "",
+              },
+            },
+          ],
+        }),
+      );
+
+      // 3) Stream arguments gradually
+      const args = JSON.stringify({ a: 1, b: 2 });
+      let i = 0;
+      const argBatchSize = 6;
+      const argInterval = setInterval(() => {
+        if (i < args.length) {
+          const part = args.slice(i, i + argBatchSize);
+          i += argBatchSize;
+          res.write(
+            mkChunk({
+              tool_calls: [{ index: 0, function: { arguments: part } }],
+            }),
+          );
+        } else {
+          // 4) Finalize with finish_reason tool_calls and [DONE]
+          res.write(mkChunk({}, "tool_calls"));
+          res.write("data: [DONE]\n\n");
+          clearInterval(argInterval);
+          res.end();
+        }
+      }, 10);
+      return;
+    }
+
+    // Check for high token usage marker to simulate near context limit
+    const highTokensMatch =
+      typeof lastMessage?.content === "string" &&
+      !lastMessage?.content.startsWith("Summarize the following chat:") &&
+      lastMessage?.content?.match?.(/\[high-tokens=(\d+)\]/);
+    const highTokensValue = highTokensMatch
+      ? parseInt(highTokensMatch[1], 10)
+      : null;
+
+    // Split the message into characters to simulate streaming
+    const messageChars = messageContent.split("");
+
+    // Stream each character with a delay
+    let index = 0;
+    const batchSize = 32;
+
+    // Send role first
+    res.write(createStreamChunk("", "assistant"));
+
+    const interval = setInterval(() => {
+      if (index < messageChars.length) {
+        // Get the next batch of characters (up to batchSize)
+        const batch = messageChars.slice(index, index + batchSize).join("");
+        res.write(createStreamChunk(batch));
+        index += batchSize;
+      } else {
+        // Send the final chunk with optional usage info for high token simulation
+        const usage = highTokensValue
+          ? {
+              prompt_tokens: highTokensValue - 100,
+              completion_tokens: 100,
+              total_tokens: highTokensValue,
+            }
+          : undefined;
+        res.write(createStreamChunk("", "assistant", true, usage));
+        clearInterval(interval);
+        res.end();
+      }
+    }, 10);
+  };
+
+function generateDump(req: Request) {
+  const timestamp = Date.now();
+  const generatedDir = path.join(__dirname, "generated");
+
+  // Create generated directory if it doesn't exist
+  if (!fs.existsSync(generatedDir)) {
+    fs.mkdirSync(generatedDir, { recursive: true });
+  }
+
+  const dumpFilePath = path.join(generatedDir, `${timestamp}.json`);
+
+  try {
+    fs.writeFileSync(
+      dumpFilePath,
+      JSON.stringify(
+        {
+          body: req.body,
+          headers: { authorization: req.headers["authorization"] },
+        },
+        null,
+        2,
+      ).replace(/\r\n/g, "\n"),
+      "utf-8",
+    );
+    console.log(`* Dumped messages to: ${dumpFilePath}`);
+    return `[[dyad-dump-path=${dumpFilePath}]]`;
+  } catch (error) {
+    console.error(`* Error writing dump file: ${error}`);
+    return `Error: Could not write dump file: ${error}`;
+  }
+}

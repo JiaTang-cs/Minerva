@@ -1,0 +1,517 @@
+/**
+ * Handler for Local Agent E2E testing fixtures
+ * Manages multi-turn tool call conversations
+ */
+
+import { Request, Response } from "express";
+import crypto from "crypto";
+import path from "path";
+import fs from "fs";
+import type { LocalAgentFixture, Turn } from "./localAgentTypes";
+
+// Register ts-node to allow loading .ts fixture files directly
+try {
+  require("ts-node/register");
+} catch {
+  // ts-node not available, will fall back to .js files
+}
+
+// Map of session ID -> current turn index
+
+// Cache loaded fixtures to avoid re-importing
+const fixtureCache = new Map<string, LocalAgentFixture>();
+
+// Track connection attempts per session+turn for connection drop simulation.
+// Key: `${sessionId}-${passIndex}-${turnIndex}`, Value: attempt count
+const connectionAttempts = new Map<string, number>();
+
+/**
+ * Generate a session ID from the first user message
+ * This allows us to track conversation state across requests
+ */
+function getSessionId(messages: any[]): string {
+  // Find the first user message to use as session identifier
+  const firstUserMsg = messages.find((m) => m.role === "user");
+  if (!firstUserMsg) {
+    return crypto.randomUUID();
+  }
+  return crypto
+    .createHash("md5")
+    .update(JSON.stringify(firstUserMsg))
+    .digest("hex");
+}
+
+/**
+ * Check if a message content contains a todo reminder pattern.
+ * The todo reminder is injected by the outer loop when there are incomplete todos.
+ */
+function isTodoReminderMessage(msg: any): boolean {
+  if (msg?.role !== "user") return false;
+  const content = Array.isArray(msg.content)
+    ? msg.content.find((p: any) => p.type === "text")?.text
+    : typeof msg.content === "string"
+      ? msg.content
+      : null;
+  // Note: This magic string must match the reminder text in prepare_step_utils.ts
+  // buildTodoReminderMessage(). Update both if the text changes.
+  return content?.includes("incomplete todo(s)") ?? false;
+}
+
+/**
+ * Count the number of todo reminder messages in the conversation.
+ * This determines which outer loop pass we're on.
+ */
+function countTodoReminderMessages(messages: any[]): number {
+  return messages.filter(isTodoReminderMessage).length;
+}
+
+/**
+ * Count the number of tool result messages AFTER the last user message
+ * to determine which turn we're on for the current fixture.
+ * This ensures each new user prompt (fixture trigger) starts fresh at turn 0.
+ */
+function countToolResultRounds(messages: any[]): number {
+  // Find the index of the last user message
+  let lastUserIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i]?.role === "user") {
+      lastUserIndex = i;
+      break;
+    }
+  }
+
+  // Count tool results only after the last user message
+  let rounds = 0;
+  for (let i = lastUserIndex + 1; i < messages.length; i++) {
+    const msg = messages[i];
+    if (msg?.role === "tool") {
+      rounds++;
+    } else if (Array.isArray(msg?.content)) {
+      if (msg.content.some((p: any) => p.type === "tool-result")) {
+        rounds++;
+      }
+    }
+  }
+  return rounds;
+}
+
+/**
+ * Extract the attachment path from the last user message.
+ * The user message format includes: "path: /path/to/app/.dyad/media/hash.png"
+ */
+function extractAttachmentPath(messages: any[]): string | null {
+  // Search from the end to find the most recent user message with an attachment path
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg?.role !== "user") continue;
+    const text = Array.isArray(msg.content)
+      ? msg.content.find((p: any) => p.type === "text")?.text
+      : typeof msg.content === "string"
+        ? msg.content
+        : null;
+    if (!text) continue;
+    const match = text.match(/\(path: ([^\s)]+)\)/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+/**
+ * Load a fixture file dynamically
+ * Tries .ts first (for dev mode with ts-node), then .js
+ */
+async function loadFixture(fixtureName: string): Promise<LocalAgentFixture> {
+  if (fixtureCache.has(fixtureName)) {
+    return fixtureCache.get(fixtureName)!;
+  }
+
+  const fixtureDir = path.join(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    "e2e-tests",
+    "fixtures",
+    "engine",
+    "local-agent",
+  );
+
+  // Try .ts first, then .js
+  let fixturePath = path.join(fixtureDir, `${fixtureName}.ts`);
+  if (!fs.existsSync(fixturePath)) {
+    fixturePath = path.join(fixtureDir, `${fixtureName}.js`);
+  }
+
+  try {
+    // Clear require cache to allow fixture updates during development
+    delete require.cache[require.resolve(fixturePath)];
+    const module = require(fixturePath);
+    const fixture = module.fixture as LocalAgentFixture;
+
+    if (!fixture || (!fixture.turns && !fixture.passes)) {
+      throw new Error(
+        `Invalid fixture: missing 'fixture' export or 'turns'/'passes' array`,
+      );
+    }
+
+    fixtureCache.set(fixtureName, fixture);
+    return fixture;
+  } catch (error) {
+    console.error(`Failed to load fixture: ${fixturePath}`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get the turns for the current pass from a fixture.
+ * Supports both simple fixtures (with `turns`) and multi-pass fixtures (with `passes`).
+ */
+function getTurnsForPass(
+  fixture: LocalAgentFixture,
+  passIndex: number,
+): Turn[] {
+  // If fixture uses passes, get the appropriate pass
+  if (fixture.passes && fixture.passes.length > 0) {
+    if (passIndex >= fixture.passes.length) {
+      // All passes exhausted
+      return [];
+    }
+    return fixture.passes[passIndex].turns;
+  }
+
+  // Simple fixture with turns - only valid for pass 0
+  if (passIndex > 0) {
+    return [];
+  }
+  return fixture.turns || [];
+}
+
+/**
+ * Create a streaming chunk in OpenAI format
+ */
+function createStreamChunk(
+  content: string,
+  role: string = "assistant",
+  isLast: boolean = false,
+  finishReason: string | null = null,
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  },
+) {
+  const chunk: any = {
+    id: `chatcmpl-${Date.now()}`,
+    object: "chat.completion.chunk",
+    created: Math.floor(Date.now() / 1000),
+    model: "fake-local-agent-model",
+    choices: [
+      {
+        index: 0,
+        delta: isLast ? {} : { content, role },
+        finish_reason: finishReason,
+      },
+    ],
+  };
+  if (isLast && usage) {
+    chunk.usage = usage;
+  }
+  return `data: ${JSON.stringify(chunk)}\n\n${isLast ? "data: [DONE]\n\n" : ""}`;
+}
+
+/**
+ * Stream a text-only turn response
+ */
+async function streamTextResponse(
+  res: Response,
+  text: string,
+  usage?: Turn["usage"],
+) {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  // Send role first
+  res.write(createStreamChunk("", "assistant"));
+
+  // Stream text in batches
+  const batchSize = 32;
+  for (let i = 0; i < text.length; i += batchSize) {
+    const batch = text.slice(i, i + batchSize);
+    res.write(createStreamChunk(batch));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+
+  // Send final chunk
+  res.write(createStreamChunk("", "assistant", true, "stop", usage));
+  res.end();
+}
+
+/**
+ * Stream a turn with tool calls
+ */
+async function streamToolCallResponse(
+  res: Response,
+  turn: Turn,
+  options?: { dropAfterToolCalls?: boolean },
+) {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  const now = Date.now();
+  const mkChunk = (delta: any, finish: string | null = null) => {
+    const chunk = {
+      id: `chatcmpl-${now}`,
+      object: "chat.completion.chunk",
+      created: Math.floor(now / 1000),
+      model: "fake-local-agent-model",
+      choices: [
+        {
+          index: 0,
+          delta,
+          finish_reason: finish,
+        },
+      ],
+    };
+    return `data: ${JSON.stringify(chunk)}\n\n`;
+  };
+
+  // 1) Send role
+  res.write(mkChunk({ role: "assistant" }));
+
+  // 2) Send text content if any
+  if (turn.text) {
+    const batchSize = 32;
+    for (let i = 0; i < turn.text.length; i += batchSize) {
+      const batch = turn.text.slice(i, i + batchSize);
+      res.write(mkChunk({ content: batch }));
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  }
+
+  // 3) Send tool calls
+  if (turn.toolCalls && turn.toolCalls.length > 0) {
+    for (let idx = 0; idx < turn.toolCalls.length; idx++) {
+      const toolCall = turn.toolCalls[idx];
+      const toolCallId = `call_${now}_${idx}`;
+
+      // Send tool call init with id + name + empty args
+      res.write(
+        mkChunk({
+          tool_calls: [
+            {
+              index: idx,
+              id: toolCallId,
+              type: "function",
+              function: {
+                name: toolCall.name,
+                arguments: "",
+              },
+            },
+          ],
+        }),
+      );
+
+      // Stream arguments gradually
+      const args = JSON.stringify(toolCall.args);
+      const argBatchSize = 20;
+      for (let i = 0; i < args.length; i += argBatchSize) {
+        const part = args.slice(i, i + argBatchSize);
+        res.write(
+          mkChunk({
+            tool_calls: [{ index: idx, function: { arguments: part } }],
+          }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+    }
+  }
+
+  if (options?.dropAfterToolCalls) {
+    console.log(
+      `[local-agent] Simulating connection drop after streaming tool calls`,
+    );
+    // Drop before finish_reason/[DONE] so tool calls were emitted but the
+    // provider response did not complete.
+    res.socket?.destroy();
+    return;
+  }
+
+  // 4) Send finish (with optional usage data)
+  const finishReason =
+    turn.toolCalls && turn.toolCalls.length > 0 ? "tool_calls" : "stop";
+  const finishChunk: any = {
+    id: `chatcmpl-${now}`,
+    object: "chat.completion.chunk",
+    created: Math.floor(now / 1000),
+    model: "fake-local-agent-model",
+    choices: [
+      {
+        index: 0,
+        delta: {},
+        finish_reason: finishReason,
+      },
+    ],
+  };
+  if (turn.usage) {
+    finishChunk.usage = turn.usage;
+  }
+  res.write(`data: ${JSON.stringify(finishChunk)}\n\n`);
+
+  res.write("data: [DONE]\n\n");
+  res.end();
+}
+
+/**
+ * Handle a local-agent fixture request
+ */
+export async function handleLocalAgentFixture(
+  req: Request,
+  res: Response,
+  fixtureName: string,
+): Promise<void> {
+  const { messages = [] } = req.body;
+
+  console.log(`[local-agent] Loading fixture: ${fixtureName}`);
+  console.log(`[local-agent] Messages count: ${messages.length}`);
+
+  try {
+    const fixture = await loadFixture(fixtureName);
+    const sessionId = getSessionId(messages);
+
+    // Determine which outer loop pass we're on based on todo reminder messages
+    const passIndex = countTodoReminderMessages(messages);
+
+    // Determine which turn we're on within the current pass
+    const toolResultRounds = countToolResultRounds(messages);
+    const turnIndex = toolResultRounds;
+
+    // Get the turns for the current pass
+    const turns = getTurnsForPass(fixture, passIndex);
+
+    console.error(
+      `[local-agent] Loaded fixture: ${fixtureName}, Session: ${sessionId}, Pass: ${passIndex}, Turn: ${turnIndex}, Tool rounds: ${toolResultRounds}`,
+    );
+
+    if (turnIndex >= turns.length) {
+      // All turns exhausted for this pass, send a simple completion message
+      console.log(
+        `[local-agent] All turns exhausted for pass ${passIndex}, sending completion`,
+      );
+      await streamTextResponse(res, "Task completed.");
+      return;
+    }
+
+    let turn = turns[turnIndex];
+    console.log(
+      `[local-agent] Executing pass ${passIndex}, turn ${turnIndex}:`,
+      {
+        hasText: !!turn.text,
+        toolCallCount: turn.toolCalls?.length ?? 0,
+      },
+    );
+
+    // Replace {{ATTACHMENT_PATH}} placeholders in tool call args
+    // with the actual path extracted from the user message
+    if (turn.toolCalls) {
+      const attachmentPath = extractAttachmentPath(messages);
+      if (attachmentPath) {
+        turn = {
+          ...turn,
+          toolCalls: turn.toolCalls.map((tc) => ({
+            ...tc,
+            args: JSON.parse(
+              JSON.stringify(tc.args).replace(
+                /\{\{ATTACHMENT_PATH\}\}/g,
+                JSON.stringify(attachmentPath).slice(1, -1),
+              ),
+            ),
+          })),
+        };
+      }
+    }
+
+    // Check if we should simulate a connection drop for this attempt
+    const turnScopedDropAttempts =
+      fixture.dropConnectionByTurn?.find((rule) => rule.turnIndex === turnIndex)
+        ?.attempts ?? fixture.dropConnectionOnAttempts;
+    const turnScopedDropAfterToolCallAttempts =
+      fixture.dropConnectionAfterToolCallByTurn?.find(
+        (rule) => rule.turnIndex === turnIndex,
+      )?.attempts;
+
+    if (turnScopedDropAttempts && turnScopedDropAttempts.length > 0) {
+      const attemptKey = `${sessionId}-${passIndex}-${turnIndex}`;
+      const currentAttempt = (connectionAttempts.get(attemptKey) || 0) + 1;
+      connectionAttempts.set(attemptKey, currentAttempt);
+
+      console.log(
+        `[local-agent] Connection attempt ${currentAttempt} for ${attemptKey}, ` +
+          `drop on: [${turnScopedDropAttempts.join(", ")}]`,
+      );
+
+      if (turnScopedDropAttempts.includes(currentAttempt)) {
+        console.log(
+          `[local-agent] Simulating connection drop on attempt ${currentAttempt}`,
+        );
+        // Stream partial data then destroy the socket to simulate a network interruption
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.write(
+          createStreamChunk(
+            "Partial response before connection dr",
+            "assistant",
+          ),
+        );
+        // Destroy the underlying socket to trigger a "terminated" error on the client
+        res.socket?.destroy();
+        return;
+      }
+    }
+
+    // If this turn has tool calls, stream them
+    if (turn.toolCalls && turn.toolCalls.length > 0) {
+      const dropAfterToolCalls =
+        turnScopedDropAfterToolCallAttempts &&
+        turnScopedDropAfterToolCallAttempts.length > 0
+          ? (() => {
+              const attemptKey = `${sessionId}-${passIndex}-${turnIndex}-after-tool-call`;
+              const currentAttempt =
+                (connectionAttempts.get(attemptKey) || 0) + 1;
+              connectionAttempts.set(attemptKey, currentAttempt);
+              return turnScopedDropAfterToolCallAttempts.includes(
+                currentAttempt,
+              );
+            })()
+          : false;
+
+      await streamToolCallResponse(res, turn, {
+        dropAfterToolCalls,
+      });
+    } else {
+      // Text-only turn
+      await streamTextResponse(res, turn.text || "Done.", turn.usage);
+    }
+  } catch (error) {
+    console.error(`[local-agent] Error handling fixture:`, error);
+    res.status(500).json({
+      error: {
+        message: `Failed to load fixture: ${fixtureName}`,
+        type: "server_error",
+      },
+    });
+  }
+}
+
+/**
+ * Check if a message content matches a local-agent fixture pattern
+ * Returns the fixture name if matched, null otherwise
+ */
+export function extractLocalAgentFixture(content: string): string | null {
+  if (!content) return null;
+  // Match tc=local-agent/FIXTURE_NAME, allowing trailing whitespace
+  const match = content.trim().match(/^tc=local-agent\/([^\s[]+)/);
+  return match ? match[1] : null;
+}

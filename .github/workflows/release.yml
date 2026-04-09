@@ -1,0 +1,175 @@
+# .github/workflows/release.yml
+
+# Need to write to repo contents to upload the app to GitHub Release
+# See: https://www.electronforge.io/config/publishers/github#authentication
+permissions:
+  contents: write
+
+name: Release app
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    environment: release
+    strategy:
+      # Continue building other platforms even if one fails
+      fail-fast: false
+      matrix:
+        os: [
+            { name: "windows", image: "windows-latest" },
+            # See https://github.com/dyad-sh/dyad/issues/96
+            { name: "linux", image: "ubuntu-22.04" },
+            { name: "macos-intel", image: "macos-15-intel" },
+            { name: "macos", image: "macos-latest" },
+          ]
+    runs-on: ${{ matrix.os.image }}
+    steps:
+      - name: Github checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Use Node.js
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false # Do NOT use GitHub Actions cache in release builds: https://adnanthekhan.com/2024/12/21/cacheract-the-monster-in-your-build-cache/
+      - name: Install npm 11.8.0
+        run: npm install -g npm@11.8.0
+      - run: npm ci
+        env:
+          # Required for @vscode/ripgrep to download binaries without hitting GitHub API rate limits
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: add macos cert
+        if: contains(matrix.os.name, 'macos')
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: chmod +x tools/add-macos-cert.sh && . ./tools/add-macos-cert.sh
+      # Windows only
+      - name: Install Azure Trusted Signing
+        if: contains(matrix.os.name, 'windows')
+        shell: powershell
+        run: |
+          # Install via NuGet instead of winget (winget is slow/unreliable in CI)
+          $installDir = "$env:RUNNER_TEMP\TrustedSigning"
+          nuget install Microsoft.Trusted.Signing.Client -Version 1.0.95 -OutputDirectory $installDir -Source https://api.nuget.org/v3/index.json
+
+          $dllPath = Get-ChildItem -Path $installDir -Recurse -Filter "Azure.CodeSigning.Dlib.dll" |
+            Where-Object { $_.FullName -match "x64" } |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if ($dllPath) {
+            Write-Host "Found DLL at: $dllPath"
+            "AZURE_CODE_SIGNING_DLIB=$dllPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          } else {
+            Write-Error "Could not find Azure.CodeSigning.Dlib.dll"
+            exit 1
+          }
+
+      - name: Find Windows 11 SDK SignTool
+        if: contains(matrix.os.name, 'windows')
+        shell: powershell
+        run: |
+          $sdkPath = "C:\Program Files (x86)\Windows Kits\10\bin"
+          $signTool = Get-ChildItem -Path $sdkPath -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "\\x64\\" } |
+            Sort-Object { [version]($_.FullName -replace '.*\\(\d+\.\d+\.\d+\.\d+)\\.*', '$1') } -Descending |
+            Select-Object -First 1
+
+          if ($signTool) {
+            Write-Host "Found SignTool at: $($signTool.FullName)"
+            "SIGNTOOL_PATH=$($signTool.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          } else {
+            Write-Error "Could not find x64 signtool.exe"
+            exit 1
+          }
+
+      - name: Create Azure signing metadata
+        if: contains(matrix.os.name, 'windows')
+        shell: pwsh
+        run: |
+          @'
+          {
+            "Endpoint": "https://eus.codesigning.azure.net/",
+            "CodeSigningAccountName": "dyad",
+            "CertificateProfileName": "dyad-tech"
+          }
+          '@ | Out-File -Encoding utf8 signing-metadata.json
+
+          echo "AZURE_METADATA_JSON=$PWD\signing-metadata.json" >> $env:GITHUB_ENV
+
+      # Build (dry-run) - does NOT publish
+      - name: Build app (dry-run)
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          command: npm run publish -- --dry-run
+        env:
+          DEBUG: "@electron/*,electron-forge:*,electron-osx-sign*,electron-notarize*,electron-windows-installer:main,electron-windows-sign"
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          WINDOWS_SIGN: ${{ contains(matrix.os.name, 'windows') && 'true' || '' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-${{ matrix.os.name }}
+          path: out/
+          retention-days: 1
+
+  publish:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Github checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Use Node.js
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false # Do NOT use GitHub Actions cache in release builds: https://adnanthekhan.com/2024/12/21/cacheract-the-monster-in-your-build-cache/
+      - name: Install npm 11.8.0
+        run: npm install -g npm@11.8.0
+      - run: npm ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: out/
+          pattern: build-*
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -laR out/
+
+      - name: Publish from dry-run
+        run: ./node_modules/.bin/electron-forge publish --from-dry-run
+        env:
+          DEBUG: "@electron/*,electron-forge:*"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  verify-assets:
+    name: Verify Release Assets
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Github checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Use Node.js
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false # Do NOT use GitHub Actions cache in release builds: https://adnanthekhan.com/2024/12/21/cacheract-the-monster-in-your-build-cache/
+      - name: Verify all release assets are uploaded
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/verify-release-assets.js
