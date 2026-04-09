@@ -1,5 +1,4 @@
-import { isDyadProEnabled, type LargeLanguageModel } from "@/lib/schemas";
-import { Button } from "@/components/ui/button";
+import { type LargeLanguageModel } from "@/lib/schemas";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,21 +14,17 @@ import { useEffect, useState } from "react";
 import { useLocalModels } from "@/hooks/useLocalModels";
 import { useLocalLMSModels } from "@/hooks/useLMStudioModels";
 import { useLanguageModelsByProviders } from "@/hooks/useLanguageModelsByProviders";
-
-import { ipc, LocalModel } from "@/ipc/types";
+import { LocalModel } from "@/ipc/types";
 import { useLanguageModelProviders } from "@/hooks/useLanguageModelProviders";
 import { useSettings } from "@/hooks/useSettings";
 import { PriceBadge } from "@/components/PriceBadge";
-import { TURBO_MODELS } from "@/ipc/shared/language_model_constants";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
-import { useTrialModelRestriction } from "@/hooks/useTrialModelRestriction";
 
 export function ModelPicker() {
   const { settings, updateSettings } = useSettings();
   const queryClient = useQueryClient();
-  const { isTrial } = useTrialModelRestriction();
   const onModelSelect = (model: LargeLanguageModel) => {
     updateSettings({ selectedModel: model });
     // Invalidate token count when model changes since different models have different context windows
@@ -112,23 +107,7 @@ export function ModelPicker() {
   // Get auto provider models (if any)
   const autoModels =
     !loading && modelsByProviders && modelsByProviders["auto"]
-      ? modelsByProviders["auto"].filter((model) => {
-          if (
-            settings &&
-            !isDyadProEnabled(settings) &&
-            ["turbo", "value"].includes(model.apiName)
-          ) {
-            return false;
-          }
-          if (
-            settings &&
-            isDyadProEnabled(settings) &&
-            model.apiName === "free"
-          ) {
-            return false;
-          }
-          return true;
-        })
+      ? modelsByProviders["auto"]
       : [];
 
   // Determine availability of local models
@@ -154,9 +133,6 @@ export function ModelPicker() {
     const provider = providers?.find((p) => p.id === providerId);
     return !(provider && provider.secondary);
   });
-  if (settings && isDyadProEnabled(settings)) {
-    primaryProviders.unshift(["auto", TURBO_MODELS]);
-  }
   const secondaryProviders = providerEntries.filter(([providerId, models]) => {
     if (models.length === 0) return false;
     const provider = providers?.find((p) => p.id === providerId);
@@ -184,50 +160,7 @@ export function ModelPicker() {
       <DropdownMenuContent className="w-64" align="start">
         <DropdownMenuLabel>Cloud Models</DropdownMenuLabel>
         <DropdownMenuSeparator />
-
-        {/* Trial user upgrade banner */}
-        {isTrial && (
-          <>
-            <div className="px-2 py-3 bg-gradient-to-r from-indigo-50 to-sky-50 dark:from-indigo-950/50 dark:to-sky-950/50">
-              <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2">
-                Upgrade from Dyad Pro trial to unlock more models.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="cursor-pointer w-full bg-indigo-600 hover:bg-indigo-700 text-white hover:text-white border-indigo-600"
-                onClick={() => {
-                  ipc.system.openExternalUrl(
-                    "https://academy.dyad.sh/subscription",
-                  );
-                  setOpen(false);
-                }}
-              >
-                Upgrade to Dyad Pro
-              </Button>
-            </div>
-            <DropdownMenuSeparator />
-            {/* Trial users only see the auto model */}
-            <DropdownMenuItem
-              className="bg-secondary"
-              onClick={() => {
-                onModelSelect({ name: "auto", provider: "auto" });
-                setOpen(false);
-              }}
-            >
-              <div className="flex justify-between items-start w-full">
-                <span>Auto</span>
-                <span className="text-[11px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                  Trial
-                </span>
-              </div>
-            </DropdownMenuItem>
-          </>
-        )}
-
-        {/* Cloud models - only show for non-trial users */}
-        {!isTrial &&
-          (loading ? (
+        {loading ? (
             <div className="text-xs text-center py-2 text-muted-foreground">
               Loading models...
             </div>
@@ -287,18 +220,6 @@ export function ModelPicker() {
 
               {/* Primary providers as submenus */}
               {primaryProviders.map(([providerId, models]) => {
-                models = models.filter((model) => {
-                  // Don't show free models if Dyad Pro is enabled because
-                  // we will use the paid models (in Dyad Pro backend) which
-                  // don't have the free limitations.
-                  if (
-                    isDyadProEnabled(settings) &&
-                    model.apiName.endsWith(":free")
-                  ) {
-                    return false;
-                  }
-                  return true;
-                });
                 const provider = providers?.find((p) => p.id === providerId);
                 const providerDisplayName =
                   provider?.id === "auto"
@@ -310,13 +231,6 @@ export function ModelPicker() {
                       <div className="flex flex-col items-start w-full">
                         <div className="flex items-center gap-2">
                           <span>{providerDisplayName}</span>
-                          {provider?.type === "cloud" &&
-                            !provider?.secondary &&
-                            isDyadProEnabled(settings) && (
-                              <span className="text-[10px] bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 bg-[length:200%_100%] animate-[shimmer_5s_ease-in-out_infinite] text-white px-1.5 py-0.5 rounded-full font-medium">
-                                Pro
-                              </span>
-                            )}
                           {provider?.type === "custom" && (
                             <span className="text-[10px] bg-amber-500/20 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
                               Custom
@@ -451,23 +365,20 @@ export function ModelPicker() {
                 </DropdownMenuSub>
               )}
             </>
-          ))}
+          )}
 
-        {/* Local Models - only show for non-trial users */}
-        {!isTrial && (
-          <>
-            <DropdownMenuSeparator />
-            {/* Local Models Parent SubMenu */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="w-full font-normal">
-                <div className="flex flex-col items-start">
-                  <span>Local models</span>
-                  <span className="text-xs text-muted-foreground">
-                    LM Studio, Ollama
-                  </span>
-                </div>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-56">
+        <DropdownMenuSeparator />
+        {/* Local Models Parent SubMenu */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="w-full font-normal">
+            <div className="flex flex-col items-start">
+              <span>Local models</span>
+              <span className="text-xs text-muted-foreground">
+                LM Studio, Ollama
+              </span>
+            </div>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-56">
                 {/* Ollama Models SubMenu */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger
@@ -636,10 +547,8 @@ export function ModelPicker() {
                     )}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </>
-        )}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -19,18 +19,12 @@ import { FREE_OPENROUTER_MODEL_NAMES } from "../shared/language_model_constants"
 import { getLanguageModelProviders } from "../shared/language_model_helpers";
 import { resolveBuiltinModelAlias } from "../shared/remote_language_model_catalog";
 import { LanguageModelProvider } from "@/ipc/types";
-import {
-  createDyadEngine,
-  type DyadEngineProvider,
-} from "./llm_engine_provider";
 
 import { LM_STUDIO_BASE_URL } from "./lm_studio_utils";
 import { createOllamaProvider } from "./ollama_provider";
 import { getOllamaApiUrl } from "../handlers/local_model_ollama_handler";
 import { createFallback } from "./fallback_ai_model";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
-
-const dyadEngineUrl = process.env.DYAD_ENGINE_URL;
 
 const AUTO_MODEL_ALIASES = [
   "dyad/auto/openai",
@@ -55,8 +49,6 @@ export async function getModelClient(
 }> {
   const allProviders = await getLanguageModelProviders();
 
-  const dyadApiKey = settings.providerSettings?.auto?.apiKey?.value;
-
   // --- Handle specific provider ---
   const providerConfig = allProviders.find((p) => p.id === model.provider);
 
@@ -67,58 +59,6 @@ export async function getModelClient(
     );
   }
 
-  // Handle Dyad Pro override
-  if (dyadApiKey && settings.enableDyadPro) {
-    // Check if the selected provider supports Dyad Pro (has a gateway prefix) OR
-    // we're using local engine.
-    // IMPORTANT: some providers like OpenAI have an empty string gateway prefix,
-    // so we do a nullish and not a truthy check here.
-    if (providerConfig.gatewayPrefix != null || dyadEngineUrl) {
-      const enableSmartFilesContext = settings.enableProSmartFilesContextMode;
-      const provider = createDyadEngine({
-        apiKey: dyadApiKey,
-        baseURL: dyadEngineUrl ?? "https://engine.dyad.sh/v1",
-        dyadOptions: {
-          enableLazyEdits:
-            settings.selectedChatMode === "ask"
-              ? false
-              : settings.enableProLazyEditsMode &&
-                settings.proLazyEditsMode !== "v2",
-          enableSmartFilesContext,
-          enableWebSearch: settings.enableProWebSearch,
-        },
-        settings,
-      });
-
-      logger.info(
-        `\x1b[1;97;44m Using Dyad Pro API key for model: ${model.name} \x1b[0m`,
-      );
-
-      logger.info(
-        `\x1b[1;30;42m Using Dyad Pro engine: ${dyadEngineUrl ?? "<prod>"} \x1b[0m`,
-      );
-
-      // Do not use free variant (for openrouter).
-      const modelName = model.name.split(":free")[0];
-      const proModelClient = await getProModelClient({
-        model,
-        settings,
-        provider,
-        modelId: `${providerConfig.gatewayPrefix || ""}${modelName}`,
-      });
-
-      return {
-        modelClient: proModelClient,
-        isEngineEnabled: true,
-        isSmartContextEnabled: enableSmartFilesContext,
-      };
-    } else {
-      logger.warn(
-        `Dyad Pro enabled, but provider ${model.provider} does not have a gateway prefix defined. Falling back to direct provider connection.`,
-      );
-      // Fall through to regular provider logic if gateway prefix is missing
-    }
-  }
   // Handle 'auto' provider by trying each model in AUTO_MODELS until one works
   if (model.provider === "auto") {
     if (model.name === "free") {
@@ -183,86 +123,6 @@ export async function getModelClient(
     );
   }
   return getRegularModelClient(model, settings, providerConfig);
-}
-
-async function getProModelClient({
-  model,
-  settings,
-  provider,
-  modelId,
-}: {
-  model: LargeLanguageModel;
-  settings: UserSettings;
-  provider: DyadEngineProvider;
-  modelId: string;
-}): Promise<ModelClient> {
-  if (
-    settings.selectedChatMode === "local-agent" &&
-    model.provider === "auto" &&
-    model.name === "auto"
-  ) {
-    const providers = await getLanguageModelProviders();
-    const fallbackModels = await Promise.all(
-      AUTO_MODEL_ALIASES.map(async (aliasId) => {
-        const resolvedModel = await resolveBuiltinModelAlias(aliasId);
-        if (!resolvedModel) {
-          return null;
-        }
-
-        const resolvedProvider = providers.find(
-          (providerInfo) => providerInfo.id === resolvedModel.providerId,
-        );
-        const resolvedModelId = `${
-          resolvedProvider?.gatewayPrefix || ""
-        }${resolvedModel.apiName}`;
-
-        if (resolvedModel.providerId === "openai") {
-          return provider.responses(resolvedModel.apiName, {
-            providerId: resolvedModel.providerId,
-          });
-        }
-
-        return provider(resolvedModelId, {
-          providerId: resolvedModel.providerId,
-        });
-      }),
-    );
-
-    const validModels = fallbackModels.filter(
-      (candidate) => candidate !== null,
-    );
-    if (validModels.length === 0) {
-      throw new DyadError(
-        "No auto-mode models could be resolved from the catalog",
-        DyadErrorKind.External,
-      );
-    }
-
-    return {
-      // We need to do the fallback here (and not server-side)
-      // because GPT-5* models need to use responses API to get
-      // full functionality (e.g. thinking summaries).
-      model: createFallback({
-        models: validModels,
-      }),
-      // Using openAI as the default provider.
-      // TODO: we should remove this and rely on the provider id passed into the provider().
-      builtinProviderId: "openai",
-    };
-  }
-  if (
-    settings.selectedChatMode === "local-agent" &&
-    model.provider === "openai"
-  ) {
-    return {
-      model: provider.responses(modelId, { providerId: model.provider }),
-      builtinProviderId: model.provider,
-    };
-  }
-  return {
-    model: provider(modelId, { providerId: model.provider }),
-    builtinProviderId: model.provider,
-  };
 }
 
 function getRegularModelClient(

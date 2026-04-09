@@ -37,13 +37,7 @@ import type { FileAttachment } from "@/ipc/types";
 import type { ListedApp } from "@/ipc/types/app";
 import { NEON_TEMPLATE_IDS } from "@/shared/templates";
 import { neonTemplateHook } from "@/client_logic/template_hook";
-import {
-  ProBanner,
-  ManageDyadProButton,
-  SetupDyadProButton,
-} from "@/components/ProBanner";
-import { hasDyadProKey, getEffectiveDefaultChatMode } from "@/lib/schemas";
-import { useFreeAgentQuota } from "@/hooks/useFreeAgentQuota";
+import { getEffectiveDefaultChatMode } from "@/lib/schemas";
 
 // Track whether we've already checked release notes this session (module-scoped
 // so it persists across component unmount/remount cycles).
@@ -62,7 +56,6 @@ export default function HomePage() {
   const search = useSearch({ from: "/" });
   const { refreshApps } = useLoadApps();
   const { settings, updateSettings, envVars } = useSettings();
-  const { isQuotaExceeded, isLoading: isQuotaLoading } = useFreeAgentQuota();
 
   const setIsPreviewOpen = useSetAtom(isPreviewOpenAtom);
   const { selectChat } = useSelectChat();
@@ -154,23 +147,21 @@ export default function HomePage() {
     }
   }, [appId, navigate]);
 
-  // Apply default chat mode when navigating to home page
-  // Wait for quota status to load to avoid race condition where we default to Basic Agent
-  // before knowing if quota is actually exceeded
+  // Apply default chat mode when navigating to home page.
   const hasAppliedDefaultChatMode = useRef(false);
   useEffect(() => {
-    if (settings && !hasAppliedDefaultChatMode.current && !isQuotaLoading) {
+    if (settings && !hasAppliedDefaultChatMode.current) {
       hasAppliedDefaultChatMode.current = true;
       const effectiveDefaultMode = getEffectiveDefaultChatMode(
         settings,
         envVars,
-        !isQuotaExceeded,
+        true,
       );
       if (settings.selectedChatMode !== effectiveDefaultMode) {
         updateSettings({ selectedChatMode: effectiveDefaultMode });
       }
     }
-  }, [settings, updateSettings, isQuotaExceeded, isQuotaLoading, envVars]);
+  }, [settings, updateSettings, envVars]);
 
   const handleSubmit = async (options?: HomeSubmitOptions) => {
     const attachments = options?.attachments || [];
@@ -277,13 +268,6 @@ export default function HomePage() {
   // Main Home Page Content
   return (
     <div className="flex flex-col items-center justify-center max-w-3xl w-full m-auto p-8 relative">
-      <div className="fixed top-16 right-8 z-50">
-        {settings && hasDyadProKey(settings) ? (
-          <ManageDyadProButton className="mt-0 w-auto h-9 px-3 text-base shadow-sm bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800" />
-        ) : (
-          <SetupDyadProButton />
-        )}
-      </div>
       <ForceCloseDialog
         isOpen={forceCloseDialogOpen}
         onClose={() => setForceCloseDialogOpen(false)}
@@ -353,7 +337,6 @@ export default function HomePage() {
             </span>
           </button>
         </div>
-        <ProBanner />
       </div>
       <PrivacyBanner />
 

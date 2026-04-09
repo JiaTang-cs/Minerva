@@ -122,8 +122,7 @@ export const generateImageTool: ToolDefinition<
   inputSchema: generateImageSchema,
   defaultConsent: "always",
   modifiesState: true,
-
-  isEnabled: (ctx) => ctx.isDyadPro,
+  backend: "cloud",
 
   getConsentPreview: (args) => `Generate image: "${args.prompt}"`,
 

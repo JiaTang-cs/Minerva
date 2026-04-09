@@ -369,11 +369,6 @@ export interface BuildAgentToolSetOptions {
    * Plan mode has access to read-only tools plus planning-specific tools.
    */
   planModeOnly?: boolean;
-  /**
-   * If true, exclude Pro-only tools.
-   * Used for basic agent mode where some tools may not be available.
-   */
-  basicAgentMode?: boolean;
 }
 
 const FILE_EDIT_TOOLS: Set<FileEditToolName> = new Set(FILE_EDIT_TOOL_NAMES);
@@ -420,11 +415,6 @@ const PLANNING_SPECIFIC_TOOLS = new Set([
 ]);
 
 /**
- * Tools only available in Pro agent mode (excluded from basic agent mode).
- */
-const PRO_AGENT_ONLY_TOOLS = new Set<string>();
-
-/**
  * Build ToolSet for AI SDK from tool definitions
  */
 export function buildAgentToolSet(
@@ -453,8 +443,7 @@ export function buildAgentToolSet(
       continue;
     }
 
-    // Skip Pro-only tools in basic agent mode
-    if (options.basicAgentMode && PRO_AGENT_ONLY_TOOLS.has(tool.name)) {
+    if (tool.backend === "cloud") {
       continue;
     }
 

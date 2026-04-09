@@ -41,6 +41,11 @@ export interface FileEditTracker {
   };
 }
 
+export interface ReadFileStateEntry {
+  content: string;
+  modifiedTimeMs: number;
+}
+
 export interface AgentContext {
   event: IpcMainInvokeEvent;
   appId: number;
@@ -57,11 +62,8 @@ export interface AgentContext {
   dyadRequestId: string;
   /** Tracks file edit tool usage per file for telemetry */
   fileEditTracker: FileEditTracker;
-  /**
-   * If true, the user has Dyad Pro enabled.
-   * Engine-dependent tools require this to access the Dyad Pro API.
-   */
-  isDyadPro: boolean;
+  /** Tracks the last fully-read file content for read-before-write safety. */
+  readFileState: Record<string, ReadFileStateEntry>;
   /**
    * Streams accumulated XML to UI without persisting to DB (for live preview).
    * Call this repeatedly with the full accumulated XML so far.
@@ -156,6 +158,11 @@ export interface ToolDefinition<T = any> {
    * If it returns false, the tool will be filtered out.
    */
   isEnabled?: (ctx: AgentContext) => boolean;
+  /**
+   * Marks a tool as cloud-backed so it can be filtered from the local-only
+   * agent runtime.
+   */
+  backend?: "local" | "cloud";
 
   /**
    * Returns a preview string describing what the tool will do with the given args.

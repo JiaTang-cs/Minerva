@@ -7,13 +7,6 @@ describe("local_agent_prompt", () => {
     expect(prompt).toMatchSnapshot();
   });
 
-  it("basic agent mode system prompt", () => {
-    const prompt = constructLocalAgentPrompt(undefined, undefined, {
-      basicAgentMode: true,
-    });
-    expect(prompt).toMatchSnapshot();
-  });
-
   it("ask mode system prompt", () => {
     const prompt = constructLocalAgentPrompt(undefined, undefined, {
       readOnly: true,

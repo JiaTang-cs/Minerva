@@ -34,9 +34,7 @@ import { showError } from "@/lib/toast";
 import { HelpBotDialog } from "./HelpBotDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { BugScreenshotDialog } from "./BugScreenshotDialog";
-import { useUserBudgetInfo } from "@/hooks/useUserBudgetInfo";
 import { type UserSettings } from "@/lib/schemas";
-import { type UserBudgetInfo } from "@/ipc/types/system";
 import { motion, AnimatePresence } from "framer-motion";
 
 // =============================================================================
@@ -77,7 +75,6 @@ function formatSettingsLines(settings: UserSettings | null): string {
     `- Selected Model: ${settings.selectedModel?.provider}:${settings.selectedModel?.name}`,
     `- Chat Mode: ${settings.selectedChatMode ?? "default"}`,
     `- Auto Approve Changes: ${settings.autoApproveChanges ?? "n/a"}`,
-    `- Dyad Pro Enabled: ${settings.enableDyadPro ?? "n/a"}`,
     `- Thinking Budget: ${settings.thinkingBudget ?? "n/a"}`,
     `- Runtime Mode: ${settings.runtimeMode2 ?? "n/a"}`,
     `- Release Channel: ${settings.releaseChannel ?? "n/a"}`,
@@ -86,10 +83,7 @@ function formatSettingsLines(settings: UserSettings | null): string {
   ].join("\n");
 }
 
-function formatSystemInfoSection(
-  debugInfo: SystemDebugInfo,
-  userBudget: UserBudgetInfo | undefined,
-): string {
+function formatSystemInfoSection(debugInfo: SystemDebugInfo): string {
   return `## System Information
 - Dyad Version: ${debugInfo.dyadVersion}
 - Platform: ${debugInfo.platform}
@@ -97,7 +91,6 @@ function formatSystemInfoSection(
 - Node Version: ${debugInfo.nodeVersion || "n/a"}
 - PNPM Version: ${debugInfo.pnpmVersion || "n/a"}
 - Node Path: ${debugInfo.nodePath || "n/a"}
-- Pro User ID: ${userBudget?.redactedUserId || "n/a"}
 - Telemetry ID: ${debugInfo.telemetryId || "n/a"}
 - Model: ${debugInfo.selectedLanguageModel || "n/a"}`;
 }
@@ -113,13 +106,10 @@ function openGitHubIssue(params: {
   title: string;
   labels: string[];
   body: string;
-  isDyadProUser: unknown;
 }) {
-  const labels = [...params.labels];
-  if (params.isDyadProUser) labels.push("pro");
   const qs = new URLSearchParams({
     title: params.title,
-    labels: labels.join(","),
+    labels: params.labels.join(","),
     body: params.body,
   });
   ipc.system.openExternalUrl(`${GITHUB_ISSUES_BASE}?${qs.toString()}`);
@@ -258,8 +248,6 @@ export function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
   const hasNavigated = useRef(false);
   const selectedChatId = useAtomValue(selectedChatIdAtom);
   const { settings } = useSettings();
-  const { userBudget } = useUserBudgetInfo();
-  const isDyadProUser = settings?.providerSettings?.["auto"]?.apiKey?.value;
 
   // ---------------------------------------------------------------------------
   // Navigation
@@ -306,7 +294,7 @@ export function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
 ## Screenshot (recommended)
 <!-- Screenshot of the bug -->
 
-${formatSystemInfoSection(debugInfo, userBudget ?? undefined)}
+${formatSystemInfoSection(debugInfo)}
 
 ## Settings
 ${formatSettingsLines(settings)}
@@ -317,7 +305,6 @@ ${formatLogsSection(debugInfo)}
         title: "[bug] <WRITE TITLE HERE>",
         labels: ["bug"],
         body,
-        isDyadProUser,
       });
     } catch (error) {
       console.error("Failed to prepare bug report:", error);
@@ -395,7 +382,6 @@ ${formatLogsSection(debugInfo)}
 
 Session ID: ${sessionId}
 Session Schema: v2.0
-Pro User ID: ${userBudget?.redactedUserId || "n/a"}
 
 ## Issue Description (required)
 <!-- Please describe the issue you're experiencing -->
@@ -406,7 +392,7 @@ Pro User ID: ${userBudget?.redactedUserId || "n/a"}
 ## Actual Behavior (required)
 <!-- What actually happened? -->
 
-${formatSystemInfoSection(debugInfo, userBudget ?? undefined)}
+${formatSystemInfoSection(debugInfo)}
 
 ## Settings
 ${formatSettingsLines(settings)}
@@ -417,15 +403,13 @@ ${formatLogsSection(debugInfo)}
         title: "[session report] <add title>",
         labels: ["support"],
         body,
-        isDyadProUser,
       });
     } catch (error) {
       console.error("Failed to prepare session report:", error);
       openGitHubIssue({
         title: "[session report] <add title>",
         labels: ["support"],
-        body: `Session ID: ${sessionId}\nSession Schema: v2.0\nPro User ID: ${userBudget?.redactedUserId || "n/a"}`,
-        isDyadProUser,
+        body: `Session ID: ${sessionId}\nSession Schema: v2.0`,
       });
     }
     handleClose();
@@ -449,26 +433,20 @@ ${formatLogsSection(debugInfo)}
       </DialogDescription>
       <div className="flex flex-col w-full mt-4 space-y-5">
         {/* Self-service help */}
-        {isDyadProUser ? (
-          <Button
-            variant="default"
-            onClick={() => setIsHelpBotOpen(true)}
-            className="w-full py-6 border-primary/50 shadow-sm shadow-primary/10 transition-all hover:shadow-md hover:shadow-primary/15"
-          >
-            <SparklesIcon className="mr-2 h-5 w-5" /> Chat with Dyad help bot
-            (Pro)
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            onClick={() =>
-              ipc.system.openExternalUrl("https://www.dyad.sh/docs")
-            }
-            className="w-full py-6 bg-(--background-lightest)"
-          >
-            <BookOpenIcon className="mr-2 h-5 w-5" /> Open Docs
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          onClick={() => ipc.system.openExternalUrl("https://www.dyad.sh/docs")}
+          className="w-full py-6 bg-(--background-lightest)"
+        >
+          <BookOpenIcon className="mr-2 h-5 w-5" /> Open Docs
+        </Button>
+        <Button
+          variant="default"
+          onClick={() => setIsHelpBotOpen(true)}
+          className="w-full py-6 border-primary/50 shadow-sm shadow-primary/10 transition-all hover:shadow-md hover:shadow-primary/15"
+        >
+          <SparklesIcon className="mr-2 h-5 w-5" /> Chat with Dyad help bot
+        </Button>
 
         {/* Divider */}
         <div className="flex items-center gap-3">
@@ -485,9 +463,7 @@ ${formatLogsSection(debugInfo)}
           <div className="border rounded-lg p-4 space-y-3 relative">
             <div className="flex items-center gap-2">
               <MessageSquareIcon className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold">
-                AI / Dyad Pro issues
-              </span>
+              <span className="text-sm font-semibold">AI issues</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Best for AI quality issues. Uploads your chat session and code for

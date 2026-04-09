@@ -3,31 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, X, Sparkles, Lock, Link } from "lucide-react";
+import { Loader2, Upload, X, Sparkles } from "lucide-react";
 import {
   useGenerateThemePrompt,
-  useGenerateThemeFromUrl,
   useThemeGenerationModelOptions,
 } from "@/hooks/useCustomThemes";
 import { ipc } from "@/ipc/types";
 import { showError } from "@/lib/toast";
 import { toast } from "sonner";
-import { useUserBudgetInfo } from "@/hooks/useUserBudgetInfo";
-import { AiAccessBanner } from "./ProBanner";
-import type {
-  ThemeGenerationMode,
-  ThemeGenerationModel,
-  ThemeInputSource,
-} from "@/ipc/types";
+import type { ThemeGenerationMode, ThemeGenerationModel } from "@/ipc/types";
 
-// Image upload constants
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per image (raw file size)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_IMAGES = 5;
 
-// Image stored with file path (for IPC) and blob URL (for preview)
 interface ThemeImage {
-  path: string; // File path in temp directory
-  preview: string; // Blob URL for displaying thumbnail
+  path: string;
+  preview: string;
 }
 
 interface AIGeneratorTabProps {
@@ -61,45 +52,35 @@ export function AIGeneratorTab({
     useState<ThemeGenerationModel>("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Track if dialog is open to prevent orphaned uploads from adding images after close
   const isDialogOpenRef = useRef(isDialogOpen);
 
-  // URL-based generation state
-  const [inputSource, setInputSource] = useState<ThemeInputSource>("images");
-  const [websiteUrl, setWebsiteUrl] = useState("");
-
   const generatePromptMutation = useGenerateThemePrompt();
-  const generateFromUrlMutation = useGenerateThemeFromUrl();
-  const isGenerating =
-    generatePromptMutation.isPending || generateFromUrlMutation.isPending;
-  const { userBudget } = useUserBudgetInfo();
+  const isGenerating = generatePromptMutation.isPending;
   const { themeGenerationModelOptions, isLoadingThemeGenerationModelOptions } =
     useThemeGenerationModelOptions();
 
-  // Cleanup function to revoke blob URLs and delete temp files
   const cleanupImages = useCallback(
     async (images: ThemeImage[], showErrors = false) => {
-      // Revoke blob URLs to free memory
       images.forEach((img) => {
         URL.revokeObjectURL(img.preview);
       });
 
-      // Delete temp files via IPC
       const paths = images.map((img) => img.path);
-      if (paths.length > 0) {
-        try {
-          await ipc.template.cleanupThemeImages({ paths });
-        } catch {
-          if (showErrors) {
-            showError("Failed to cleanup temporary image files");
-          }
+      if (paths.length === 0) {
+        return;
+      }
+
+      try {
+        await ipc.template.cleanupThemeImages({ paths });
+      } catch {
+        if (showErrors) {
+          showError("Failed to cleanup temporary image files");
         }
       }
     },
     [],
   );
 
-  // Keep ref in sync with isDialogOpen prop
   useEffect(() => {
     isDialogOpenRef.current = isDialogOpen;
   }, [isDialogOpen]);
@@ -118,16 +99,13 @@ export function AIGeneratorTab({
     }
   }, [aiSelectedModel, themeGenerationModelOptions]);
 
-  // Keep a ref to current images for cleanup without causing effect re-runs
   const aiImagesRef = useRef<ThemeImage[]>([]);
   useEffect(() => {
     aiImagesRef.current = aiImages;
   }, [aiImages]);
 
-  // Cleanup images and reset state when dialog closes
   useEffect(() => {
     if (!isDialogOpen) {
-      // Use ref to get current images to avoid dependency on aiImages
       const imagesToCleanup = aiImagesRef.current;
       if (imagesToCleanup.length > 0) {
         cleanupImages(imagesToCleanup);
@@ -136,8 +114,6 @@ export function AIGeneratorTab({
       setAiKeywords("");
       setAiGenerationMode("inspired");
       setAiSelectedModel(themeGenerationModelOptions[0]?.id ?? "");
-      setInputSource("images");
-      setWebsiteUrl("");
     }
   }, [isDialogOpen, cleanupImages, themeGenerationModelOptions]);
 
@@ -167,7 +143,6 @@ export function AIGeneratorTab({
         const newImages: ThemeImage[] = [];
 
         for (const file of filesToProcess) {
-          // Validate file type
           if (!file.type.startsWith("image/")) {
             showError(
               `Please upload only image files. "${file.name}" is not a valid image.`,
@@ -175,7 +150,6 @@ export function AIGeneratorTab({
             continue;
           }
 
-          // Validate file size (raw file size)
           if (file.size > MAX_FILE_SIZE) {
             const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
             showError(`File "${file.name}" exceeds 10MB limit (${sizeMB}MB)`);
@@ -183,7 +157,6 @@ export function AIGeneratorTab({
           }
 
           try {
-            // Read file as base64 for upload
             const base64Data = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onerror = () => reject(new Error("Failed to read file"));
@@ -199,18 +172,14 @@ export function AIGeneratorTab({
               reader.readAsDataURL(file);
             });
 
-            // Save to temp file via IPC
             const result = await ipc.template.saveThemeImage({
               data: base64Data,
               filename: file.name,
             });
 
-            // Create blob URL for preview (much more memory efficient than base64 in DOM)
-            const preview = URL.createObjectURL(file);
-
             newImages.push({
               path: result.path,
-              preview,
+              preview: URL.createObjectURL(file),
             });
           } catch (err) {
             showError(
@@ -219,23 +188,21 @@ export function AIGeneratorTab({
           }
         }
 
-        if (newImages.length > 0) {
-          // Check if dialog was closed while upload was in progress
-          if (!isDialogOpenRef.current) {
-            // Dialog closed - cleanup orphaned images immediately
-            await cleanupImages(newImages);
-            return;
-          }
-
-          setAiImages((prev) => {
-            // Double-check limit in case of race conditions
-            const remaining = MAX_IMAGES - prev.length;
-            return [...prev, ...newImages.slice(0, remaining)];
-          });
+        if (newImages.length === 0) {
+          return;
         }
+
+        if (!isDialogOpenRef.current) {
+          await cleanupImages(newImages);
+          return;
+        }
+
+        setAiImages((prev) => {
+          const remaining = MAX_IMAGES - prev.length;
+          return [...prev, ...newImages.slice(0, remaining)];
+        });
       } finally {
         setIsUploading(false);
-        // Reset input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -248,7 +215,6 @@ export function AIGeneratorTab({
     async (index: number) => {
       const imageToRemove = aiImages[index];
       if (imageToRemove) {
-        // Cleanup the removed image - show errors since this is a user action
         await cleanupImages([imageToRemove], true);
       }
       setAiImages((prev) => prev.filter((_, i) => i !== index));
@@ -257,83 +223,33 @@ export function AIGeneratorTab({
   );
 
   const handleGenerate = useCallback(async () => {
-    if (inputSource === "images") {
-      // Image-based generation
-      if (aiImages.length === 0) {
-        showError("Please upload at least one image");
-        return;
-      }
+    if (aiImages.length === 0) {
+      showError("Please upload at least one image");
+      return;
+    }
 
-      try {
-        const result = await generatePromptMutation.mutateAsync({
-          imagePaths: aiImages.map((img) => img.path),
-          keywords: aiKeywords,
-          generationMode: aiGenerationMode,
-          model: aiSelectedModel,
-        });
-        setAiGeneratedPrompt(result.prompt);
-        toast.success("Theme prompt generated successfully");
-      } catch (error) {
-        showError(
-          `Failed to generate theme: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
-    } else {
-      // URL-based generation
-      if (!websiteUrl.trim()) {
-        showError("Please enter a website URL");
-        return;
-      }
-
-      try {
-        const result = await generateFromUrlMutation.mutateAsync({
-          url: websiteUrl,
-          keywords: aiKeywords,
-          generationMode: aiGenerationMode,
-          model: aiSelectedModel,
-        });
-
-        setAiGeneratedPrompt(result.prompt);
-        toast.success("Theme prompt generated from website");
-      } catch (error) {
-        showError(
-          `Failed to generate theme: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-      }
+    try {
+      const result = await generatePromptMutation.mutateAsync({
+        imagePaths: aiImages.map((img) => img.path),
+        keywords: aiKeywords,
+        generationMode: aiGenerationMode,
+        model: aiSelectedModel,
+      });
+      setAiGeneratedPrompt(result.prompt);
+      toast.success("Theme prompt generated successfully");
+    } catch (error) {
+      showError(
+        `Failed to generate theme: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }, [
-    inputSource,
     aiImages,
-    websiteUrl,
     aiKeywords,
     aiGenerationMode,
     aiSelectedModel,
     generatePromptMutation,
-    generateFromUrlMutation,
     setAiGeneratedPrompt,
   ]);
-
-  // Show Pro-only locked state for non-Pro users
-  if (!userBudget) {
-    return (
-      <div className="space-y-4 mt-4">
-        <div className="flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed border-muted-foreground/25 rounded-lg bg-muted/10">
-          <Lock className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-center mb-2">
-            AI Theme Generator
-          </h3>
-          <p className="text-sm text-muted-foreground text-center max-w-md">
-            Upload screenshots and let AI generate a custom theme prompt
-            tailored to your design style.
-          </p>
-          <p className="text-xs text-muted-foreground/70 mt-2">
-            Pro-only feature
-          </p>
-        </div>
-        <AiAccessBanner />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4 mt-4">
@@ -357,123 +273,62 @@ export function AIGeneratorTab({
         />
       </div>
 
-      {/* Input Source Toggle */}
-      <div className="space-y-3">
-        <Label>Reference Source</Label>
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            type="button"
-            onClick={() => setInputSource("images")}
-            className={`flex flex-col items-center rounded-lg border p-3 text-center transition-colors ${
-              inputSource === "images"
-                ? "border-primary bg-primary/5"
-                : "hover:bg-muted/50"
-            }`}
-          >
-            <Upload className="h-5 w-5 mb-1" />
-            <span className="font-medium text-sm">Upload Images</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Use screenshots from your device
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setInputSource("url")}
-            className={`flex flex-col items-center rounded-lg border p-3 text-center transition-colors ${
-              inputSource === "url"
-                ? "border-primary bg-primary/5"
-                : "hover:bg-muted/50"
-            }`}
-          >
-            <Link className="h-5 w-5 mb-1" />
-            <span className="font-medium text-sm">Website URL</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Extract design from a live website
-            </span>
-          </button>
+      <div className="space-y-2">
+        <Label>Reference Images</Label>
+        <div
+          className={`border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+            disabled={isUploading}
+          />
+          {isUploading ? (
+            <Loader2 className="h-8 w-8 mx-auto text-muted-foreground mb-2 animate-spin" />
+          ) : (
+            <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+          )}
+          <p className="text-sm text-muted-foreground">
+            {isUploading ? "Uploading..." : "Click to upload images"}
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Upload UI screenshots to inspire your theme
+          </p>
         </div>
+
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          {aiImages.length} / {MAX_IMAGES} images
+          {aiImages.length >= MAX_IMAGES && (
+            <span className="text-destructive ml-2">Maximum reached</span>
+          )}
+        </p>
+
+        {aiImages.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {aiImages.map((img, index) => (
+              <div key={img.path} className="relative group">
+                <img
+                  src={img.preview}
+                  alt={`Upload ${index + 1}`}
+                  className="h-16 w-16 object-cover rounded-md border"
+                />
+                <button
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Image Upload Section - only shown when inputSource is "images" */}
-      {inputSource === "images" && (
-        <div className="space-y-2">
-          <Label>Reference Images</Label>
-          <div
-            className={`border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleImageUpload}
-              disabled={isUploading}
-            />
-            {isUploading ? (
-              <Loader2 className="h-8 w-8 mx-auto text-muted-foreground mb-2 animate-spin" />
-            ) : (
-              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            )}
-            <p className="text-sm text-muted-foreground">
-              {isUploading ? "Uploading..." : "Click to upload images"}
-            </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
-              Upload UI screenshots to inspire your theme
-            </p>
-          </div>
-
-          {/* Image counter */}
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            {aiImages.length} / {MAX_IMAGES} images
-            {aiImages.length >= MAX_IMAGES && (
-              <span className="text-destructive ml-2">• Maximum reached</span>
-            )}
-          </p>
-
-          {/* Image Preview */}
-          {aiImages.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {aiImages.map((img, index) => (
-                <div key={img.path} className="relative group">
-                  <img
-                    src={img.preview}
-                    alt={`Upload ${index + 1}`}
-                    className="h-16 w-16 object-cover rounded-md border"
-                  />
-                  <button
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* URL Input Section - only shown when inputSource is "url" */}
-      {inputSource === "url" && (
-        <div className="space-y-2">
-          <Label htmlFor="website-url">Website URL</Label>
-          <Input
-            id="website-url"
-            type="url"
-            placeholder="https://example.com"
-            value={websiteUrl}
-            onChange={(e) => setWebsiteUrl(e.target.value)}
-            disabled={isGenerating}
-          />
-          <p className="text-xs text-muted-foreground">
-            Enter a website URL to extract its design system
-          </p>
-        </div>
-      )}
-
-      {/* Keywords Input */}
       <div className="space-y-2">
         <Label htmlFor="ai-keywords">Keywords (optional)</Label>
         <Input
@@ -487,7 +342,6 @@ export function AIGeneratorTab({
         </p>
       </div>
 
-      {/* Generation Mode Selection */}
       <div className="space-y-3">
         <Label>Generation Mode</Label>
         <div className="grid grid-cols-2 gap-4">
@@ -523,7 +377,6 @@ export function AIGeneratorTab({
         </div>
       </div>
 
-      {/* Model Selection */}
       <div className="space-y-3">
         <Label>Model Selection</Label>
         <div
@@ -561,15 +414,13 @@ export function AIGeneratorTab({
         </div>
       </div>
 
-      {/* Generate Button */}
       <Button
         onClick={handleGenerate}
         disabled={
           isLoadingThemeGenerationModelOptions ||
           !aiSelectedModel ||
           isGenerating ||
-          (inputSource === "images" && aiImages.length === 0) ||
-          (inputSource === "url" && !websiteUrl.trim())
+          aiImages.length === 0
         }
         variant="secondary"
         className="w-full"
@@ -577,9 +428,7 @@ export function AIGeneratorTab({
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {inputSource === "url"
-              ? "Generating from website..."
-              : "Generating prompt..."}
+            Generating prompt...
           </>
         ) : (
           <>
@@ -589,7 +438,6 @@ export function AIGeneratorTab({
         )}
       </Button>
 
-      {/* Generated Prompt Display */}
       <div className="space-y-2">
         <Label htmlFor="ai-prompt">Generated Prompt</Label>
         {aiGeneratedPrompt ? (
@@ -602,15 +450,12 @@ export function AIGeneratorTab({
           />
         ) : (
           <div className="min-h-[100px] border rounded-md p-4 flex items-center justify-center text-muted-foreground text-sm text-center">
-            No prompt generated yet.{" "}
-            {inputSource === "images"
-              ? 'Upload images and click "Generate" to create a theme prompt.'
-              : 'Enter a website URL and click "Generate" to extract a theme.'}
+            No prompt generated yet. Upload images and click "Generate" to
+            create a theme prompt.
           </div>
         )}
       </div>
 
-      {/* Save Button - only show when prompt is generated */}
       {aiGeneratedPrompt && (
         <Button
           onClick={onSave}

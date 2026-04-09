@@ -2,20 +2,13 @@ import { useAtom, useAtomValue } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { useLoadApps } from "@/hooks/useLoadApps";
 import { useRouter } from "@tanstack/react-router";
-import { useSettings } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 // @ts-ignore
 import logo from "../../assets/logo.svg";
-import { providerSettingsRoute } from "@/routes/settings/providers/$provider";
-import { cn } from "@/lib/utils";
-import { useDeepLink } from "@/contexts/DeepLinkContext";
-import { useCallback, useEffect, useState } from "react";
-import { DyadProSuccessDialog } from "@/components/DyadProSuccessDialog";
+import { useCallback } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ipc } from "@/ipc/types";
 import { useSystemPlatform } from "@/hooks/useSystemPlatform";
-import { useUserBudgetInfo } from "@/hooks/useUserBudgetInfo";
-import type { UserBudgetInfo } from "@/ipc/types";
 import {
   Tooltip,
   TooltipContent,
@@ -32,8 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRunApp } from "@/hooks/useRunApp";
 import { showError, showSuccess } from "@/lib/toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/queryKeys";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 export const TitleBar = () => {
@@ -41,31 +33,9 @@ export const TitleBar = () => {
   const selectedChatId = useAtomValue(selectedChatIdAtom);
   const { apps } = useLoadApps();
   const { navigate } = useRouter();
-  const { settings, refreshSettings } = useSettings();
-  const queryClient = useQueryClient();
-  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const platform = useSystemPlatform();
   const showWindowControls = platform !== null && platform !== "darwin";
 
-  const showDyadProSuccessDialog = () => {
-    setIsSuccessDialogOpen(true);
-  };
-
-  const { lastDeepLink, clearLastDeepLink } = useDeepLink();
-  useEffect(() => {
-    const handleDeepLink = async () => {
-      if (lastDeepLink?.type === "dyad-pro-return") {
-        await refreshSettings();
-        // Refetch user budget when Dyad Pro key is set via deep link
-        queryClient.invalidateQueries({ queryKey: queryKeys.userBudget.info });
-        showDyadProSuccessDialog();
-        clearLastDeepLink();
-      }
-    };
-    handleDeepLink();
-  }, [lastDeepLink?.timestamp]);
-
-  // Get selected app name
   const selectedApp = apps.find((app) => app.id === selectedAppId);
   const displayText = selectedApp
     ? `App: ${selectedApp.name}`
@@ -77,74 +47,51 @@ export const TitleBar = () => {
     }
   };
 
-  const isDyadPro = !!settings?.providerSettings?.auto?.apiKey?.value;
-  const isDyadProEnabled = Boolean(settings?.enableDyadPro);
-
   return (
-    <>
-      <div className="@container z-11 w-full h-11 pt-3 bg-(--sidebar) absolute top-0 left-0 app-region-drag flex items-center">
-        <div className={`${showWindowControls ? "pl-2" : "pl-18"}`}></div>
+    <div className="@container z-11 w-full h-11 pt-3 bg-(--sidebar) absolute top-0 left-0 app-region-drag flex items-center">
+      <div className={`${showWindowControls ? "pl-2" : "pl-18"}`}></div>
 
-        <img src={logo} alt="Dyad Logo" className="w-6 h-6 mr-0.5 ml-2" />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                data-testid="title-bar-app-name-button"
-                variant="outline"
-                size="sm"
-                className={`hidden @2xl:block no-app-region-drag text-xs max-w-38 truncate font-medium ${
-                  selectedApp ? "cursor-pointer" : ""
-                }`}
-                onClick={handleAppClick}
-              />
-            }
-          >
-            {displayText}
-          </TooltipTrigger>
-          <TooltipContent>
-            {selectedApp ? selectedApp.name : "No app selected"}
-          </TooltipContent>
-        </Tooltip>
-        {isDyadPro && <DyadProButton isDyadProEnabled={isDyadProEnabled} />}
+      <img src={logo} alt="Dyad Logo" className="w-6 h-6 mr-0.5 ml-2" />
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              data-testid="title-bar-app-name-button"
+              variant="outline"
+              size="sm"
+              className={`hidden @2xl:block no-app-region-drag text-xs max-w-38 truncate font-medium ${
+                selectedApp ? "cursor-pointer" : ""
+              }`}
+              onClick={handleAppClick}
+            />
+          }
+        >
+          {displayText}
+        </TooltipTrigger>
+        <TooltipContent>
+          {selectedApp ? selectedApp.name : "No app selected"}
+        </TooltipContent>
+      </Tooltip>
 
-        <div className="flex-1 min-w-0 overflow-hidden no-app-region-drag">
-          <ChatTabs selectedChatId={selectedChatId} />
-        </div>
-
-        <TitleBarActions />
-
-        {showWindowControls && <WindowsControls />}
+      <div className="flex-1 min-w-0 overflow-hidden no-app-region-drag">
+        <ChatTabs selectedChatId={selectedChatId} />
       </div>
 
-      <DyadProSuccessDialog
-        isOpen={isSuccessDialogOpen}
-        onClose={() => setIsSuccessDialogOpen(false)}
-      />
-    </>
+      <TitleBarActions />
+
+      {showWindowControls && <WindowsControls />}
+    </div>
   );
 };
 
 function WindowsControls() {
   const { isDarkMode } = useTheme();
 
-  const minimizeWindow = () => {
-    ipc.system.minimizeWindow();
-  };
-
-  const maximizeWindow = () => {
-    ipc.system.maximizeWindow();
-  };
-
-  const closeWindow = () => {
-    ipc.system.closeWindow();
-  };
-
   return (
     <div className="ml-auto flex no-app-region-drag">
       <button
         className="w-10 h-10 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        onClick={minimizeWindow}
+        onClick={() => ipc.system.minimizeWindow()}
         aria-label="Minimize"
       >
         <svg
@@ -163,7 +110,7 @@ function WindowsControls() {
       </button>
       <button
         className="w-10 h-10 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        onClick={maximizeWindow}
+        onClick={() => ipc.system.maximizeWindow()}
         aria-label="Maximize"
       >
         <svg
@@ -184,7 +131,7 @@ function WindowsControls() {
       </button>
       <button
         className="w-10 h-10 flex items-center justify-center hover:bg-red-500 transition-colors"
-        onClick={closeWindow}
+        onClick={() => ipc.system.closeWindow()}
         aria-label="Close"
       >
         <svg
@@ -216,9 +163,7 @@ function TitleBarActions() {
 
   const useClearSessionData = () => {
     return useMutation({
-      mutationFn: () => {
-        return ipc.system.clearSessionData();
-      },
+      mutationFn: () => ipc.system.clearSessionData(),
       onSuccess: async () => {
         await refreshAppIframe();
         showSuccess("Preview data cleared");
@@ -269,62 +214,5 @@ function TitleBarActions() {
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  );
-}
-
-export function DyadProButton({
-  isDyadProEnabled,
-}: {
-  isDyadProEnabled: boolean;
-}) {
-  const { navigate } = useRouter();
-  const { userBudget } = useUserBudgetInfo();
-  return (
-    <Button
-      data-testid="title-bar-dyad-pro-button"
-      onClick={() => {
-        navigate({
-          to: providerSettingsRoute.id,
-          params: { provider: "auto" },
-        });
-      }}
-      variant="outline"
-      className={cn(
-        "hidden @2xl:block ml-1 no-app-region-drag h-7 bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white text-xs px-2 pt-1 pb-1",
-        !isDyadProEnabled && "bg-zinc-600 dark:bg-zinc-600",
-      )}
-      size="sm"
-    >
-      {isDyadProEnabled
-        ? userBudget?.isTrial
-          ? "Pro Trial"
-          : "Pro"
-        : "Pro (off)"}
-      {userBudget && isDyadProEnabled && (
-        <AICreditStatus userBudget={userBudget} />
-      )}
-    </Button>
-  );
-}
-
-export function AICreditStatus({
-  userBudget,
-}: {
-  userBudget: NonNullable<UserBudgetInfo>;
-}) {
-  const remaining = Math.round(
-    userBudget.totalCredits - userBudget.usedCredits,
-  );
-  return (
-    <Tooltip>
-      <TooltipTrigger>
-        <div className="text-xs pl-1 mt-0.5">{remaining} credits</div>
-      </TooltipTrigger>
-      <TooltipContent>
-        <div>
-          <p>Note: there is a slight delay in updating the credit status.</p>
-        </div>
-      </TooltipContent>
-    </Tooltip>
   );
 }

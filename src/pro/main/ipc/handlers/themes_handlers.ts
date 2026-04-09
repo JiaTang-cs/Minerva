@@ -12,7 +12,6 @@ import { streamText, TextPart, ImagePart } from "ai";
 import { readSettings } from "../../../../main/settings";
 import { IS_TEST_BUILD } from "@/ipc/utils/test_utils";
 import { getModelClient } from "../../../../ipc/utils/get_model_client";
-import { v4 as uuidv4 } from "uuid";
 import type {
   SetAppThemeParams,
   GetAppThemeParams,
@@ -28,7 +27,6 @@ import type {
   CleanupThemeImagesParams,
   ThemeGenerationModelOption,
 } from "@/ipc/types";
-import { webCrawlResponseSchema } from "./local_agent/tools/web_crawl";
 import {
   getThemeGenerationModelOptions,
   resolveBuiltinModelAlias,
@@ -37,9 +35,6 @@ import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
 
 const logger = log.scope("themes_handlers");
 const handle = createLoggedHandler(logger);
-
-// Timeout for web crawl requests (120 seconds)
-const WEB_CRAWL_TIMEOUT_MS = 120_000;
 
 /**
  * Sanitizes external content before including it in LLM prompts.
@@ -268,6 +263,10 @@ REQUIRED STRUCTURE
 - Forbidden Patterns
 - Self-Check
 `;
+
+void sanitizeForPrompt;
+void WEB_CRAWL_THEME_GENERATION_META_PROMPT;
+void WEB_CRAWL_HIGH_FIDELITY_META_PROMPT;
 
 export function registerThemesHandlers() {
   // Get built-in themes
@@ -612,12 +611,6 @@ Modern dark theme with purple accents for testing.
         };
       }
 
-      if (!settings.enableDyadPro) {
-        throw new Error(
-          "Dyad Pro is required for AI theme generation. Please enable Dyad Pro in Settings.",
-        );
-      }
-
       // Validate inputs - image paths are required
       if (params.imagePaths.length === 0) {
         throw new DyadError(
@@ -740,229 +733,12 @@ images: ${imagesPart}`;
     "generate-theme-from-url",
     async (
       _,
-      params: GenerateThemeFromUrlParams,
+      _params: GenerateThemeFromUrlParams,
     ): Promise<GenerateThemePromptResult> => {
-      const settings = readSettings();
-
-      // Return mock response in test mode
-      if (IS_TEST_BUILD) {
-        return {
-          prompt: `<theme>
-# Test Mode Theme (from URL)
-
-## Visual Objective
-Modern theme extracted from website for testing.
-
-</theme>`,
-        };
-      }
-
-      if (!settings.enableDyadPro) {
-        throw new Error(
-          "Dyad Pro is required for AI theme generation. Please enable Dyad Pro in Settings.",
-        );
-      }
-
-      // Validate URL format and protocol
-      let parsedUrl: URL;
-      try {
-        parsedUrl = new URL(params.url);
-      } catch {
-        throw new DyadError(
-          "Invalid URL format. Please enter a valid URL.",
-          DyadErrorKind.Validation,
-        );
-      }
-
-      // Only allow HTTP/HTTPS protocols (security: prevent file://, javascript://, etc.)
-      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-        throw new Error(
-          "Invalid URL protocol. Only HTTP and HTTPS URLs are supported.",
-        );
-      }
-
-      // SSRF protection: block internal/private network addresses
-      const hostname = parsedUrl.hostname.toLowerCase();
-      const blockedPatterns = [
-        /^localhost$/i,
-        /^127\.\d+\.\d+\.\d+$/,
-        /^10\.\d+\.\d+\.\d+$/,
-        /^192\.168\.\d+\.\d+$/,
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+$/,
-        /^169\.254\.\d+\.\d+$/,
-        /^::1$/,
-        /\.local$/i,
-      ];
-      if (blockedPatterns.some((p) => p.test(hostname))) {
-        throw new DyadError(
-          "Cannot crawl internal network addresses.",
-          DyadErrorKind.External,
-        );
-      }
-
-      // Validate keywords length
-      if (params.keywords.length > 500) {
-        throw new DyadError(
-          "Keywords must be less than 500 characters",
-          DyadErrorKind.Validation,
-        );
-      }
-
-      // Validate generation mode
-      if (!["inspired", "high-fidelity"].includes(params.generationMode)) {
-        throw new DyadError(
-          "Invalid generation mode",
-          DyadErrorKind.Validation,
-        );
-      }
-
-      // Validate and map model selection
-      const selectedModel = await resolveBuiltinModelAlias(params.model);
-      if (!selectedModel) {
-        throw new Error(
-          `Invalid model selection: alias "${params.model}" could not be resolved`,
-        );
-      }
-
-      // Get API key for Dyad Engine
-      const apiKey = settings.providerSettings?.auto?.apiKey?.value;
-      if (!apiKey) {
-        throw new DyadError("Dyad Pro API key is required", DyadErrorKind.Auth);
-      }
-
-      // Crawl the website
-      logger.log(`Crawling website for theme: ${params.url}`);
-
-      const DYAD_ENGINE_URL =
-        process.env.DYAD_ENGINE_URL ?? "https://engine.dyad.sh/v1";
-
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        WEB_CRAWL_TIMEOUT_MS,
+      throw new DyadError(
+        "Theme generation from URL is currently unavailable.",
+        DyadErrorKind.Precondition,
       );
-
-      let crawlResponse: Response;
-      try {
-        crawlResponse = await fetch(`${DYAD_ENGINE_URL}/tools/web-crawl`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-            "X-Dyad-Request-Id": `theme-crawl-${uuidv4()}`,
-          },
-          body: JSON.stringify({ url: params.url }),
-          signal: controller.signal,
-        });
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          throw new Error(
-            "Website crawl timed out. The website may be too slow or unresponsive.",
-          );
-        }
-        throw new Error(
-          "Failed to connect to crawl service. Please check your internet connection and try again.",
-        );
-      } finally {
-        clearTimeout(timeoutId);
-      }
-
-      if (!crawlResponse.ok) {
-        const errorText = await crawlResponse.text();
-        throw new Error(
-          `Failed to crawl website: ${crawlResponse.status} - ${errorText}`,
-        );
-      }
-
-      // Validate response with Zod schema
-      const rawCrawlResult = await crawlResponse.json();
-      const parseResult = webCrawlResponseSchema.safeParse(rawCrawlResult);
-      if (!parseResult.success) {
-        logger.error("Invalid crawl response structure:", parseResult.error);
-        throw new Error(
-          "Received invalid response from crawl service. Please try again.",
-        );
-      }
-      const crawlResult = parseResult.data;
-
-      if (!crawlResult.screenshot) {
-        throw new Error(
-          "Failed to capture website screenshot. Please try a different URL.",
-        );
-      }
-
-      if (!crawlResult.markdown) {
-        throw new Error(
-          "Failed to extract website content. Please try a different URL.",
-        );
-      }
-
-      logger.log(`Website crawled successfully: ${params.url}`);
-
-      // Use the selected model for theme generation
-      const { modelClient } = await getModelClient(
-        {
-          provider: selectedModel.providerId,
-          name: selectedModel.apiName,
-        },
-        settings,
-      );
-
-      // Select system prompt based on generation mode
-      const systemPrompt =
-        params.generationMode === "high-fidelity"
-          ? WEB_CRAWL_HIGH_FIDELITY_META_PROMPT
-          : WEB_CRAWL_THEME_GENERATION_META_PROMPT;
-
-      // Build the user input prompt (sanitize user-provided keywords)
-      const keywordsPart = sanitizeKeywords(params.keywords) || "N/A";
-      const userInput = `inspired by: ${keywordsPart}
-source: Live website (screenshot and content provided)`;
-
-      // Truncate markdown if too long (consistent with existing web_crawl.ts)
-      const MAX_MARKDOWN_LENGTH = 16000;
-      const truncatedMarkdown =
-        crawlResult.markdown.length > MAX_MARKDOWN_LENGTH
-          ? crawlResult.markdown.slice(0, MAX_MARKDOWN_LENGTH) +
-            "\n<!-- truncated -->"
-          : crawlResult.markdown;
-
-      // Sanitize crawled content to prevent prompt injection
-      const sanitizedMarkdown = sanitizeForPrompt(truncatedMarkdown);
-
-      // Build content parts
-      const contentParts: (TextPart | ImagePart)[] = [
-        { type: "text", text: userInput },
-        {
-          type: "image",
-          image: crawlResult.screenshot,
-          mimeType: "image/png",
-        } as ImagePart,
-        {
-          type: "text",
-          text: `Website content (markdown):\n\`\`\`markdown\n${sanitizedMarkdown}\n\`\`\``,
-        },
-      ];
-
-      try {
-        const stream = streamText({
-          model: modelClient.model,
-          system: systemPrompt,
-          maxRetries: 1,
-          messages: [{ role: "user", content: contentParts }],
-        });
-
-        const result = await stream.text;
-
-        return { prompt: result };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : "Failed to generate theme from website. Please try again.",
-        );
-      }
     },
   );
 }

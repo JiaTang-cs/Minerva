@@ -11,10 +11,8 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { useSettings } from "@/hooks/useSettings";
-import { useFreeAgentQuota } from "@/hooks/useFreeAgentQuota";
 import { useMcp } from "@/hooks/useMcp";
 import type { ChatMode } from "@/lib/schemas";
-import { isDyadProEnabled } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { detectIsMac } from "@/hooks/useChatModeToggle";
 import { useRouterState } from "@tanstack/react-router";
@@ -34,9 +32,6 @@ export function ChatModeSelector() {
 
   // Migration happens on read, so selectedChatMode will never be "agent"
   const selectedMode = settings?.selectedChatMode || "build";
-  const isProEnabled = settings ? isDyadProEnabled(settings) : false;
-  const { messagesRemaining, messagesLimit, isQuotaExceeded } =
-    useFreeAgentQuota();
   const { servers } = useMcp();
   const enabledMcpServersCount = servers.filter((s) => s.enabled).length;
 
@@ -79,8 +74,7 @@ export function ChatModeSelector() {
       case "ask":
         return "Ask";
       case "local-agent":
-        // Show "Basic Agent" for non-Pro users, "Agent" for Pro users
-        return isProEnabled ? "Agent" : "Basic Agent";
+        return "Agent";
       case "plan":
         return "Plan";
       default:
@@ -141,19 +135,17 @@ export function ChatModeSelector() {
           </TooltipContent>
         </Tooltip>
         <SelectContent align="start">
-          {isProEnabled && (
-            <SelectItem value="local-agent">
-              <div className="flex flex-col items-start">
-                <div className="flex items-center gap-1.5">
-                  <Bot size={14} className="text-muted-foreground" />
-                  <span className="font-medium">Agent v2</span>
-                </div>
-                <span className="text-xs text-muted-foreground ml-[22px]">
-                  Better at bigger tasks and debugging
-                </span>
+          <SelectItem value="local-agent">
+            <div className="flex flex-col items-start">
+              <div className="flex items-center gap-1.5">
+                <Bot size={14} className="text-muted-foreground" />
+                <span className="font-medium">Agent</span>
               </div>
-            </SelectItem>
-          )}
+              <span className="text-xs text-muted-foreground ml-[22px]">
+                Better at bigger tasks and debugging
+              </span>
+            </div>
+          </SelectItem>
           <SelectItem value="plan">
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-1.5">
@@ -165,24 +157,6 @@ export function ChatModeSelector() {
               </span>
             </div>
           </SelectItem>
-          {!isProEnabled && (
-            <SelectItem value="local-agent" disabled={isQuotaExceeded}>
-              <div className="flex flex-col items-start">
-                <div className="flex items-center gap-1.5">
-                  <Bot size={14} className="text-muted-foreground" />
-                  <span className="font-medium">Basic Agent</span>
-                  <span className="text-xs text-muted-foreground">
-                    {`(${isQuotaExceeded ? "0" : messagesRemaining}/${messagesLimit} remaining for today)`}
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground ml-[22px]">
-                  {isQuotaExceeded
-                    ? "Daily limit reached"
-                    : "Try our AI agent for free"}
-                </span>
-              </div>
-            </SelectItem>
-          )}
           <SelectItem value="build">
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-1.5">

@@ -15,9 +15,6 @@ import {
   ChevronsUpDown,
   ChevronsDownUp,
   SendHorizontalIcon,
-  Lock,
-  Mic,
-  MicOff,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
@@ -58,7 +55,12 @@ import { useAttachments } from "@/hooks/useAttachments";
 import { AttachmentsList } from "./AttachmentsList";
 import { DragDropOverlay } from "./DragDropOverlay";
 import { FileAttachmentTypeDialog } from "./FileAttachmentTypeDialog";
-import { showExtraFilesToast, showInfo, showWarning } from "@/lib/toast";
+import {
+  showError as showErrorToast,
+  showExtraFilesToast,
+  showInfo,
+  showWarning,
+} from "@/lib/toast";
 import { useSummarizeInNewChat } from "./SummarizeInNewChatButton";
 import { ChatInputControls } from "../ChatInputControls";
 import { ChatErrorBox } from "./ChatErrorBox";
@@ -86,7 +88,6 @@ import {
 import { ImageGeneratorDialog } from "@/components/ImageGeneratorDialog";
 import { useChatModeToggle } from "@/hooks/useChatModeToggle";
 import { VisualEditingChangesDialog } from "@/components/preview_panel/VisualEditingChangesDialog";
-import { useUserBudgetInfo } from "@/hooks/useUserBudgetInfo";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import {
@@ -101,10 +102,7 @@ import {
 import { useCountTokens } from "@/hooks/useCountTokens";
 import { useChats } from "@/hooks/useChats";
 import { useRouter } from "@tanstack/react-router";
-import { showError as showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { useVoiceToText } from "@/hooks/useVoiceToText";
-import { isDyadProEnabled } from "@/lib/schemas";
 
 const showTokenBarAtom = atom(false);
 
@@ -242,22 +240,6 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       .map((msg) => msg.content)
       .reverse(); // Most recent first
   }, [chatId, messagesById]);
-
-  const { userBudget } = useUserBudgetInfo();
-  const isProEnabled = settings ? isDyadProEnabled(settings) : false;
-
-  const handleTranscription = useCallback(
-    (text: string) => {
-      setInputValue((prev: string) => (prev.trim() ? prev + " " + text : text));
-    },
-    [setInputValue],
-  );
-
-  const { isRecording, isTranscribing, toggleRecording } = useVoiceToText({
-    enabled: isProEnabled,
-    onTranscription: handleTranscription,
-    onError: (message) => showErrorToast(message),
-  });
 
   const [needsFreshPlanChat, setNeedsFreshPlanChat] = useAtom(
     needsFreshPlanChatAtom,
@@ -441,10 +423,6 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       pendingFiles
     ) {
       return;
-    }
-
-    if (isRecording) {
-      await toggleRecording();
     }
 
     // Build prompt with auto-added image mentions
@@ -680,7 +658,6 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         <ChatErrorBox
           onDismiss={dismissError}
           error={error}
-          isDyadProEnabled={settings.enableDyadPro ?? false}
           onStartNewChat={handleNewChat}
         />
       )}
@@ -800,54 +777,27 @@ export function ChatInput({ chatId }: { chatId?: number }) {
               />
             )}
 
-          {userBudget ? (
-            <VisualEditingChangesDialog
-              iframeRef={
-                previewIframeRef
-                  ? { current: previewIframeRef }
-                  : { current: null }
-              }
-              onReset={() => {
-                // Exit component selection mode and visual editing
-                setSelectedComponents([]);
-                setVisualEditingSelectedComponent(null);
-                setCurrentComponentCoordinates(null);
-                setPendingVisualChanges(new Map());
-                refreshAppIframe();
+          <VisualEditingChangesDialog
+            iframeRef={
+              previewIframeRef ? { current: previewIframeRef } : { current: null }
+            }
+            onReset={() => {
+              // Exit component selection mode and visual editing
+              setSelectedComponents([]);
+              setVisualEditingSelectedComponent(null);
+              setCurrentComponentCoordinates(null);
+              setPendingVisualChanges(new Map());
+              refreshAppIframe();
 
-                // Deactivate component selector in iframe
-                if (previewIframeRef?.contentWindow) {
-                  previewIframeRef.contentWindow.postMessage(
-                    { type: "deactivate-dyad-component-selector" },
-                    "*",
-                  );
-                }
-              }}
-            />
-          ) : (
-            selectedComponents.length > 0 && (
-              <div className="border-b border-border p-3 bg-muted/30">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        onClick={() => {
-                          ipc.system.openExternalUrl("https://dyad.sh/pro");
-                        }}
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                      />
-                    }
-                  >
-                    <Lock size={16} />
-                    <span className="font-medium">{t("visualEditor")}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t("visualEditorDescription")}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )
-          )}
+              // Deactivate component selector in iframe
+              if (previewIframeRef?.contentWindow) {
+                previewIframeRef.contentWindow.postMessage(
+                  { type: "deactivate-dyad-component-selector" },
+                  "*",
+                );
+              }
+            }}
+          />
 
           <SelectedComponentsDisplay />
 
@@ -883,68 +833,6 @@ export function ChatInput({ chatId }: { chatId?: number }) {
               disableSendButton={disableSendButton}
               messageHistory={userMessageHistory}
             />
-
-            {/* Voice-to-text button */}
-            {isProEnabled ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      onClick={toggleRecording}
-                      disabled={isTranscribing}
-                      aria-label={
-                        isRecording
-                          ? t("stopRecording", "Stop recording")
-                          : isTranscribing
-                            ? t("transcribing", "Transcribing...")
-                            : t("voiceToText", "Voice to text")
-                      }
-                      className={cn(
-                        "px-2 py-2 mb-0.5 text-muted-foreground rounded-lg transition-colors duration-150 cursor-pointer disabled:cursor-default disabled:opacity-30",
-                        isRecording &&
-                          "text-red-500 hover:text-red-600 animate-pulse",
-                        !isRecording && !isTranscribing && "hover:text-primary",
-                      )}
-                    />
-                  }
-                >
-                  {isTranscribing ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : isRecording ? (
-                    <MicOff size={20} />
-                  ) : (
-                    <Mic size={20} />
-                  )}
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isRecording
-                    ? t("stopRecording", "Stop recording")
-                    : isTranscribing
-                      ? t("transcribing", "Transcribing...")
-                      : t("voiceToText", "Voice to text")}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      onClick={() =>
-                        ipc.system.openExternalUrl("https://dyad.sh/pro")
-                      }
-                      aria-label={t("voiceToTextPro", "Voice to text (Pro)")}
-                      className="px-2 py-2 mb-0.5 text-muted-foreground hover:text-primary rounded-lg transition-colors duration-150 cursor-pointer relative"
-                    />
-                  }
-                >
-                  <Mic size={20} />
-                  <Lock size={10} className="absolute -top-0.5 -right-0.5" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  {t("voiceToTextRequiresPro", "Voice to text (requires Pro)")}
-                </TooltipContent>
-              </Tooltip>
-            )}
 
             {isStreaming ? (
               <Tooltip>
@@ -1007,7 +895,6 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         open={imageGeneratorOpen}
         onOpenChange={setImageGeneratorOpen}
         defaultAppId={appId ?? undefined}
-        source="chat"
       />
     </>
   );

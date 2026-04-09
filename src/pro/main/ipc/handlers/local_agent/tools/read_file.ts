@@ -90,6 +90,12 @@ export const readFileTool: ToolDefinition<z.infer<typeof readFileSchema>> = {
     }
 
     const content = await readFile(fullFilePath, "utf8");
+    const stat = await fs.promises.stat(fullFilePath);
+    ctx.readFileState[args.path] = {
+      content,
+      modifiedTimeMs: stat.mtimeMs,
+    };
+
     if (!content) return "";
 
     const start = args.start_line_one_indexed;

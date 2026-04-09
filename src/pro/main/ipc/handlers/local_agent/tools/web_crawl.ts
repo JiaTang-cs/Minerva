@@ -109,9 +109,7 @@ export const webCrawlTool: ToolDefinition<z.infer<typeof webCrawlSchema>> = {
   description: DESCRIPTION,
   inputSchema: webCrawlSchema,
   defaultConsent: "ask",
-
-  // Requires Dyad Pro engine API
-  isEnabled: (ctx) => ctx.isDyadPro,
+  backend: "cloud",
 
   getConsentPreview: (args) => `Crawl URL: "${args.url}"`,
 
