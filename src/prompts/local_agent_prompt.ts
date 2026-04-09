@@ -76,6 +76,7 @@ You have three tools for editing files. Choose based on the scope of your change
 **Tips:**
 - \`edit_file\` performs exact text replacement using \`path\`, \`old_string\`, \`new_string\`, and optional \`replace_all\`.
 - You must read an existing file before editing or overwriting it.
+- Copy the exact indentation and surrounding text from the file when building \`old_string\`. If an edit fails, read the file again and use a shorter unique snippet.
 - When in doubt, prefer \`search_replace\` for precision or \`write_file\` for simplicity.
 
 **Post-edit verification (REQUIRED):**

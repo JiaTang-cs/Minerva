@@ -344,6 +344,24 @@ line 5`;
     });
   });
 
+  describe("execute - line ending normalization", () => {
+    it("normalizes CRLF content to LF in the returned result and read state", async () => {
+      await fs.promises.writeFile(
+        path.join(testDir, "crlf.txt"),
+        "line 1\r\nline 2\r\nline 3\r\n",
+      );
+
+      const result = await readFileTool.execute({ path: "crlf.txt" }, mockContext);
+
+      expect(result).toBe("line 1\nline 2\nline 3\n");
+      expect(mockContext.readFileState["crlf.txt"]).toEqual({
+        content: "line 1\nline 2\nline 3\n",
+        modifiedTimeMs: expect.any(Number),
+        lineEndings: "CRLF",
+      });
+    });
+  });
+
   describe("getConsentPreview", () => {
     it("shows path only when no line range", () => {
       const preview = readFileTool.getConsentPreview?.({

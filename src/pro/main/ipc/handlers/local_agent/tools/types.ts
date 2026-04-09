@@ -44,6 +44,7 @@ export interface FileEditTracker {
 export interface ReadFileStateEntry {
   content: string;
   modifiedTimeMs: number;
+  lineEndings?: "LF" | "CRLF";
 }
 
 export interface AgentContext {

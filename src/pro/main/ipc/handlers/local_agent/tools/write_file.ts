@@ -8,6 +8,7 @@ import {
   escapeXmlAttr,
   escapeXmlContent,
 } from "./types";
+import { normalizeLineEndings } from "./file_content_utils";
 import { safeJoin } from "@/ipc/utils/path_utils";
 import { deploySupabaseFunction } from "../../../../../../supabase_admin/supabase_management_client";
 import {
@@ -55,7 +56,7 @@ async function maybeDeployServerFunction(
 export const writeFileTool: ToolDefinition<z.infer<typeof writeFileSchema>> = {
   name: "write_file",
   description:
-    "Create a new file or completely overwrite an existing file in the codebase. Read existing files before overwriting them.",
+    "Create a new file or completely overwrite an existing file in the codebase. Read existing files before overwriting them. Prefer edit_file for smaller changes.",
   inputSchema: writeFileSchema,
   defaultConsent: "always",
   modifiesState: true,
@@ -82,11 +83,11 @@ export const writeFileTool: ToolDefinition<z.infer<typeof writeFileSchema>> = {
       ctx.isSharedModulesChanged = true;
     }
 
-    let existingContent: string | null = null;
+    let existingContentRaw: string | null = null;
     let existingStat: Awaited<ReturnType<typeof fs.stat>> | null = null;
 
     try {
-      [existingContent, existingStat] = await Promise.all([
+      [existingContentRaw, existingStat] = await Promise.all([
         fs.readFile(fullFilePath, "utf8"),
         fs.stat(fullFilePath),
       ]);
@@ -95,6 +96,11 @@ export const writeFileTool: ToolDefinition<z.infer<typeof writeFileSchema>> = {
         throw error;
       }
     }
+
+    const existingContent =
+      existingContentRaw !== null
+        ? normalizeLineEndings(existingContentRaw)
+        : null;
 
     if (existingContent !== null) {
       const priorRead = ctx.readFileState[args.path];
@@ -122,7 +128,7 @@ export const writeFileTool: ToolDefinition<z.infer<typeof writeFileSchema>> = {
 
     const nextStat = await fs.stat(fullFilePath);
     ctx.readFileState[args.path] = {
-      content: args.content,
+      content: normalizeLineEndings(args.content),
       modifiedTimeMs: nextStat.mtimeMs,
     };
 

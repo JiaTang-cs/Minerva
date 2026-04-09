@@ -3,6 +3,10 @@ import { z } from "zod";
 import { ToolDefinition, AgentContext, escapeXmlAttr } from "./types";
 import { safeJoin } from "@/ipc/utils/path_utils";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import {
+  detectLineEndings,
+  normalizeLineEndings,
+} from "./file_content_utils";
 
 const readFile = fs.promises.readFile;
 
@@ -89,11 +93,13 @@ export const readFileTool: ToolDefinition<z.infer<typeof readFileSchema>> = {
       );
     }
 
-    const content = await readFile(fullFilePath, "utf8");
+    const rawContent = await readFile(fullFilePath, "utf8");
     const stat = await fs.promises.stat(fullFilePath);
+    const content = normalizeLineEndings(rawContent);
     ctx.readFileState[args.path] = {
       content,
       modifiedTimeMs: stat.mtimeMs,
+      lineEndings: detectLineEndings(rawContent),
     };
 
     if (!content) return "";
