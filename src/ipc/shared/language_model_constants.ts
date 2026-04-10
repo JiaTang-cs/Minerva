@@ -346,7 +346,7 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
     },
     {
       name: "turbo",
-      displayName: "Turbo (Pro)",
+      displayName: "Turbo",
       description: "Use very fast open-source frontier models",
       maxOutputTokens: 32_000,
       contextWindow: 256_000,
@@ -356,7 +356,7 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
     },
     {
       name: "value",
-      displayName: "Super Value (Pro)",
+      displayName: "Super Value",
       description: "Uses the most cost-effective models available",
       maxOutputTokens: 32_000,
       contextWindow: 256_000,
