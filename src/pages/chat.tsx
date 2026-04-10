@@ -84,66 +84,78 @@ export default function ChatPage() {
   }, [isChatPanelHidden]);
 
   return (
-    <PanelGroup autoSaveId="persistence" direction="horizontal">
-      <Panel
-        id="chat-panel"
-        ref={chatPanelRef}
-        collapsible
-        minSize={1}
-        className={cn(!isResizing && "transition-all duration-100 ease-in-out")}
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
+      <PanelGroup
+        autoSaveId="persistence"
+        direction="horizontal"
+        className="h-full min-h-0 w-full"
       >
-        <div className="h-full w-full">
-          {!isChatPanelHidden && (
-            <ChatPanel
-              chatId={chatId}
-              isPreviewOpen={isPreviewOpen}
-              onTogglePreview={() => {
-                setIsPreviewOpen(!isPreviewOpen);
-                if (isPreviewOpen) {
-                  ref.current?.collapse();
-                } else {
-                  ref.current?.expand();
-                }
-              }}
-            />
+        <Panel
+          id="chat-panel"
+          ref={chatPanelRef}
+          collapsible
+          minSize={1}
+          className={cn(
+            "min-h-0 overflow-hidden",
+            !isResizing && "transition-all duration-100 ease-in-out",
           )}
-        </div>
-      </Panel>
-      <PanelResizeHandle
-        onDragging={(isDragging) => {
-          setIsResizing(isDragging);
-          // When dragging ends, sync the hidden state based on final width
-          if (!isDragging) {
-            // Small delay to let the panel settle
-            requestAnimationFrame(() => {
-              const panel = document.getElementById("chat-panel");
-              if (panel) {
-                const panelWidth = panel.getBoundingClientRect().width;
-                const containerWidth =
-                  panel.parentElement?.getBoundingClientRect().width || 1;
-                const percentage = (panelWidth / containerWidth) * 100;
-                // Consider hidden if panel is less than 5% width
-                setIsChatPanelHidden(percentage < 5);
-              }
-            });
-          }
-        }}
-        className={cn(
-          "relative bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors cursor-col-resize",
-          isChatPanelHidden ? "w-2" : "w-1",
-        )}
-      />
+        >
+          <div className="h-full min-h-0 w-full overflow-hidden">
+            {!isChatPanelHidden && (
+              <ChatPanel
+                chatId={chatId}
+                isPreviewOpen={isPreviewOpen}
+                onTogglePreview={() => {
+                  setIsPreviewOpen(!isPreviewOpen);
+                  if (isPreviewOpen) {
+                    ref.current?.collapse();
+                  } else {
+                    ref.current?.expand();
+                  }
+                }}
+              />
+            )}
+          </div>
+        </Panel>
+        <PanelResizeHandle
+          onDragging={(isDragging) => {
+            setIsResizing(isDragging);
+            // When dragging ends, sync the hidden state based on final width
+            if (!isDragging) {
+              // Small delay to let the panel settle
+              requestAnimationFrame(() => {
+                const panel = document.getElementById("chat-panel");
+                if (panel) {
+                  const panelWidth = panel.getBoundingClientRect().width;
+                  const containerWidth =
+                    panel.parentElement?.getBoundingClientRect().width || 1;
+                  const percentage = (panelWidth / containerWidth) * 100;
+                  // Consider hidden if panel is less than 5% width
+                  setIsChatPanelHidden(percentage < 5);
+                }
+              });
+            }
+          }}
+          className={cn(
+            "relative bg-gray-200 transition-colors cursor-col-resize hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700",
+            isChatPanelHidden ? "w-2" : "w-1",
+          )}
+        />
 
-      <Panel
-        collapsible
-        ref={ref}
-        id="preview-panel"
-        minSize={20}
-        className={cn(!isResizing && "transition-all duration-100 ease-in-out")}
-      >
-        <PreviewPanel />
-      </Panel>
-      <RightActionSidebar />
-    </PanelGroup>
+        <Panel
+          collapsible
+          ref={ref}
+          id="preview-panel"
+          minSize={20}
+          className={cn(
+            "min-h-0 overflow-hidden",
+            !isResizing && "transition-all duration-100 ease-in-out",
+          )}
+        >
+          <PreviewPanel />
+        </Panel>
+        <RightActionSidebar />
+      </PanelGroup>
+    </div>
   );
 }

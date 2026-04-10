@@ -173,17 +173,17 @@ export function ChatPanel({
   }, [messages, isStreaming, settings?.isTestMode, scrollToBottom]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full min-h-0 flex-col">
       <ChatHeader
         isVersionPaneOpen={isVersionPaneOpen}
         isPreviewOpen={isPreviewOpen}
         onTogglePreview={onTogglePreview}
         onVersionClick={() => setIsVersionPaneOpen(!isVersionPaneOpen)}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {!isVersionPaneOpen && (
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex-1 relative overflow-hidden">
+          <div className="flex min-h-0 flex-1 flex-col min-w-0">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
               <MessagesList
                 messages={messages}
                 messagesEndRef={messagesEndRef}

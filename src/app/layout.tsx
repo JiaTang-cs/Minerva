@@ -111,7 +111,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AppSidebar />
             <div
               id="layout-main-content-container"
-              className="flex h-screenish w-full overflow-x-hidden mt-12 mb-4 mr-4 border-t border-l border-border rounded-lg bg-background"
+              className="mt-12 mr-4 mb-4 flex h-screenish min-h-0 w-full overflow-hidden rounded-lg border-t border-l border-border bg-background"
             >
               {children}
             </div>
