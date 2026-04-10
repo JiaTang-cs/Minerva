@@ -1,7 +1,32 @@
-import type { editor } from "monaco-editor";
+import type * as Monaco from "monaco-editor";
 import { loader } from "@monaco-editor/react";
+import { loadMonacoWithFallback } from "./monaco_loader";
 
-export const customLight: editor.IStandaloneThemeData = {
+type MonacoInstance = typeof Monaco;
+
+const MONACO_VS_SOURCES = [
+  "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs",
+  "https://unpkg.com/monaco-editor@0.52.2/min/vs",
+] as const;
+
+const MONACO_SCRIPT_TIMEOUT_MS = 8000;
+const MONACO_LOADER_SCRIPT_ATTR = "data-dyad-monaco-loader";
+
+declare global {
+  interface Window {
+    monaco?: MonacoInstance;
+    require?: {
+      config: (config: { paths: { vs: string } }) => void;
+      (
+        modules: string[],
+        onLoad: (value: MonacoInstance) => void,
+        onError: (error: unknown) => void,
+      ): void;
+    };
+  }
+}
+
+export const customLight: Monaco.editor.IStandaloneThemeData = {
   base: "vs",
   inherit: false,
   rules: [
@@ -72,7 +97,7 @@ export const customLight: editor.IStandaloneThemeData = {
   },
 };
 
-export const customDark: editor.IStandaloneThemeData = {
+export const customDark: Monaco.editor.IStandaloneThemeData = {
   base: "vs-dark",
   inherit: false,
   rules: [
@@ -142,7 +167,14 @@ export const customDark: editor.IStandaloneThemeData = {
   },
 };
 
-loader.init().then((monaco) => {
+let themedMonaco: MonacoInstance | null = null;
+let monacoReadyPromise: Promise<MonacoInstance> | null = null;
+
+function applyDyadMonacoSetup(monaco: MonacoInstance) {
+  if (themedMonaco === monaco) {
+    return monaco;
+  }
+
   monaco.editor.defineTheme("dyad-light", customLight);
   monaco.editor.defineTheme("dyad-dark", customDark);
 
@@ -153,4 +185,93 @@ loader.init().then((monaco) => {
     // Too noisy because we don't have the full TS environment.
     noSemanticValidation: true,
   });
-});
+  themedMonaco = monaco;
+
+  return monaco;
+}
+
+function removeExistingLoaderScripts() {
+  document
+    .querySelectorAll(`script[${MONACO_LOADER_SCRIPT_ATTR}]`)
+    .forEach((script) => script.remove());
+}
+
+function loadLoaderScript(vsPath: string): Promise<void> {
+  if (typeof window.require === "function") {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    const timeout = window.setTimeout(() => {
+      script.remove();
+      reject(
+        new Error(`Timed out while loading Monaco loader from ${vsPath}`),
+      );
+    }, MONACO_SCRIPT_TIMEOUT_MS);
+
+    script.setAttribute(MONACO_LOADER_SCRIPT_ATTR, "true");
+    script.src = `${vsPath}/loader.js`;
+    script.onload = () => {
+      window.clearTimeout(timeout);
+      resolve();
+    };
+    script.onerror = () => {
+      window.clearTimeout(timeout);
+      script.remove();
+      reject(new Error(`Failed to load Monaco loader from ${vsPath}`));
+    };
+
+    document.body.appendChild(script);
+  });
+}
+
+function loadMonacoFromVsPath(vsPath: string): Promise<MonacoInstance> {
+  if (window.monaco?.editor) {
+    return Promise.resolve(window.monaco);
+  }
+
+  removeExistingLoaderScripts();
+
+  return loadLoaderScript(vsPath).then(
+    () =>
+      new Promise<MonacoInstance>((resolve, reject) => {
+        const requireFn = window.require;
+
+        if (!requireFn) {
+          reject(new Error("Monaco loader script did not expose window.require"));
+          return;
+        }
+
+        requireFn.config({ paths: { vs: vsPath } });
+        requireFn(
+          ["vs/editor/editor.main"],
+          (monaco) => {
+            window.monaco = monaco;
+            resolve(monaco);
+          },
+          (error) => {
+            reject(
+              error instanceof Error
+                ? error
+                : new Error(`Failed to load Monaco editor.main from ${vsPath}`),
+            );
+          },
+        );
+      }),
+  );
+}
+
+export function ensureMonacoReady(): Promise<MonacoInstance> {
+  if (!monacoReadyPromise) {
+    monacoReadyPromise = loadMonacoWithFallback({
+      vsPaths: [...MONACO_VS_SOURCES],
+      loadFromVsPath: loadMonacoFromVsPath,
+      onPathSelected: (vsPath) => {
+        loader.config({ paths: { vs: vsPath } });
+      },
+    }).then((monaco) => applyDyadMonacoSetup(monaco));
+  }
+
+  return monacoReadyPromise;
+}

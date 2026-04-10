@@ -665,6 +665,7 @@ export function UnconnectedGitHubConnector({
   handleRepoSetupComplete,
   expanded,
 }: UnconnectedGitHubConnectorProps) {
+  const { t } = useTranslation(["home", "common"]);
   // --- Collapsible State ---
   const [isExpanded, setIsExpanded] = useState(expanded || false);
 
@@ -924,7 +925,7 @@ export function UnconnectedGitHubConnector({
           variant="outline"
           disabled={isConnectingToGithub} // Also disable if appId is null
         >
-          Connect to GitHub
+          {t("integrations.github.connectToGithub")}
           <Github className="h-5 w-5" />
           {isConnectingToGithub && (
             <svg

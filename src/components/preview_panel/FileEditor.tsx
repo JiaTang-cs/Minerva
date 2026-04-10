@@ -3,7 +3,7 @@ import Editor, { OnMount } from "@monaco-editor/react";
 import { useLoadAppFile } from "@/hooks/useLoadAppFile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ChevronRight, Circle, Save } from "lucide-react";
-import "@/components/chat/monaco";
+import { ensureMonacoReady } from "@/components/chat/monaco";
 import { ipc } from "@/ipc/types";
 import { showError, showSuccess, showWarning } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
@@ -106,6 +106,8 @@ export const FileEditor = ({
   const [value, setValue] = useState<string | undefined>(undefined);
   const [displayUnsavedChanges, setDisplayUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMonacoReady, setIsMonacoReady] = useState(false);
+  const [monacoError, setMonacoError] = useState<string | null>(null);
   const { settings } = useSettings();
   // Use refs for values that need to be current in event handlers
   const originalValueRef = useRef<string | undefined>(undefined);
@@ -123,6 +125,28 @@ export const FileEditor = ({
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    ensureMonacoReady()
+      .then(() => {
+        if (!cancelled) {
+          setIsMonacoReady(true);
+          setMonacoError(null);
+        }
+      })
+      .catch((error) => {
+        console.error("Monaco initialization error:", error);
+        if (!cancelled) {
+          setMonacoError(error instanceof Error ? error.message : String(error));
+        }
+      });
+
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -282,6 +306,14 @@ export const FileEditor = ({
     return (
       <div className="p-4 text-gray-500">{t("preview.noContentAvailable")}</div>
     );
+  }
+
+  if (monacoError) {
+    return <div className="p-4 text-red-500">Error: {monacoError}</div>;
+  }
+
+  if (!isMonacoReady) {
+    return <div className="p-4">{t("preview.loadingFileContent")}</div>;
   }
 
   return (

@@ -7,8 +7,11 @@ import { PortalMigrate } from "@/components/PortalMigrate";
 import { ipc } from "@/ipc/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GithubCollaboratorManager } from "@/components/GithubCollaboratorManager";
+import { useTranslation } from "react-i18next";
 
 export const PublishPanel = () => {
+  const { t } = useTranslation("home");
+  const { t: tc } = useTranslation("common");
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { app, loading } = useLoadApp(selectedAppId);
 
@@ -37,7 +40,7 @@ export const PublishPanel = () => {
           </svg>
         </div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          Loading...
+          {tc("loading")}
         </h2>
       </div>
     );
@@ -62,10 +65,10 @@ export const PublishPanel = () => {
           </svg>
         </div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          No App Selected
+          {t("preview.publish_panel.noAppSelectedTitle")}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 max-w-md">
-          Select an app to view publishing options.
+          {t("preview.publish_panel.noAppSelectedDescription")}
         </p>
       </div>
     );
@@ -76,7 +79,7 @@ export const PublishPanel = () => {
       <div className="p-4 space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Publish App
+            {t("preview.publish_panel.publishApp")}
           </h1>
         </div>
 
@@ -99,7 +102,7 @@ export const PublishPanel = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Sync your code to GitHub for collaboration.
+              {t("preview.publish_panel.githubDescription")}
             </p>
             <GitHubConnector
               appId={selectedAppId}
@@ -137,7 +140,7 @@ export const PublishPanel = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Publish your app by deploying it to Vercel.
+              {t("preview.publish_panel.vercelDescription")}
             </p>
 
             {!app?.githubOrg || !app?.githubRepo ? (
@@ -158,11 +161,10 @@ export const PublishPanel = () => {
                   </svg>
                   <div>
                     <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      GitHub Required for Vercel Deployment
+                      {t("preview.publish_panel.githubRequiredForVercel")}
                     </h3>
                     <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                      Deploying to Vercel requires connecting to GitHub first.
-                      Please set up your GitHub repository above.
+                      {t("preview.publish_panel.githubRequiredDescription")}
                     </p>
                   </div>
                 </div>
