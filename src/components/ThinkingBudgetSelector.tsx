@@ -17,29 +17,26 @@ interface OptionInfo {
 
 const defaultValue = "medium";
 
-const options: OptionInfo[] = [
-  {
-    value: "low",
-    label: "Low",
-    description:
-      "Minimal thinking tokens for faster responses and lower costs.",
-  },
-  {
-    value: defaultValue,
-    label: "Medium (default)",
-    description: "Balanced thinking for most conversations.",
-  },
-  {
-    value: "high",
-    label: "High",
-    description:
-      "Extended thinking for complex problems requiring deep analysis.",
-  },
-];
-
 export const ThinkingBudgetSelector: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation("settings");
+  const options: OptionInfo[] = [
+    {
+      value: "low",
+      label: t("ai.thinkingBudgetOptions.low.label"),
+      description: t("ai.thinkingBudgetOptions.low.description"),
+    },
+    {
+      value: defaultValue,
+      label: t("ai.thinkingBudgetOptions.medium.label"),
+      description: t("ai.thinkingBudgetOptions.medium.description"),
+    },
+    {
+      value: "high",
+      label: t("ai.thinkingBudgetOptions.high.label"),
+      description: t("ai.thinkingBudgetOptions.high.description"),
+    },
+  ];
 
   const handleValueChange = (value: string) => {
     updateSettings({ thinkingBudget: value as "low" | "medium" | "high" });
@@ -66,7 +63,9 @@ export const ThinkingBudgetSelector: React.FC = () => {
           onValueChange={(v) => v && handleValueChange(v)}
         >
           <SelectTrigger className="w-[180px]" id="thinking-budget">
-            <SelectValue placeholder={t("ai.selectThinkingBudget")} />
+            <SelectValue placeholder={currentOption.label}>
+              {currentOption.label}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {options.map((option) => (

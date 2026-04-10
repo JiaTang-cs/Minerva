@@ -14,7 +14,9 @@ import { useLoadApps } from "@/hooks/useLoadApps";
 import { useMemo, useState } from "react";
 import { AppSearchDialog } from "./AppSearchDialog";
 import { AppItem } from "./appItem";
+import { useTranslation } from "react-i18next";
 export function AppList({ show }: { show?: boolean }) {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const [selectedAppId, setSelectedAppId] = useAtom(selectedAppIdAtom);
   const setSelectedChatId = useSetAtom(selectedChatIdAtom);
@@ -69,7 +71,7 @@ export function AppList({ show }: { show?: boolean }) {
         className="overflow-y-auto h-[calc(100vh-112px)]"
         data-testid="app-list-container"
       >
-        <SidebarGroupLabel>Your Apps</SidebarGroupLabel>
+        <SidebarGroupLabel>{t("appList.title")}</SidebarGroupLabel>
         <SidebarGroupContent>
           <div className="flex flex-col space-y-2">
             <Button
@@ -78,7 +80,7 @@ export function AppList({ show }: { show?: boolean }) {
               className="flex items-center justify-start gap-2 mx-2 py-2"
             >
               <PlusCircle size={16} />
-              <span>New App</span>
+              <span>{t("appList.newApp")}</span>
             </Button>
             <Button
               onClick={() => setIsSearchDialogOpen(!isSearchDialogOpen)}
@@ -87,27 +89,29 @@ export function AppList({ show }: { show?: boolean }) {
               data-testid="search-apps-button"
             >
               <Search size={16} />
-              <span>Search Apps</span>
+              <span>{t("appList.searchApps")}</span>
             </Button>
 
             {loading ? (
               <div className="py-2 px-4 text-sm text-gray-500">
-                Loading apps...
+                {t("appList.loadingApps")}
               </div>
             ) : error ? (
               <div className="py-2 px-4 text-sm text-red-500">
-                Error loading apps
+                {t("appList.errorLoadingApps")}
               </div>
             ) : apps.length === 0 ? (
               <div className="py-2 px-4 text-sm text-gray-500">
-                No apps found
+                {t("appList.noAppsFound")}
               </div>
             ) : (
               <SidebarMenu className="space-y-1" data-testid="app-list">
-                <SidebarGroupLabel>Favorite apps</SidebarGroupLabel>
+                <SidebarGroupLabel>
+                  {t("appList.favoriteApps")}
+                </SidebarGroupLabel>
                 {favoriteApps.length === 0 ? (
                   <div className="px-4 text-xs text-gray-500 italic">
-                    Star an app from its details page to pin it here
+                    {t("appList.starHint")}
                   </div>
                 ) : (
                   favoriteApps.map((app) => (
@@ -119,7 +123,7 @@ export function AppList({ show }: { show?: boolean }) {
                     />
                   ))
                 )}
-                <SidebarGroupLabel>Other apps</SidebarGroupLabel>
+                <SidebarGroupLabel>{t("appList.otherApps")}</SidebarGroupLabel>
                 {nonFavoriteApps.map((app) => (
                   <AppItem
                     key={app.id}

@@ -779,7 +779,9 @@ export function ChatInput({ chatId }: { chatId?: number }) {
 
           <VisualEditingChangesDialog
             iframeRef={
-              previewIframeRef ? { current: previewIframeRef } : { current: null }
+              previewIframeRef
+                ? { current: previewIframeRef }
+                : { current: null }
             }
             onReset={() => {
               // Exit component selection mode and visual editing

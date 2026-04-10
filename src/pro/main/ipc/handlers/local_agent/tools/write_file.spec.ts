@@ -29,12 +29,9 @@ vi.mock("../../../../../../supabase_admin/supabase_utils", () => ({
   isSharedServerModule: vi.fn(() => false),
 }));
 
-vi.mock(
-  "../../../../../../supabase_admin/supabase_management_client",
-  () => ({
-    deploySupabaseFunction: vi.fn(),
-  }),
-);
+vi.mock("../../../../../../supabase_admin/supabase_management_client", () => ({
+  deploySupabaseFunction: vi.fn(),
+}));
 
 describe("writeFileTool", () => {
   const createContext = (): AgentContext => ({
@@ -71,8 +68,12 @@ describe("writeFileTool", () => {
 
     vi.mocked(fs.readFile).mockResolvedValue("line 1\r\nline 2\r\n");
     vi.mocked(fs.stat)
-      .mockResolvedValueOnce({ mtimeMs: 100 } as Awaited<ReturnType<typeof fs.stat>>)
-      .mockResolvedValueOnce({ mtimeMs: 101 } as Awaited<ReturnType<typeof fs.stat>>);
+      .mockResolvedValueOnce({ mtimeMs: 100 } as Awaited<
+        ReturnType<typeof fs.stat>
+      >)
+      .mockResolvedValueOnce({ mtimeMs: 101 } as Awaited<
+        ReturnType<typeof fs.stat>
+      >);
 
     await writeFileTool.execute(
       {

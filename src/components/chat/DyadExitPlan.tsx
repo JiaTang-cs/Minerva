@@ -3,6 +3,7 @@ import { useAtomValue } from "jotai";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { planStateAtom } from "@/atoms/planAtoms";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
+import { useTranslation } from "react-i18next";
 
 interface DyadExitPlanProps {
   node: {
@@ -13,6 +14,7 @@ interface DyadExitPlanProps {
 }
 
 export const DyadExitPlan: React.FC<DyadExitPlanProps> = ({ node }) => {
+  const { t } = useTranslation("chat");
   const { notes } = node.properties;
   const chatId = useAtomValue(selectedChatIdAtom);
   const planState = useAtomValue(planStateAtom);
@@ -35,13 +37,13 @@ export const DyadExitPlan: React.FC<DyadExitPlanProps> = ({ node }) => {
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-green-800 dark:text-green-200">
-            Plan Accepted
+            {t("planAccepted")}
           </span>
           <ArrowRight className="text-green-500" size={16} />
           <span className="text-green-700 dark:text-green-300">
             {isTransitioning
-              ? `Preparing a new chat${".".repeat(dotCount + 1)}`
-              : "Opening new chat for implementation"}
+              ? `${t("preparingNewChat")}${".".repeat(dotCount + 1)}`
+              : t("openingImplementationChat")}
           </span>
         </div>
         {notes && (

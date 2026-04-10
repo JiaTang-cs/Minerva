@@ -59,5 +59,46 @@
   "builtIn": "内置",
   "advanced": "高级",
   "required": "必填",
-  "optional": "可选"
+  "optional": "可选",
+  "navigation": {
+    "apps": "应用",
+    "chat": "聊天",
+    "settings": "设置",
+    "library": "资源库",
+    "hub": "Hub",
+    "help": "帮助"
+  },
+  "appList": {
+    "title": "你的应用",
+    "newApp": "新建应用",
+    "searchApps": "搜索应用",
+    "loadingApps": "正在加载应用...",
+    "errorLoadingApps": "加载应用出错",
+    "noAppsFound": "未找到应用",
+    "favoriteApps": "收藏的应用",
+    "otherApps": "其他应用",
+    "starHint": "在应用详情页为应用加星，即可将其固定到这里"
+  },
+  "appSearch": {
+    "placeholder": "搜索应用",
+    "noResults": "未找到结果。",
+    "groupLabel": "应用"
+  },
+  "libraryNav": {
+    "title": "资源库",
+    "all": "全部",
+    "themes": "主题",
+    "prompts": "提示词",
+    "media": "媒体"
+  },
+  "titleBar": {
+    "appPrefix": "应用",
+    "noAppSelected": "（未选择应用）",
+    "noAppSelectedTooltip": "未选择应用",
+    "previewDataCleared": "预览数据已清除",
+    "errorClearingPreviewData": "清除预览数据失败：{{error}}",
+    "minimize": "最小化",
+    "maximize": "最大化"
+  },
+  "unknownError": "发生未知错误"
 }

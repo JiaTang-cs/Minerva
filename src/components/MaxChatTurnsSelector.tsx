@@ -18,39 +18,38 @@ interface OptionInfo {
 
 const defaultValue = "default";
 
-const options: OptionInfo[] = [
-  {
-    value: "2",
-    label: "Economy (2)",
-    description:
-      "Minimal context to reduce token usage and improve response times.",
-  },
-  {
-    value: defaultValue,
-    label: `Default (${MAX_CHAT_TURNS_IN_CONTEXT})  `,
-    description: "Balanced context size for most conversations.",
-  },
-  {
-    value: "5",
-    label: "Plus (5)",
-    description: "Slightly higher context size for detailed conversations.",
-  },
-  {
-    value: "10",
-    label: "High (10)",
-    description:
-      "Extended context for complex conversations requiring more history.",
-  },
-  {
-    value: "100",
-    label: "Max (100)",
-    description: "Maximum context (not recommended due to cost and speed).",
-  },
-];
-
 export const MaxChatTurnsSelector: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation("settings");
+  const options: OptionInfo[] = [
+    {
+      value: "2",
+      label: t("ai.maxChatTurnsOptions.economy.label"),
+      description: t("ai.maxChatTurnsOptions.economy.description"),
+    },
+    {
+      value: defaultValue,
+      label: t("ai.maxChatTurnsOptions.default.label", {
+        count: MAX_CHAT_TURNS_IN_CONTEXT,
+      }),
+      description: t("ai.maxChatTurnsOptions.default.description"),
+    },
+    {
+      value: "5",
+      label: t("ai.maxChatTurnsOptions.plus.label"),
+      description: t("ai.maxChatTurnsOptions.plus.description"),
+    },
+    {
+      value: "10",
+      label: t("ai.maxChatTurnsOptions.high.label"),
+      description: t("ai.maxChatTurnsOptions.high.description"),
+    },
+    {
+      value: "100",
+      label: t("ai.maxChatTurnsOptions.max.label"),
+      description: t("ai.maxChatTurnsOptions.max.description"),
+    },
+  ];
 
   const handleValueChange = (value: string) => {
     if (value === "default") {
@@ -83,7 +82,9 @@ export const MaxChatTurnsSelector: React.FC = () => {
           onValueChange={(v) => v && handleValueChange(v)}
         >
           <SelectTrigger className="w-[180px]" id="max-chat-turns">
-            <SelectValue placeholder={t("ai.selectMaxChatTurns")} />
+            <SelectValue placeholder={currentOption.label}>
+              {currentOption.label}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {options.map((option) => (

@@ -68,6 +68,7 @@ import { useRunApp } from "@/hooks/useRunApp";
 import { useSettings } from "@/hooks/useSettings";
 import { useShortcut } from "@/hooks/useShortcut";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { normalizePath } from "../../../shared/normalizePath";
 import { showError } from "@/lib/toast";
 import type { DeviceMode } from "@/lib/schemas";
@@ -173,6 +174,7 @@ const ErrorBanner = ({ error, onDismiss, onAIFix }: ErrorBannerProps) => {
 
 // Preview iframe component
 export const PreviewIframe = ({ loading }: { loading: boolean }) => {
+  const { t } = useTranslation("home");
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { appUrl, originalUrl } = useAtomValue(appUrlAtom);
   const setConsoleEntries = useSetAtom(appConsoleEntriesAtom);
@@ -1098,7 +1100,7 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
             <div className="absolute bottom-0 right-0 w-2 h-2 bg-primary rounded-full opacity-60"></div>
           </div>
           <p className="text-gray-600 dark:text-gray-300">
-            Preparing app preview...
+            {t("preview.preparingAppPreview")}
           </p>
         </div>
       </div>
@@ -1109,7 +1111,7 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
   if (selectedAppId === null) {
     return (
       <div className="p-4 text-gray-500 dark:text-gray-400">
-        Select an app to see the preview.
+        {t("preview.selectAppToSeePreview")}
       </div>
     );
   }
@@ -1142,7 +1144,9 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                 )}
               </TooltipTrigger>
               <TooltipContent>
-                {isChatPanelHidden ? "Show chat" : "Hide chat"}
+                {isChatPanelHidden
+                  ? t("preview.showChat")
+                  : t("preview.hideChat")}
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -1246,11 +1250,11 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
               <DropdownMenuContent className="w-full">
                 {routesLoading ? (
                   <DropdownMenuItem disabled>
-                    Loading routes...
+                    {t("preview.loadingRoutes")}
                   </DropdownMenuItem>
                 ) : routesError ? (
                   <DropdownMenuItem disabled>
-                    Unable to load routes
+                    {t("preview.unableToLoadRoutes")}
                   </DropdownMenuItem>
                 ) : availableRoutes.length > 0 ? (
                   availableRoutes.map((route) => (
@@ -1267,7 +1271,7 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                   ))
                 ) : (
                   <DropdownMenuItem disabled>
-                    No routes detected
+                    {t("preview.noRoutesDetected")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -1286,9 +1290,9 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                 }
               >
                 <Power size={16} />
-                <span>Restart</span>
+                <span>{t("preview.restart")}</span>
               </TooltipTrigger>
-              <TooltipContent>Restart App</TooltipContent>
+              <TooltipContent>{t("preview.restartApp")}</TooltipContent>
             </Tooltip>
             <button
               data-testid="preview-open-browser-button"
@@ -1325,7 +1329,7 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                 >
                   <MonitorSmartphone size={16} />
                 </TooltipTrigger>
-                <TooltipContent>Device Mode</TooltipContent>
+                <TooltipContent>{t("preview.deviceMode")}</TooltipContent>
               </Tooltip>
               <PopoverContent className="w-auto p-2">
                 <ToggleGroup
@@ -1347,39 +1351,39 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                       render={
                         <ToggleGroupItem
                           value="desktop"
-                          aria-label="Desktop view"
+                          aria-label={t("preview.desktopView")}
                         />
                       }
                     >
                       <Monitor size={16} />
                     </TooltipTrigger>
-                    <TooltipContent>Desktop</TooltipContent>
+                    <TooltipContent>{t("preview.desktop")}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger
                       render={
                         <ToggleGroupItem
                           value="tablet"
-                          aria-label="Tablet view"
+                          aria-label={t("preview.tabletView")}
                         />
                       }
                     >
                       <Tablet size={16} className="scale-x-130" />
                     </TooltipTrigger>
-                    <TooltipContent>Tablet</TooltipContent>
+                    <TooltipContent>{t("preview.tablet")}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger
                       render={
                         <ToggleGroupItem
                           value="mobile"
-                          aria-label="Mobile view"
+                          aria-label={t("preview.mobileView")}
                         />
                       }
                     >
                       <Smartphone size={16} />
                     </TooltipTrigger>
-                    <TooltipContent>Mobile</TooltipContent>
+                    <TooltipContent>{t("preview.mobile")}</TooltipContent>
                   </Tooltip>
                 </ToggleGroup>
               </PopoverContent>
@@ -1406,7 +1410,7 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
           <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 bg-gray-50 dark:bg-gray-950">
             <Loader2 className="w-8 h-8 animate-spin text-gray-400 dark:text-gray-500" />
             <p className="text-gray-600 dark:text-gray-300">
-              Starting your app server...
+              {t("preview.startingAppServer")}
             </p>
           </div>
         ) : (

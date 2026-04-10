@@ -59,5 +59,46 @@
   "builtIn": "Built-in",
   "advanced": "Advanced",
   "required": "Required",
-  "optional": "Optional"
+  "optional": "Optional",
+  "navigation": {
+    "apps": "Apps",
+    "chat": "Chat",
+    "settings": "Settings",
+    "library": "Library",
+    "hub": "Hub",
+    "help": "Help"
+  },
+  "appList": {
+    "title": "Your Apps",
+    "newApp": "New App",
+    "searchApps": "Search Apps",
+    "loadingApps": "Loading apps...",
+    "errorLoadingApps": "Error loading apps",
+    "noAppsFound": "No apps found",
+    "favoriteApps": "Favorite apps",
+    "otherApps": "Other apps",
+    "starHint": "Star an app from its details page to pin it here"
+  },
+  "appSearch": {
+    "placeholder": "Search apps",
+    "noResults": "No results found.",
+    "groupLabel": "Apps"
+  },
+  "libraryNav": {
+    "title": "Library",
+    "all": "All",
+    "themes": "Themes",
+    "prompts": "Prompts",
+    "media": "Media"
+  },
+  "titleBar": {
+    "appPrefix": "App",
+    "noAppSelected": "(no app selected)",
+    "noAppSelectedTooltip": "No app selected",
+    "previewDataCleared": "Preview data cleared",
+    "errorClearingPreviewData": "Error clearing preview data: {{error}}",
+    "minimize": "Minimize",
+    "maximize": "Maximize"
+  },
+  "unknownError": "An unknown error occurred"
 }

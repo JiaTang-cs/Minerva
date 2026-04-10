@@ -30,7 +30,41 @@
     "systemPath": "系统 PATH：",
     "notFound": "未找到",
     "nodeConfigured": "Node.js 已正确配置，可以使用。",
-    "nodeSelectFolder": "如果 Node.js 不在系统 PATH 中，请选择其安装文件夹。"
+    "nodeSelectFolder": "如果 Node.js 不在系统 PATH 中，请选择其安装文件夹。",
+    "customAppsFolder": "自定义应用目录",
+    "selectFolder": "选择文件夹",
+    "customFolder": "自定义目录：",
+    "defaultFolder": "默认目录：",
+    "customAppsFolderDescription": "这是 Dyad 用来存放新应用的顶层目录。",
+    "customAppsFolderUnavailable": "当前应用目录不可访问。请确认目录存在且具备写权限，或更换为其他目录。",
+    "customAppsFolderUpdated": "自定义应用目录已更新",
+    "customAppsFolderInvalid": "无法使用所选目录，请确认它是一个有效且具有写权限的文件夹。",
+    "customAppsFolderReset": "Dyad 应用目录已恢复为默认值",
+    "customAppsFolderFetchFailed": "获取 Dyad 应用目录失败：{{error}}",
+    "customAppsFolderSetFailed": "设置自定义应用目录失败：{{error}}",
+    "customAppsFolderResetFailed": "重置 Dyad 应用目录失败：{{error}}",
+    "autoUpdateToastTitle": "自动更新设置已更改",
+    "restartRequiredDescription": "需要重启 Dyad 才能使设置生效。",
+    "restartDyad": "重启 Dyad",
+    "stableChannelToastTitle": "当前使用 Stable 发布通道",
+    "stableChannelToastDescription": "你会停留在当前版本，直到有新的 Stable 版本可用；或者你也可以现在手动降级。",
+    "downloadStable": "下载 Stable 版本",
+    "betaChannelToastTitle": "当前使用 Beta 发布通道",
+    "hostRuntime": "本地（默认）",
+    "dockerRuntime": "Docker（实验性）",
+    "runtimeModeUpdateFailed": "更新运行时模式失败：{{error}}",
+    "dockerWarningPrefix": "Docker 模式属于",
+    "dockerWarningExperimental": "实验性功能",
+    "dockerWarningSuffix": "，并且需要安装并运行 {{dockerDesktop}}",
+    "dockerDesktop": "Docker Desktop",
+    "systemPathUnavailable": "系统 PATH（不可用）",
+    "nodePathUpdated": "Node.js 路径已更新",
+    "nodePathNotFoundAt": "在路径“{{path}}”中找不到 Node.js",
+    "nodePathSetFailed": "设置 Node.js 路径失败：{{error}}",
+    "nodePathReset": "已恢复为系统 Node.js 路径",
+    "nodePathResetFailed": "重置 Node.js 路径失败：{{error}}",
+    "dockerWarningBeforeLink": "需要先安装并运行",
+    "dockerWarningAfterLink": ""
   },
   "workflow": {
     "title": "工作流设置",
@@ -40,7 +74,16 @@
     "autoApprove": "自动批准更改",
     "autoApproveDescription": "将自动批准代码更改并运行。",
     "autoFixProblems": "自动修复问题",
-    "autoFixProblemsDescription": "将自动修复 TypeScript 错误。"
+    "autoFixProblemsDescription": "将自动修复 TypeScript 错误。",
+    "notifications": "启用通知",
+    "agentDescription": "更擅长处理大型任务和调试",
+    "buildDescription": "生成并编辑代码",
+    "planDescription": "先设计，再动手实现",
+    "autoApproveDisableHint": "你可以在设置中关闭自动批准。",
+    "autoFixDisableHint": "你可以在设置页关闭“自动修复问题”。",
+    "autoExpandPreviewDescription": "在代码发生变更时自动展开预览面板。",
+    "chatEventNotificationDescription": "当聊天回复完成，或应用未聚焦时有问卷需要你输入时，显示原生通知。",
+    "autoExpandPreview": "自动展开预览面板"
   },
   "ai": {
     "title": "AI 设置",
@@ -53,6 +96,10 @@
     "maxChatTurns": "上下文中最大聊天轮数",
     "maxChatTurnsDescription": "限制上下文中包含的最近聊天轮数。",
     "selectMaxChatTurns": "选择最大轮数",
+    "contextCompaction": "上下文压缩",
+    "maxToolCallSteps": "最大工具调用次数（Agent）",
+    "maxToolCallStepsDescription": "限制 Agent 在暂停前最多可以调用多少次工具。",
+    "selectMaxToolCallSteps": "选择最大工具调用次数",
     "unlimited": "无限制",
     "turnCount_one": "{{count}} 轮",
     "turnCount_other": "{{count}} 轮",
@@ -83,7 +130,62 @@
     "apiKeyEmpty": "API 密钥不能为空。",
     "errorTogglingPro": "切换 Dyad Pro 时出错：{{error}}",
     "failedSaveApiKey": "保存 API 密钥失败。",
-    "failedDeleteApiKey": "删除 API 密钥失败。"
+    "failedDeleteApiKey": "删除 API 密钥失败。",
+    "thinkingBudgetOptions": {
+      "low": {
+        "label": "低",
+        "description": "使用较少的思考 token，以获得更快响应和更低成本。"
+      },
+      "medium": {
+        "label": "中（默认）",
+        "description": "适用于大多数对话的平衡思考强度。"
+      },
+      "high": {
+        "label": "高",
+        "description": "为复杂问题提供更长时间的深入思考。"
+      }
+    },
+    "maxChatTurnsOptions": {
+      "economy": {
+        "label": "节省（2）",
+        "description": "最小上下文，减少 token 消耗并提升响应速度。"
+      },
+      "default": {
+        "label": "默认（{{count}}）",
+        "description": "适用于大多数对话的平衡上下文长度。"
+      },
+      "plus": {
+        "label": "增强（5）",
+        "description": "为更详细的对话提供稍大的上下文。"
+      },
+      "high": {
+        "label": "高（10）",
+        "description": "为复杂对话提供更长的历史上下文。"
+      },
+      "max": {
+        "label": "最大（100）",
+        "description": "最大上下文长度，不推荐，可能增加成本并降低速度。"
+      }
+    },
+    "maxToolCallStepsOptions": {
+      "low": {
+        "label": "低（25）",
+        "description": "将工具调用限制为 25 次，适合不需要太多步骤的简单任务。"
+      },
+      "medium": {
+        "label": "中（50）",
+        "description": "适合常规直接任务的中等限制。"
+      },
+      "default": {
+        "label": "默认（{{count}}）",
+        "description": "适用于大多数任务的平衡限制。"
+      },
+      "high": {
+        "label": "高（200）",
+        "description": "适合复杂多步骤任务的更高限制，但可能增加时间和成本。"
+      }
+    },
+    "contextCompactionDescription": "自动压缩超长对话，以保持在上下文限制内。原始消息仍会保存在应用数据目录中。"
   },
   "telemetry": {
     "title": "遥测",
@@ -91,13 +193,20 @@
     "telemetryId": "遥测 ID：",
     "enable": "启用遥测",
     "privacyNotice": "我们使用匿名遥测数据来改进产品。不会收集个人数据。",
-    "acceptAndContinue": "接受并继续"
+    "acceptAndContinue": "接受并继续",
+    "shareAnonymousData": "要分享匿名数据吗？",
+    "helpImprove": "通过匿名使用数据帮助改进 Dyad。",
+    "noCodeOrMessages": "注意：这不会记录你的代码或消息内容。",
+    "learnMore": "了解更多",
+    "accept": "接受",
+    "reject": "拒绝",
+    "later": "稍后"
   },
   "integrations": {
     "title": "集成"
   },
   "agentPermissions": {
-    "title": "Agent 权限 (Pro)",
+    "title": "Agent 权限",
     "description": "配置 Agent 内置工具的权限。",
     "defaultAllowedTools": "默认允许的工具 ({{count}})",
     "ask": "询问",
@@ -121,7 +230,7 @@
     "environmentVariables": "环境变量",
     "key": "键",
     "keyPlaceholder": "例如 PATH",
-    "value": "值",
+    "value": "ֵ",
     "valuePlaceholder": "例如 /usr/local/bin",
     "addEnvVar": "添加环境变量",
     "noEnvVars": "未配置环境变量",
@@ -135,7 +244,13 @@
   "experiments": {
     "title": "实验性功能",
     "enableNativeGit": "启用原生 Git",
-    "enableNativeGitDescription": "无需任何外部 Git 安装，提供更快的原生 Git 性能体验。"
+    "enableNativeGitDescription": "无需任何外部 Git 安装，提供更快的原生 Git 性能体验。",
+    "blockUnsafeNpmPackages": "拦截不安全的 npm 包",
+    "blockUnsafeNpmPackagesDescription": "使用 socket.dev 检测不安全的 npm 包并阻止安装。",
+    "enableMcpServersForBuildMode": "为 Build 模式启用 MCP 服务器",
+    "enableMcpServersForBuildModeDescription": "允许在 Build 模式中使用 MCP 服务器。注意：Agent 模式始终启用 MCP 服务器。",
+    "enableSelectAppFromHomeChatInput": "在首页聊天输入框中启用应用选择",
+    "enableSelectAppFromHomeChatInputDescription": "在首页聊天输入框中显示应用选择器，以便引用现有应用开始聊天。"
   },
   "dangerZone": {
     "title": "危险区域",
@@ -207,11 +322,11 @@
     "deleteConfirmTitle": "确定要删除此模型吗？",
     "deleteConfirmDescription": "此操作无法撤销。这将永久删除自定义模型「{{name}}」（API 名称：{{apiName}}）。",
     "yesDeleteIt": "是的，删除它",
-    "contextTokens": "上下文：{{count}} 令牌",
-    "maxOutputTokens": "最大输出：{{count}} 令牌",
+    "contextTokens": "上下文：{{count}} Token",
+    "maxOutputTokens": "最大输出：{{count}} Token",
     "modelIdRequired": "模型 API 名称为必填项",
     "modelNameRequired": "模型显示名称为必填项",
-    "invalidMaxOutput": "最大输出令牌数必须是有效数字",
+    "invalidMaxOutput": "最大输出 Token 数必须是有效数字",
     "invalidContextWindow": "上下文窗口必须是有效数字",
     "addModelTitle": "添加自定义模型",
     "addModelDescription": "为所选提供商配置新的语言模型。",
@@ -223,7 +338,7 @@
     "modelNameHelp": "模型的友好显示名称",
     "modelDescription": "描述",
     "modelDescriptionHelp": "可选：描述模型的功能",
-    "maxOutputTokensLabel": "最大输出令牌数",
+    "maxOutputTokensLabel": "最大输出 Token 数",
     "maxOutputTokensHelp": "可选：例如 4096",
     "contextWindowLabel": "上下文窗口",
     "contextWindowHelp": "可选：例如 8192",
@@ -256,5 +371,25 @@
     "failedCreate": "创建自定义提供商失败"
   },
   "manageDyadPro": "管理 Dyad Pro 订阅",
-  "setupDyadPro": "设置 Dyad Pro 订阅"
+  "setupDyadPro": "设置 Dyad Pro 订阅",
+  "page": {
+    "backButton": "返回",
+    "searchPlaceholder": "搜索设置...",
+    "searchLabel": "搜索设置",
+    "clearSearch": "清除搜索",
+    "noSettingsFound": "未找到设置项"
+  },
+  "sidebar": {
+    "title": "设置",
+    "general": "通用",
+    "workflow": "工作流",
+    "ai": "AI",
+    "providers": "模型提供商",
+    "telemetry": "遥测",
+    "integrations": "集成",
+    "agentPermissions": "Agent 权限",
+    "toolsMcp": "工具（MCP）",
+    "experiments": "实验功能",
+    "dangerZone": "危险区域"
+  }
 }

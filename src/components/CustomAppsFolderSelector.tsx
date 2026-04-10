@@ -4,36 +4,37 @@ import { Button } from "@/components/ui/button";
 import { showError, showSuccess } from "@/lib/toast";
 import { ipc } from "@/ipc/types";
 import { FolderOpen, RotateCcw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function CustomAppsFolderSelector() {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const [isSelectingPath, setIsSelectingPath] = useState(false);
-  const [customAppsFolder, setCustomAppsFolder] =
-    useState<string>("Loading...");
+  const [customAppsFolder, setCustomAppsFolder] = useState<string>(
+    tc("loading"),
+  );
   const [isPathAvailable, setIsPathAvailable] = useState(true);
   const [isPathDefault, setIsPathDefault] = useState(true);
 
   useEffect(() => {
-    // Fetch path on mount
     fetchCustomAppsFolder();
   }, []);
 
   const handleSelectCustomAppsFolder = async () => {
     setIsSelectingPath(true);
     try {
-      // Call the IPC method to select folder
       const result = await ipc.system.selectCustomAppsFolder();
       if (result.path) {
-        // Save the custom path to settings
         await ipc.system.setCustomAppsFolder(result.path);
         await fetchCustomAppsFolder();
-        showSuccess("Custom apps folder updated successfully");
+        showSuccess(t("general.customAppsFolderUpdated"));
       } else if (result.path === null && result.canceled === false) {
-        showError(
-          "Unable to use selected folder. Please ensure it is a valid directory with write permissions.",
-        );
+        showError(t("general.customAppsFolderInvalid"));
       }
     } catch (error: any) {
-      showError(`Failed to set custom apps folder: ${error.message}`);
+      showError(
+        t("general.customAppsFolderSetFailed", { error: error.message }),
+      );
     } finally {
       setIsSelectingPath(false);
     }
@@ -41,13 +42,13 @@ export function CustomAppsFolderSelector() {
 
   const handleResetToDefault = async () => {
     try {
-      // Clear the custom path
       await ipc.system.setCustomAppsFolder(null);
-      // Update UI to show default directory
       await fetchCustomAppsFolder();
-      showSuccess("Dyad apps folder reset successfully");
+      showSuccess(t("general.customAppsFolderReset"));
     } catch (error: any) {
-      showError(`Failed to reset Dyad Apps folder path: ${error.message}`);
+      showError(
+        t("general.customAppsFolderResetFailed", { error: error.message }),
+      );
     }
   };
 
@@ -59,7 +60,9 @@ export function CustomAppsFolderSelector() {
       setIsPathAvailable(isPathAvailable);
       setIsPathDefault(isPathDefault);
     } catch (error: any) {
-      showError(`Failed to fetch Dyad apps folder path: ${error.message}`);
+      showError(
+        t("general.customAppsFolderFetchFailed", { error: error.message }),
+      );
     }
   };
 
@@ -67,7 +70,9 @@ export function CustomAppsFolderSelector() {
     <div className="space-y-4">
       <div className="space-y-2">
         <div className="flex gap-2">
-          <Label className="text-sm font-medium">Customize Apps Folder</Label>
+          <Label className="text-sm font-medium">
+            {t("general.customAppsFolder")}
+          </Label>
 
           <Button
             onClick={handleSelectCustomAppsFolder}
@@ -78,7 +83,9 @@ export function CustomAppsFolderSelector() {
             data-testid="customize-apps-folder-button"
           >
             <FolderOpen className="w-4 h-4" />
-            {isSelectingPath ? "Selecting..." : "Select A Folder"}
+            {isSelectingPath
+              ? t("general.selecting")
+              : t("general.selectFolder")}
           </Button>
 
           {!isPathDefault && (
@@ -89,7 +96,7 @@ export function CustomAppsFolderSelector() {
               className="flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
-              Reset to Default
+              {t("general.resetToDefault")}
             </Button>
           )}
         </div>
@@ -98,7 +105,9 @@ export function CustomAppsFolderSelector() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                  {isPathDefault ? "Default Folder:" : "Custom Folder:"}
+                  {isPathDefault
+                    ? t("general.defaultFolder")
+                    : t("general.customFolder")}
                 </span>
               </div>
               <p
@@ -110,12 +119,11 @@ export function CustomAppsFolderSelector() {
           </div>
         </div>
 
-        {/* Help Text */}
         <div className="text-sm text-gray-500 dark:text-gray-400">
           <p>
             {isPathAvailable
-              ? "This is the top-level folder that Dyad will store new applications in."
-              : "Your apps folder is inaccessible. Make sure that the folder exists and has write permissions, or change it."}
+              ? t("general.customAppsFolderDescription")
+              : t("general.customAppsFolderUnavailable")}
           </p>
         </div>
       </div>

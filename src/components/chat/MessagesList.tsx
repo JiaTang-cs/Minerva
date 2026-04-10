@@ -19,6 +19,7 @@ import { chatMessagesByIdAtom } from "@/atoms/chatAtoms";
 import { useLanguageModelProviders } from "@/hooks/useLanguageModelProviders";
 import { useSettings } from "@/hooks/useSettings";
 import { isCancelledResponseContent } from "@/shared/chatCancellation";
+import { useTranslation } from "react-i18next";
 
 interface MessagesListProps {
   messages: Message[];
@@ -50,6 +51,8 @@ interface FooterContext {
 
 // Footer component for Virtuoso - receives context via props
 function FooterComponent({ context }: { context?: FooterContext }) {
+  const { t } = useTranslation("chat");
+  const { t: tc } = useTranslation("common");
   const submittedChatIds = useAtomValue(questionnaireSubmittedChatIdsAtom);
   if (!context) return null;
 
@@ -116,13 +119,11 @@ function FooterComponent({ context }: { context?: FooterContext }) {
                         return next;
                       });
                     } else {
-                      showWarning(
-                        "No source commit hash found for message. Need to manually undo code changes",
-                      );
+                      showWarning(t("undoMissingSourceCommit"));
                     }
                   } catch (error) {
                     console.error("Error during undo operation:", error);
-                    showError("Failed to undo changes");
+                    showError(t("failedUndoChanges"));
                   } finally {
                     setIsUndoLoading(false);
                   }
@@ -133,7 +134,7 @@ function FooterComponent({ context }: { context?: FooterContext }) {
                 ) : (
                   <Undo size={16} />
                 )}
-                Undo
+                {t("undo")}
               </Button>
             )}
           {!!messages.length && (
@@ -179,9 +180,7 @@ function FooterComponent({ context }: { context?: FooterContext }) {
                           versionId: chat.initialCommitHash,
                         });
                       } else {
-                        showWarning(
-                          "No initial commit hash found for chat. Need to manually undo code changes",
-                        );
+                        showWarning(t("retryMissingInitialCommit"));
                       }
                     }
                   }
@@ -205,7 +204,7 @@ function FooterComponent({ context }: { context?: FooterContext }) {
                   });
                 } catch (error) {
                   console.error("Error during retry operation:", error);
-                  showError("Failed to retry message");
+                  showError(t("failedRetryMessage"));
                 } finally {
                   setIsRetryLoading(false);
                 }
@@ -216,7 +215,7 @@ function FooterComponent({ context }: { context?: FooterContext }) {
               ) : (
                 <RefreshCw size={16} />
               )}
-              Retry
+              {tc("retry")}
             </Button>
           )}
         </div>
@@ -229,7 +228,7 @@ function FooterComponent({ context }: { context?: FooterContext }) {
           <div className="max-w-3xl w-full mx-auto">
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground py-2">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              Answers submitted
+              {t("answersSubmitted")}
             </div>
           </div>
         </div>
@@ -243,6 +242,7 @@ function FooterComponent({ context }: { context?: FooterContext }) {
 export const MessagesList = forwardRef<HTMLDivElement, MessagesListProps>(
   function MessagesList({ messages, messagesEndRef, onAtBottomChange }, ref) {
     const appId = useAtomValue(selectedAppIdAtom);
+    const { t } = useTranslation("chat");
     const { versions, revertVersion } = useVersions(appId);
     const { streamMessage, isStreaming } = useStreamChat();
     const { isAnyProviderSetup, isProviderSetup } = useLanguageModelProviders();
@@ -381,7 +381,7 @@ export const MessagesList = forwardRef<HTMLDivElement, MessagesListProps>(
         >
           <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto">
             <div className="flex flex-1 items-center justify-center text-gray-500">
-              No messages yet
+              {t("noMessagesYet")}
             </div>
           </div>
         </div>

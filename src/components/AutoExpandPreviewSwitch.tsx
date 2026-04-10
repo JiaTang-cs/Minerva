@@ -1,8 +1,10 @@
 import { useSettings } from "@/hooks/useSettings";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 
 export function AutoExpandPreviewSwitch() {
+  const { t } = useTranslation("settings");
   const { settings, updateSettings } = useSettings();
   const isEnabled = settings?.autoExpandPreviewPanel;
 
@@ -10,7 +12,7 @@ export function AutoExpandPreviewSwitch() {
     <div className="flex items-center space-x-2">
       <Switch
         id="auto-expand-preview"
-        aria-label="Auto-expand preview panel"
+        aria-label={t("workflow.autoExpandPreview")}
         checked={isEnabled}
         onCheckedChange={(checked) => {
           updateSettings({
@@ -18,7 +20,9 @@ export function AutoExpandPreviewSwitch() {
           });
         }}
       />
-      <Label htmlFor="auto-expand-preview">Auto-expand preview panel</Label>
+      <Label htmlFor="auto-expand-preview">
+        {t("workflow.autoExpandPreview")}
+      </Label>
     </div>
   );
 }

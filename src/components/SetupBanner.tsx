@@ -157,11 +157,7 @@ export function SetupBanner() {
   }
 
   if (itemsNeedAction.length === 0) {
-    return (
-      <h1 className="text-center text-5xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 tracking-tight">
-        {t("setup.buildNewApp")}
-      </h1>
-    );
+    return null;
   }
 
   const bannerClasses = cn(

@@ -30,7 +30,41 @@
     "systemPath": "System PATH:",
     "notFound": "Not found",
     "nodeConfigured": "Node.js is properly configured and ready to use.",
-    "nodeSelectFolder": "Select the folder where Node.js is installed if it's not in your system PATH."
+    "nodeSelectFolder": "Select the folder where Node.js is installed if it's not in your system PATH.",
+    "customAppsFolder": "Customize Apps Folder",
+    "selectFolder": "Select a Folder",
+    "customFolder": "Custom Folder:",
+    "defaultFolder": "Default Folder:",
+    "customAppsFolderDescription": "This is the top-level folder that Dyad will store new applications in.",
+    "customAppsFolderUnavailable": "Your apps folder is inaccessible. Make sure that the folder exists and has write permissions, or change it.",
+    "customAppsFolderUpdated": "Custom apps folder updated successfully",
+    "customAppsFolderInvalid": "Unable to use selected folder. Please ensure it is a valid directory with write permissions.",
+    "customAppsFolderReset": "Dyad apps folder reset successfully",
+    "customAppsFolderFetchFailed": "Failed to fetch Dyad apps folder path: {{error}}",
+    "customAppsFolderSetFailed": "Failed to set custom apps folder: {{error}}",
+    "customAppsFolderResetFailed": "Failed to reset Dyad Apps folder path: {{error}}",
+    "autoUpdateToastTitle": "Auto-update settings changed",
+    "restartRequiredDescription": "You will need to restart Dyad for your settings to take effect.",
+    "restartDyad": "Restart Dyad",
+    "stableChannelToastTitle": "Using Stable release channel",
+    "stableChannelToastDescription": "You will stay on your current version until a newer stable release is available, or you can manually downgrade now.",
+    "downloadStable": "Download Stable",
+    "betaChannelToastTitle": "Using Beta release channel",
+    "hostRuntime": "Local (default)",
+    "dockerRuntime": "Docker (experimental)",
+    "runtimeModeUpdateFailed": "Failed to update runtime mode: {{error}}",
+    "dockerWarningPrefix": "Docker mode is",
+    "dockerWarningExperimental": "experimental",
+    "dockerWarningSuffix": "and requires {{dockerDesktop}} to be installed and running",
+    "dockerDesktop": "Docker Desktop",
+    "systemPathUnavailable": "System PATH (not available)",
+    "nodePathUpdated": "Node.js path updated successfully",
+    "nodePathNotFoundAt": "Could not find Node.js at the path \"{{path}}\"",
+    "nodePathSetFailed": "Failed to set Node.js path: {{error}}",
+    "nodePathReset": "Reset to system Node.js path",
+    "nodePathResetFailed": "Failed to reset Node.js path: {{error}}",
+    "dockerWarningBeforeLink": "requires",
+    "dockerWarningAfterLink": "to be installed and running"
   },
   "workflow": {
     "title": "Workflow Settings",
@@ -40,7 +74,16 @@
     "autoApprove": "Auto-approve changes",
     "autoApproveDescription": "This will automatically approve code changes and run them.",
     "autoFixProblems": "Auto-fix problems",
-    "autoFixProblemsDescription": "This will automatically fix TypeScript errors."
+    "autoFixProblemsDescription": "This will automatically fix TypeScript errors.",
+    "notifications": "Enable notifications",
+    "agentDescription": "Better at bigger tasks",
+    "buildDescription": "Generate and edit code",
+    "planDescription": "Design before you build",
+    "autoApproveDisableHint": "You can disable auto-approve in Settings.",
+    "autoFixDisableHint": "You can disable Auto-fix problems in the Settings page.",
+    "autoExpandPreviewDescription": "Automatically expand the preview panel when code changes are made.",
+    "chatEventNotificationDescription": "Show native notifications when a chat response completes or a questionnaire needs your input while the app is not focused.",
+    "autoExpandPreview": "Auto-expand preview panel"
   },
   "ai": {
     "title": "AI Settings",
@@ -53,6 +96,7 @@
     "maxChatTurns": "Max Chat Turns in Context",
     "maxChatTurnsDescription": "Limits how many recent chat turns are included in context.",
     "selectMaxChatTurns": "Select max turns",
+    "contextCompaction": "Context compaction",
     "maxToolCallSteps": "Max Tool Calls (Agent)",
     "maxToolCallStepsDescription": "Limits how many tool calls the agent can make before pausing.",
     "selectMaxToolCallSteps": "Select max tool calls",
@@ -86,7 +130,62 @@
     "apiKeyEmpty": "API Key cannot be empty.",
     "errorTogglingPro": "Error toggling Dyad Pro: {{error}}",
     "failedSaveApiKey": "Failed to save API key.",
-    "failedDeleteApiKey": "Failed to delete API key."
+    "failedDeleteApiKey": "Failed to delete API key.",
+    "thinkingBudgetOptions": {
+      "low": {
+        "label": "Low",
+        "description": "Minimal thinking tokens for faster responses and lower costs."
+      },
+      "medium": {
+        "label": "Medium (default)",
+        "description": "Balanced thinking for most conversations."
+      },
+      "high": {
+        "label": "High",
+        "description": "Extended thinking for complex problems requiring deep analysis."
+      }
+    },
+    "maxChatTurnsOptions": {
+      "economy": {
+        "label": "Economy (2)",
+        "description": "Minimal context to reduce token usage and improve response times."
+      },
+      "default": {
+        "label": "Default ({{count}})",
+        "description": "Balanced context size for most conversations."
+      },
+      "plus": {
+        "label": "Plus (5)",
+        "description": "Slightly higher context size for detailed conversations."
+      },
+      "high": {
+        "label": "High (10)",
+        "description": "Extended context for complex conversations requiring more history."
+      },
+      "max": {
+        "label": "Max (100)",
+        "description": "Maximum context (not recommended due to cost and speed)."
+      }
+    },
+    "maxToolCallStepsOptions": {
+      "low": {
+        "label": "Low (25)",
+        "description": "Limits tool calls to 25. Good for simple tasks that don't need many steps."
+      },
+      "medium": {
+        "label": "Medium (50)",
+        "description": "Moderate limit for straightforward tasks."
+      },
+      "default": {
+        "label": "Default ({{count}})",
+        "description": "Balanced limit for most tasks."
+      },
+      "high": {
+        "label": "High (200)",
+        "description": "Extended limit for complex multi-step tasks (may increase cost and time)."
+      }
+    },
+    "contextCompactionDescription": "Automatically compact long conversations to stay within context limits. Original messages are preserved in the app data directory."
   },
   "telemetry": {
     "title": "Telemetry",
@@ -107,7 +206,7 @@
     "title": "Integrations"
   },
   "agentPermissions": {
-    "title": "Agent Permissions (Pro)",
+    "title": "Agent Permissions",
     "description": "Configure permissions for Agent built-in tools.",
     "defaultAllowedTools": "Default allowed tools ({{count}})",
     "ask": "Ask",
@@ -145,7 +244,13 @@
   "experiments": {
     "title": "Experiments",
     "enableNativeGit": "Enable Native Git",
-    "enableNativeGitDescription": "This doesn't require any external Git installation and offers a faster, native-Git performance experience."
+    "enableNativeGitDescription": "This doesn't require any external Git installation and offers a faster, native-Git performance experience.",
+    "blockUnsafeNpmPackages": "Block unsafe npm packages",
+    "blockUnsafeNpmPackagesDescription": "Use socket.dev to detect unsafe packages and block them.",
+    "enableMcpServersForBuildMode": "Enable MCP servers for Build mode",
+    "enableMcpServersForBuildModeDescription": "Allow MCP servers to be used in Build mode. Note: MCP servers are always enabled in Agent mode.",
+    "enableSelectAppFromHomeChatInput": "Enable Select App from Home Chat Input",
+    "enableSelectAppFromHomeChatInputDescription": "Show an app selector in the home chat input to start a chat referencing an existing app."
   },
   "dangerZone": {
     "title": "Danger Zone",
@@ -266,5 +371,25 @@
     "failedCreate": "Failed to create custom provider"
   },
   "manageDyadPro": "Manage Dyad Pro Subscription",
-  "setupDyadPro": "Setup Dyad Pro Subscription"
+  "setupDyadPro": "Setup Dyad Pro Subscription",
+  "page": {
+    "backButton": "Go Back",
+    "searchPlaceholder": "Search settings...",
+    "searchLabel": "Search settings",
+    "clearSearch": "Clear search",
+    "noSettingsFound": "No settings found"
+  },
+  "sidebar": {
+    "title": "Settings",
+    "general": "General",
+    "workflow": "Workflow",
+    "ai": "AI",
+    "providers": "Model Providers",
+    "telemetry": "Telemetry",
+    "integrations": "Integrations",
+    "agentPermissions": "Agent Permissions",
+    "toolsMcp": "Tools (MCP)",
+    "experiments": "Experiments",
+    "dangerZone": "Danger Zone"
+  }
 }

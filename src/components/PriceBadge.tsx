@@ -1,13 +1,15 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export function PriceBadge({
   dollarSigns,
 }: {
   dollarSigns: number | undefined;
 }) {
+  const { t } = useTranslation("common");
   if (dollarSigns === undefined || dollarSigns === null) return null;
 
-  const label = dollarSigns === 0 ? "Free" : "$".repeat(dollarSigns);
+  const label = dollarSigns === 0 ? t("free") : "$".repeat(dollarSigns);
 
   const className =
     dollarSigns === 0

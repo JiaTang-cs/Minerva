@@ -36,6 +36,7 @@ export function ZoomSelector() {
       ? (value as ZoomLevel)
       : DEFAULT_ZOOM_LEVEL;
   }, [settings?.zoomLevel]);
+  const currentLabel = ZOOM_LEVEL_LABELS[currentZoomLevel];
 
   return (
     <div className="space-y-2">
@@ -52,7 +53,7 @@ export function ZoomSelector() {
         }
       >
         <SelectTrigger id="zoom-level" className="w-[220px]">
-          <SelectValue placeholder={t("general.selectZoom")} />
+          <SelectValue placeholder={currentLabel}>{currentLabel}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {Object.entries(ZOOM_LEVEL_LABELS).map(([value, label]) => (

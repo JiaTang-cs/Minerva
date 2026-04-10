@@ -29,6 +29,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 export const TitleBar = () => {
+  const { t: tc } = useTranslation("common");
   const [selectedAppId] = useAtom(selectedAppIdAtom);
   const selectedChatId = useAtomValue(selectedChatIdAtom);
   const { apps } = useLoadApps();
@@ -38,8 +39,8 @@ export const TitleBar = () => {
 
   const selectedApp = apps.find((app) => app.id === selectedAppId);
   const displayText = selectedApp
-    ? `App: ${selectedApp.name}`
-    : "(no app selected)";
+    ? `${tc("titleBar.appPrefix")}: ${selectedApp.name}`
+    : tc("titleBar.noAppSelected");
 
   const handleAppClick = () => {
     if (selectedApp) {
@@ -69,7 +70,7 @@ export const TitleBar = () => {
           {displayText}
         </TooltipTrigger>
         <TooltipContent>
-          {selectedApp ? selectedApp.name : "No app selected"}
+          {selectedApp ? selectedApp.name : tc("titleBar.noAppSelectedTooltip")}
         </TooltipContent>
       </Tooltip>
 
@@ -85,6 +86,7 @@ export const TitleBar = () => {
 };
 
 function WindowsControls() {
+  const { t } = useTranslation("common");
   const { isDarkMode } = useTheme();
 
   return (
@@ -92,7 +94,7 @@ function WindowsControls() {
       <button
         className="w-10 h-10 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         onClick={() => ipc.system.minimizeWindow()}
-        aria-label="Minimize"
+        aria-label={t("titleBar.minimize")}
       >
         <svg
           width="12"
@@ -111,7 +113,7 @@ function WindowsControls() {
       <button
         className="w-10 h-10 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         onClick={() => ipc.system.maximizeWindow()}
-        aria-label="Maximize"
+        aria-label={t("titleBar.maximize")}
       >
         <svg
           width="12"
@@ -132,7 +134,7 @@ function WindowsControls() {
       <button
         className="w-10 h-10 flex items-center justify-center hover:bg-red-500 transition-colors"
         onClick={() => ipc.system.closeWindow()}
-        aria-label="Close"
+        aria-label={t("close")}
       >
         <svg
           width="12"
@@ -154,6 +156,7 @@ function WindowsControls() {
 
 function TitleBarActions() {
   const { t } = useTranslation("home");
+  const { t: tc } = useTranslation("common");
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { restartApp, refreshAppIframe } = useRunApp();
 
@@ -166,10 +169,14 @@ function TitleBarActions() {
       mutationFn: () => ipc.system.clearSessionData(),
       onSuccess: async () => {
         await refreshAppIframe();
-        showSuccess("Preview data cleared");
+        showSuccess(tc("titleBar.previewDataCleared"));
       },
       onError: (error) => {
-        showError(`Error clearing preview data: ${error}`);
+        showError(
+          tc("titleBar.errorClearingPreviewData", {
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
       },
     });
   };

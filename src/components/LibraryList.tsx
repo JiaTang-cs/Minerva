@@ -2,6 +2,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, Palette, FileText, Image } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type LibrarySection = {
   id: string;
@@ -18,8 +19,15 @@ const LIBRARY_SECTIONS: LibrarySection[] = [
 ];
 
 export function LibraryList({ show }: { show: boolean }) {
+  const { t } = useTranslation("common");
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
+  const sections = [
+    { ...LIBRARY_SECTIONS[0], label: t("libraryNav.all") },
+    { ...LIBRARY_SECTIONS[1], label: t("libraryNav.themes") },
+    { ...LIBRARY_SECTIONS[2], label: t("libraryNav.prompts") },
+    { ...LIBRARY_SECTIONS[3], label: t("libraryNav.media") },
+  ];
 
   if (!show) {
     return null;
@@ -28,11 +36,13 @@ export function LibraryList({ show }: { show: boolean }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0 p-4">
-        <h2 className="text-lg font-semibold tracking-tight">Library</h2>
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t("libraryNav.title")}
+        </h2>
       </div>
       <ScrollArea className="flex-grow">
         <div className="space-y-1 p-4 pt-0">
-          {LIBRARY_SECTIONS.map((section) => {
+          {sections.map((section) => {
             const fullLocation = pathname + routerState.location.searchStr;
             const isActive =
               section.to === fullLocation ||

@@ -3,10 +3,7 @@ import { z } from "zod";
 import { ToolDefinition, AgentContext, escapeXmlAttr } from "./types";
 import { safeJoin } from "@/ipc/utils/path_utils";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
-import {
-  detectLineEndings,
-  normalizeLineEndings,
-} from "./file_content_utils";
+import { detectLineEndings, normalizeLineEndings } from "./file_content_utils";
 
 const readFile = fs.promises.readFile;
 

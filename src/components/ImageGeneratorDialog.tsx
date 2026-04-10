@@ -47,10 +47,13 @@ export function ImageGeneratorDialog({
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <ImageIcon className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold">Image generation unavailable</h3>
+            <h3 className="text-lg font-semibold">
+              Image generation unavailable
+            </h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              This cloud-backed feature has been removed from the normal app flow
-              for now. Local image upload and theme generation remain available.
+              This cloud-backed feature has been removed from the normal app
+              flow for now. Local image upload and theme generation remain
+              available.
             </p>
           </div>
         </div>

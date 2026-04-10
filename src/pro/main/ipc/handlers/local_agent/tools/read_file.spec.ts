@@ -351,7 +351,10 @@ line 5`;
         "line 1\r\nline 2\r\nline 3\r\n",
       );
 
-      const result = await readFileTool.execute({ path: "crlf.txt" }, mockContext);
+      const result = await readFileTool.execute(
+        { path: "crlf.txt" },
+        mockContext,
+      );
 
       expect(result).toBe("line 1\nline 2\nline 3\n");
       expect(mockContext.readFileState["crlf.txt"]).toEqual({

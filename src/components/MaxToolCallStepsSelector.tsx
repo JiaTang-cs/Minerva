@@ -18,34 +18,33 @@ interface OptionInfo {
 
 const defaultValue = "default";
 
-const options: OptionInfo[] = [
-  {
-    value: "25",
-    label: "Low (25)",
-    description:
-      "Limits tool calls to 25. Good for simple tasks that don't need many steps.",
-  },
-  {
-    value: "50",
-    label: "Medium (50)",
-    description: "Moderate limit for straightforward tasks.",
-  },
-  {
-    value: defaultValue,
-    label: `Default (${DEFAULT_MAX_TOOL_CALL_STEPS})`,
-    description: "Balanced limit for most tasks.",
-  },
-  {
-    value: "200",
-    label: "High (200)",
-    description:
-      "Extended limit for complex multi-step tasks (may increase cost and time).",
-  },
-];
-
 export const MaxToolCallStepsSelector: React.FC = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation("settings");
+  const options: OptionInfo[] = [
+    {
+      value: "25",
+      label: t("ai.maxToolCallStepsOptions.low.label"),
+      description: t("ai.maxToolCallStepsOptions.low.description"),
+    },
+    {
+      value: "50",
+      label: t("ai.maxToolCallStepsOptions.medium.label"),
+      description: t("ai.maxToolCallStepsOptions.medium.description"),
+    },
+    {
+      value: defaultValue,
+      label: t("ai.maxToolCallStepsOptions.default.label", {
+        count: DEFAULT_MAX_TOOL_CALL_STEPS,
+      }),
+      description: t("ai.maxToolCallStepsOptions.default.description"),
+    },
+    {
+      value: "200",
+      label: t("ai.maxToolCallStepsOptions.high.label"),
+      description: t("ai.maxToolCallStepsOptions.high.description"),
+    },
+  ];
 
   const handleValueChange = (value: string) => {
     if (value === "default") {
@@ -83,7 +82,9 @@ export const MaxToolCallStepsSelector: React.FC = () => {
           onValueChange={(v) => v && handleValueChange(v)}
         >
           <SelectTrigger className="w-[180px]" id="max-tool-call-steps">
-            <SelectValue placeholder={t("ai.selectMaxToolCallSteps")} />
+            <SelectValue placeholder={currentOption.label}>
+              {currentOption.label}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {options.map((option) => (

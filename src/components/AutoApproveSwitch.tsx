@@ -20,7 +20,7 @@ export function AutoApproveSwitch({
         onCheckedChange={() => {
           updateSettings({ autoApproveChanges: !settings?.autoApproveChanges });
           if (!settings?.autoApproveChanges && showToast) {
-            showInfo("You can disable auto-approve in the Settings.");
+            showInfo(t("workflow.autoApproveDisableHint"));
           }
         }}
       />

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 export function NodePathSelector() {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const [isSelectingPath, setIsSelectingPath] = useState(false);
   const [nodeStatus, setNodeStatus] = useState<{
     version: string | null;
@@ -19,7 +20,7 @@ export function NodePathSelector() {
     isValid: false,
   });
   const [isCheckingNode, setIsCheckingNode] = useState(false);
-  const [systemPath, setSystemPath] = useState<string>("Loading...");
+  const [systemPath, setSystemPath] = useState<string>(tc("loading"));
 
   // Check Node.js status when component mounts or path changes
   useEffect(() => {
@@ -29,10 +30,10 @@ export function NodePathSelector() {
   const fetchSystemPath = async () => {
     try {
       const debugInfo = await ipc.system.getSystemDebugInfo();
-      setSystemPath(debugInfo.nodePath || "System PATH (not available)");
+      setSystemPath(debugInfo.nodePath || t("general.systemPathUnavailable"));
     } catch (err) {
       console.error("Failed to fetch system path:", err);
-      setSystemPath("System PATH (not available)");
+      setSystemPath(t("general.systemPathUnavailable"));
     }
   };
 
@@ -69,14 +70,14 @@ export function NodePathSelector() {
         await ipc.system.reloadEnvPath();
         // Recheck Node.js status
         await checkNodeStatus();
-        showSuccess("Node.js path updated successfully");
+        showSuccess(t("general.nodePathUpdated"));
       } else if (result.path === null && result.canceled === false) {
         showError(
-          `Could not find Node.js at the path "${result.selectedPath}"`,
+          t("general.nodePathNotFoundAt", { path: result.selectedPath }),
         );
       }
     } catch (error: any) {
-      showError(`Failed to set Node.js path: ${error.message}`);
+      showError(t("general.nodePathSetFailed", { error: error.message }));
     } finally {
       setIsSelectingPath(false);
     }
@@ -90,9 +91,9 @@ export function NodePathSelector() {
       // Recheck Node.js status
       await fetchSystemPath();
       await checkNodeStatus();
-      showSuccess("Reset to system Node.js path");
+      showSuccess(t("general.nodePathReset"));
     } catch (error: any) {
-      showError(`Failed to reset Node.js path: ${error.message}`);
+      showError(t("general.nodePathResetFailed", { error: error.message }));
     }
   };
 
@@ -143,7 +144,7 @@ export function NodePathSelector() {
                 </span>
                 {isCustomPath && (
                   <span className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
-                    Custom
+                    {tc("custom")}
                   </span>
                 )}
               </div>

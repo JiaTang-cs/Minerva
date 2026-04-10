@@ -39,6 +39,25 @@ import { NEON_TEMPLATE_IDS } from "@/shared/templates";
 import { neonTemplateHook } from "@/client_logic/template_hook";
 import { getEffectiveDefaultChatMode } from "@/lib/schemas";
 
+const INSPIRATION_PROMPT_LABEL_KEYS: Record<string, string> = {
+  "TODO list app": "inspiration.todoListApp",
+  "Landing Page": "inspiration.landingPage",
+  "Sign Up Form": "inspiration.signUpForm",
+  "Mood Journal & Tracker": "inspiration.moodJournalTracker",
+  "Interactive Story Game": "inspiration.interactiveStoryGame",
+  "Recipe Finder & Meal Planner": "inspiration.recipeFinderMealPlanner",
+  "Personal Finance Dashboard": "inspiration.personalFinanceDashboard",
+  "Travel Memory Map": "inspiration.travelMemoryMap",
+  "AI Writing Assistant": "inspiration.aiWritingAssistant",
+  "Habit Streak Tracker": "inspiration.habitStreakTracker",
+  "Newsletter Creator": "inspiration.newsletterCreator",
+  "Music Discovery App": "inspiration.musicDiscoveryApp",
+  "3D Portfolio Viewer": "inspiration.portfolio3dViewer",
+  "AI Image Generator": "inspiration.aiImageGenerator",
+  "Pomodoro Focus Timer": "inspiration.pomodoroFocusTimer",
+  "Virtual Avatar Builder": "inspiration.virtualAvatarBuilder",
+};
+
 // Track whether we've already checked release notes this session (module-scoped
 // so it persists across component unmount/remount cycles).
 let hasCheckedReleaseNotes = false;
@@ -139,6 +158,14 @@ export default function HomePage() {
   useEffect(() => {
     setRandomPrompts(getRandomPrompts());
   }, [getRandomPrompts]);
+
+  const getInspirationLabel = useCallback(
+    (label: string) => {
+      const key = INSPIRATION_PROMPT_LABEL_KEYS[label];
+      return key ? t(key as any) : label;
+    },
+    [t],
+  );
 
   // Redirect to app details page if appId is present
   useEffect(() => {
@@ -267,78 +294,88 @@ export default function HomePage() {
 
   // Main Home Page Content
   return (
-    <div className="flex flex-col items-center justify-center max-w-3xl w-full m-auto p-8 relative">
+    <div className="relative flex h-full w-full overflow-y-auto">
       <ForceCloseDialog
         isOpen={forceCloseDialogOpen}
         onClose={() => setForceCloseDialogOpen(false)}
         performanceData={performanceData}
       />
-      <SetupBanner />
+      <div className="flex min-h-full w-full flex-col items-center px-8 py-10">
+        <div className="w-full max-w-3xl">
+          <SetupBanner />
 
-      <div className="w-full">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <ImportAppButton className="px-0 pb-0 flex-none" />
-        </div>
-        <HomeChatInput onSubmit={handleSubmit} />
+          <div className="w-full">
+            <h1 className="mb-8 text-center text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
+              {t("setup.buildNewApp")}
+            </h1>
 
-        <div className="flex flex-col gap-4 mt-2">
-          <div className="flex flex-wrap gap-4 justify-center">
-            {randomPrompts.map((item, index) => (
-              <button
-                type="button"
-                key={index}
-                onClick={() =>
-                  setInputValue(t("buildMeA", { label: item.label }))
-                }
-                className="flex items-center gap-3 px-4 py-2 rounded-xl border border-gray-200
+            <div className="mb-4 flex items-center justify-center gap-4">
+              <ImportAppButton className="flex-none px-0 pb-0" />
+            </div>
+            <HomeChatInput onSubmit={handleSubmit} />
+
+            <div className="mt-2 flex flex-col gap-4">
+              <div className="flex flex-wrap justify-center gap-4">
+                {randomPrompts.map((item, index) => (
+                  <button
+                    type="button"
+                    key={index}
+                    onClick={() =>
+                      setInputValue(
+                        t("buildMeA", { label: getInspirationLabel(item.label) }),
+                      )
+                    }
+                    className="flex items-center gap-3 px-4 py-2 rounded-xl border border-gray-200
                            bg-white/50 backdrop-blur-sm
                            transition-all duration-200
                            hover:bg-white hover:shadow-md hover:border-gray-300
                            active:scale-[0.98]
                            dark:bg-gray-800/50 dark:border-gray-700
                            dark:hover:bg-gray-800 dark:hover:border-gray-600"
-              >
-                <span className="text-gray-700 dark:text-gray-300">
-                  {item.icon}
-                </span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {item.label}
-                </span>
-              </button>
-            ))}
-          </div>
+                  >
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {item.icon}
+                    </span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {getInspirationLabel(item.label)}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-          <button
-            type="button"
-            onClick={() => setRandomPrompts(getRandomPrompts())}
-            className="self-center flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200
+              <button
+                type="button"
+                onClick={() => setRandomPrompts(getRandomPrompts())}
+                className="self-center flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200
                        bg-white/50 backdrop-blur-sm
                        transition-all duration-200
                        hover:bg-white hover:shadow-md hover:border-gray-300
                        active:scale-[0.98]
                        dark:bg-gray-800/50 dark:border-gray-700
                        dark:hover:bg-gray-800 dark:hover:border-gray-600"
-          >
-            <svg
-              className="w-5 h-5 text-gray-700 dark:text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t("moreIdeas")}
-            </span>
-          </button>
+              >
+                <svg
+                  className="w-5 h-5 text-gray-700 dark:text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t("moreIdeas")}
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
+        <PrivacyBanner />
       </div>
-      <PrivacyBanner />
 
       {/* Release Notes Dialog */}
       <Dialog open={releaseNotesOpen} onOpenChange={setReleaseNotesOpen}>

@@ -18,6 +18,7 @@ import {
   Ban,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { enUS, ptBR, zhCN } from "date-fns/locale";
 import { useVersions } from "@/hooks/useVersions";
 import { useAtomValue } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
@@ -33,6 +34,7 @@ import {
   isCancelledResponseContent,
   stripCancelledResponseNotice,
 } from "@/shared/chatCancellation";
+import { useTranslation } from "react-i18next";
 
 /** Extract <dyad-attachment> tags from message content and return parsed attachment data. */
 function extractAttachments(content: string): {
@@ -89,6 +91,8 @@ const ChatMessage = ({
   isLastMessage,
   isCancelledPrompt,
 }: ChatMessageProps) => {
+  const { t, i18n } = useTranslation("chat");
+  const { t: tc } = useTranslation("common");
   const { isStreaming } = useStreamChat();
   const appId = useAtomValue(selectedAppIdAtom);
   const { versions: liveVersions } = useVersions(appId);
@@ -138,10 +142,16 @@ const ChatMessage = ({
   const formatTimestamp = (timestamp: string | Date) => {
     const now = new Date();
     const messageTime = new Date(timestamp);
+    const locale =
+      i18n.language === "zh-CN"
+        ? zhCN
+        : i18n.language === "pt-BR"
+          ? ptBR
+          : enUS;
     const diffInHours =
       (now.getTime() - messageTime.getTime()) / (1000 * 60 * 60);
     if (diffInHours < 24) {
-      return formatDistanceToNow(messageTime, { addSuffix: true });
+      return formatDistanceToNow(messageTime, { addSuffix: true, locale });
     } else {
       return format(messageTime, "MMM d, yyyy 'at' h:mm a");
     }
@@ -180,7 +190,7 @@ const ChatMessage = ({
               !hasAssistantText &&
               isCancelled ? (
               <div className="prose dark:prose-invert max-w-none text-[15px] italic text-muted-foreground">
-                Response cancelled before any content was generated.
+                {t("responseCancelledBeforeContent")}
               </div>
             ) : (
               <div
@@ -212,7 +222,7 @@ const ChatMessage = ({
                         <button
                           data-testid="copy-message-button"
                           onClick={handleCopyFormatted}
-                          aria-label="Copy"
+                          aria-label={t("copy")}
                           className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors duration-200 cursor-pointer"
                         />
                       }
@@ -225,7 +235,7 @@ const ChatMessage = ({
                       <span className="hidden sm:inline"></span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {copied ? "Copied!" : "Copy"}
+                      {copied ? tc("copied") : t("copy")}
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -235,12 +245,12 @@ const ChatMessage = ({
                       {message.approvalState === "approved" ? (
                         <>
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>Approved</span>
+                          <span>{t("approved")}</span>
                         </>
                       ) : message.approvalState === "rejected" ? (
                         <>
                           <XCircle className="h-4 w-4 text-red-500" />
-                          <span>Rejected</span>
+                          <span>{t("rejected")}</span>
                         </>
                       ) : null}
                     </div>
@@ -323,7 +333,7 @@ const ChatMessage = ({
                             // noop
                           });
                       }}
-                      aria-label="Copy Request ID"
+                      aria-label={t("copyRequestId")}
                       className="flex items-center space-x-1 px-1 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors duration-200 cursor-pointer"
                     />
                   }
@@ -334,20 +344,22 @@ const ChatMessage = ({
                     <Copy className="h-3 w-3" />
                   )}
                   <span className="text-xs">
-                    {copiedRequestId ? "Copied" : "Request ID"}
+                    {copiedRequestId ? tc("copied") : t("requestId")}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   {copiedRequestId
-                    ? "Copied!"
-                    : `Copy Request ID: ${message.requestId.slice(0, 8)}...`}
+                    ? tc("copied")
+                    : `${t("copyRequestId")}: ${message.requestId.slice(0, 8)}...`}
                 </TooltipContent>
               </Tooltip>
             )}
             {isLastMessage && message.totalTokens && (
               <div
                 className="flex items-center space-x-1 px-1 py-0.5"
-                title={`Max tokens used: ${message.totalTokens.toLocaleString()}`}
+                title={t("maxTokensUsed", {
+                  count: message.totalTokens,
+                })}
               >
                 <Info className="h-3 w-3" />
               </div>
@@ -357,7 +369,7 @@ const ChatMessage = ({
         {isCancelled && (
           <div className="mt-1 flex items-center justify-end gap-1 text-xs text-gray-500 dark:text-gray-400">
             <Ban className="h-3 w-3" />
-            <span>Cancelled</span>
+            <span>{t("cancelled")}</span>
           </div>
         )}
       </div>

@@ -20,25 +20,28 @@ export function ReleaseChannelSelector() {
     return null;
   }
 
+  const currentLabel =
+    settings.releaseChannel === "beta"
+      ? t("general.beta")
+      : t("general.stable");
+
   const handleReleaseChannelChange = (value: ReleaseChannel) => {
     updateSettings({ releaseChannel: value });
     if (value === "stable") {
-      toast("Using Stable release channel", {
-        description:
-          "You'll stay on your current version until a newer stable release is available, or you can manually downgrade now.",
+      toast(t("general.stableChannelToastTitle"), {
+        description: t("general.stableChannelToastDescription"),
         action: {
-          label: "Download Stable",
+          label: t("general.downloadStable"),
           onClick: () => {
             ipc.system.openExternalUrl("https://dyad.sh/download");
           },
         },
       });
     } else {
-      toast("Using Beta release channel", {
-        description:
-          "You will need to restart Dyad for your settings to take effect.",
+      toast(t("general.betaChannelToastTitle"), {
+        description: t("general.restartRequiredDescription"),
         action: {
-          label: "Restart Dyad",
+          label: t("general.restartDyad"),
           onClick: () => {
             ipc.system.restartDyad();
           },
@@ -61,7 +64,7 @@ export function ReleaseChannelSelector() {
           onValueChange={(v) => v && handleReleaseChannelChange(v)}
         >
           <SelectTrigger className="w-32" id="release-channel">
-            <SelectValue />
+            <SelectValue placeholder={currentLabel}>{currentLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="stable">{t("general.stable")}</SelectItem>

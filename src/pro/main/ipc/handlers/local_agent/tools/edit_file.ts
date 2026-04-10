@@ -302,7 +302,10 @@ export const editFileTool: ToolDefinition<z.infer<typeof editFileSchema>> = {
 
     const matches = currentContent.split(actualOldString).length - 1;
     if (matches === 0) {
-      throw new DyadError(`old_string was not found in ${args.path}`, DyadErrorKind.Validation);
+      throw new DyadError(
+        `old_string was not found in ${args.path}`,
+        DyadErrorKind.Validation,
+      );
     }
 
     if (matches > 1 && !args.replace_all) {

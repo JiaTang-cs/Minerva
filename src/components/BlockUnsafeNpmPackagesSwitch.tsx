@@ -1,8 +1,10 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSettings } from "@/hooks/useSettings";
+import { useTranslation } from "react-i18next";
 
 export function BlockUnsafeNpmPackagesSwitch() {
+  const { t } = useTranslation("settings");
   const { settings, updateSettings } = useSettings();
 
   return (
@@ -10,7 +12,7 @@ export function BlockUnsafeNpmPackagesSwitch() {
       <div className="flex items-center space-x-2">
         <Switch
           id="block-unsafe-npm-packages"
-          aria-label="Block unsafe npm packages"
+          aria-label={t("experiments.blockUnsafeNpmPackages")}
           checked={settings?.blockUnsafeNpmPackages ?? true}
           onCheckedChange={(checked) => {
             updateSettings({
@@ -19,11 +21,11 @@ export function BlockUnsafeNpmPackagesSwitch() {
           }}
         />
         <Label htmlFor="block-unsafe-npm-packages">
-          Block unsafe npm packages
+          {t("experiments.blockUnsafeNpmPackages")}
         </Label>
       </div>
       <div className="text-sm text-gray-500 dark:text-gray-400">
-        Uses socket.dev to detect unsafe packages and blocks them
+        {t("experiments.blockUnsafeNpmPackagesDescription")}
       </div>
     </div>
   );

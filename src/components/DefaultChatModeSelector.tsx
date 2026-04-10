@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 export function DefaultChatModeSelector() {
   const { settings, updateSettings, envVars } = useSettings();
   const { t } = useTranslation("settings");
+  const { t: tChat } = useTranslation("chat");
 
   if (!settings) {
     return null;
@@ -27,13 +28,13 @@ export function DefaultChatModeSelector() {
   const getModeDisplayName = (mode: ChatMode) => {
     switch (mode) {
       case "build":
-        return "Build";
+        return tChat("chatMode.build");
       case "local-agent":
-        return "Agent";
+        return tChat("chatMode.agent");
       case "ask":
-        return "Ask";
+        return tChat("chatMode.ask");
       case "plan":
-        return "Plan";
+        return tChat("chatMode.plan");
       default:
         throw new Error(`Unknown chat mode: ${mode}`);
     }
@@ -53,22 +54,22 @@ export function DefaultChatModeSelector() {
           onValueChange={(v) => v && handleDefaultChatModeChange(v)}
         >
           <SelectTrigger className="w-40" id="default-chat-mode">
-            <SelectValue>{getModeDisplayName(effectiveDefault)}</SelectValue>
+            <SelectValue placeholder={getModeDisplayName(effectiveDefault)} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="local-agent">
               <div className="flex flex-col items-start">
-                <span className="font-medium">Agent</span>
+                <span className="font-medium">{tChat("chatMode.agent")}</span>
                 <span className="text-xs text-muted-foreground">
-                  Better at bigger tasks
+                  {t("workflow.agentDescription")}
                 </span>
               </div>
             </SelectItem>
             <SelectItem value="build">
               <div className="flex flex-col items-start">
-                <span className="font-medium">Build</span>
+                <span className="font-medium">{tChat("chatMode.build")}</span>
                 <span className="text-xs text-muted-foreground">
-                  Generate and edit code
+                  {t("workflow.buildDescription")}
                 </span>
               </div>
             </SelectItem>

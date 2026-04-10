@@ -20,8 +20,11 @@ import {
 import { useSettings } from "@/hooks/useSettings";
 import { useContextPaths } from "@/hooks/useContextPaths";
 import type { ContextPathResult } from "@/lib/schemas";
+import { useTranslation } from "react-i18next";
 
 export function ContextFilesPicker() {
+  const { t } = useTranslation("chat");
+  const { t: tc } = useTranslation("common");
   const { settings } = useSettings();
   const {
     contextPaths,
@@ -125,7 +128,7 @@ export function ContextFilesPicker() {
         data-testid="codebase-context-trigger"
       >
         <Settings2 className="size-4 mr-2" />
-        Codebase context
+        {t("codebaseContext")}
       </DialogTrigger>
 
       <DialogContent
@@ -133,10 +136,10 @@ export function ContextFilesPicker() {
         onKeyDown={(e) => e.stopPropagation()}
       >
         <DialogHeader>
-          <DialogTitle>Codebase Context</DialogTitle>
+          <DialogTitle>{t("codebaseContext")}</DialogTitle>
           <DialogDescription>
             <span className="flex items-center gap-1">
-              Select the files to use as context.{" "}
+              {t("codebaseContextDescription")}{" "}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger className="cursor-help">
@@ -144,12 +147,9 @@ export function ContextFilesPicker() {
                   </TooltipTrigger>
                   <TooltipContent className="max-w-[300px]">
                     {isSmartContextEnabled ? (
-                      <p>
-                        With Smart Context, Dyad uses the most relevant files as
-                        context.
-                      </p>
+                      <p>{t("smartContextExplanation")}</p>
                     ) : (
-                      <p>By default, Dyad uses your whole codebase.</p>
+                      <p>{t("wholeCodebaseDefault")}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>
@@ -176,7 +176,7 @@ export function ContextFilesPicker() {
               onClick={addPath}
               data-testid="manual-context-files-add-button"
             >
-              Add
+              {tc("add")}
             </Button>
           </div>
 
@@ -218,8 +218,8 @@ export function ContextFilesPicker() {
               <div className="rounded-md border border-dashed p-4 text-center">
                 <p className="text-sm text-muted-foreground">
                   {isSmartContextEnabled
-                    ? "Dyad will use Smart Context to automatically find the most relevant files to use as context."
-                    : "Dyad will use the entire codebase as context."}
+                    ? t("smartContextAutoFind")
+                    : t("wholeCodebaseAsContext")}
                 </p>
               </div>
             )}
@@ -227,20 +227,17 @@ export function ContextFilesPicker() {
 
           <div className="pt-2">
             <div>
-              <h3 className="font-medium">Exclude Paths</h3>
+              <h3 className="font-medium">{t("excludePaths")}</h3>
               <p className="text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  These files will be excluded from the context.{" "}
+                  {t("excludePathsDescription")}{" "}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger className="cursor-help">
                         <InfoIcon className="size-4" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[300px]">
-                        <p>
-                          Exclude paths take precedence - files that match both
-                          include and exclude patterns will be excluded.
-                        </p>
+                        <p>{t("excludePathsHelp")}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -266,7 +263,7 @@ export function ContextFilesPicker() {
                 onClick={addExcludePath}
                 data-testid="exclude-context-files-add-button"
               >
-                Add
+                {tc("add")}
               </Button>
             </div>
 
@@ -311,21 +308,17 @@ export function ContextFilesPicker() {
           {isSmartContextEnabled && (
             <div className="pt-2">
               <div>
-                <h3 className="font-medium">Smart Context Auto-includes</h3>
+                <h3 className="font-medium">{t("smartContextAutoIncludes")}</h3>
                 <p className="text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    These files will always be included in the context.{" "}
+                    {t("smartContextAutoIncludesDescription")}{" "}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger className="cursor-help">
                           <InfoIcon className="size-4" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-[300px]">
-                          <p>
-                            Auto-include files are always included in the
-                            context in addition to the files selected as
-                            relevant by Smart Context.
-                          </p>
+                          <p>{t("smartContextAutoIncludesHelp")}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -351,7 +344,7 @@ export function ContextFilesPicker() {
                   onClick={addAutoIncludePath}
                   data-testid="auto-include-context-files-add-button"
                 >
-                  Add
+                  {tc("add")}
                 </Button>
               </div>
 

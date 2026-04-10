@@ -19,13 +19,16 @@ export function RuntimeModeSelector() {
     return null;
   }
 
-  const isDockerMode = settings?.runtimeMode2 === "docker";
+  const isDockerMode = settings.runtimeMode2 === "docker";
+  const currentLabel = isDockerMode
+    ? t("general.dockerRuntime")
+    : t("general.hostRuntime");
 
   const handleRuntimeModeChange = async (value: "host" | "docker") => {
     try {
       await updateSettings({ runtimeMode2: value });
     } catch (error: any) {
-      showError(`Failed to update runtime mode: ${error.message}`);
+      showError(t("general.runtimeModeUpdateFailed", { error: error.message }));
     }
   };
 
@@ -41,11 +44,15 @@ export function RuntimeModeSelector() {
             onValueChange={(v) => v && handleRuntimeModeChange(v)}
           >
             <SelectTrigger className="w-48" id="runtime-mode">
-              <SelectValue />
+              <SelectValue placeholder={currentLabel}>
+                {currentLabel}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="host">Local (default)</SelectItem>
-              <SelectItem value="docker">Docker (experimental)</SelectItem>
+              <SelectItem value="host">{t("general.hostRuntime")}</SelectItem>
+              <SelectItem value="docker">
+                {t("general.dockerRuntime")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -55,7 +62,9 @@ export function RuntimeModeSelector() {
       </div>
       {isDockerMode && (
         <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
-          ⚠️ Docker mode is <b>experimental</b> and requires{" "}
+          Docker mode {t("general.dockerWarningPrefix")}{" "}
+          <b>{t("general.dockerWarningExperimental")}</b>{" "}
+          {t("general.dockerWarningBeforeLink")}{" "}
           <button
             type="button"
             className="underline font-medium cursor-pointer"
@@ -65,9 +74,9 @@ export function RuntimeModeSelector() {
               )
             }
           >
-            Docker Desktop
+            {t("general.dockerDesktop")}
           </button>{" "}
-          to be installed and running
+          {t("general.dockerWarningAfterLink")}
         </div>
       )}
     </div>

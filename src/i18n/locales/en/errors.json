@@ -6,5 +6,6 @@
   "failedToLoad": "Failed to load: {{error}}",
   "networkError": "A network error occurred. Please check your connection.",
   "copyError": "Copy error message",
-  "errorOccurred": "An error occurred"
+  "errorOccurred": "An error occurred",
+  "failedToUpload": "Failed to upload. Please try again."
 }

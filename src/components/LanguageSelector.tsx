@@ -13,21 +13,10 @@ import {
 
 const DEFAULT_LANGUAGE: Language = "en";
 
-/**
- * Language labels shown in their native script so users can always
- * find their language regardless of the current UI language.
- * Only languages with completed translations are listed here.
- */
 const LANGUAGE_OPTIONS: { value: Language; nativeLabel: string }[] = [
   { value: "en", nativeLabel: "English" },
   { value: "zh-CN", nativeLabel: "简体中文" },
   { value: "pt-BR", nativeLabel: "Português (Brasil)" },
-  // Additional languages will be added as translations are completed:
-  // { value: "ja", nativeLabel: "日本語" },
-  // { value: "ko", nativeLabel: "한국어" },
-  // { value: "es", nativeLabel: "Español" },
-  // { value: "fr", nativeLabel: "Français" },
-  // { value: "de", nativeLabel: "Deutsch" },
 ];
 
 export function LanguageSelector() {
@@ -39,15 +28,16 @@ export function LanguageSelector() {
     return parsed.success ? parsed.data : DEFAULT_LANGUAGE;
   }, [settings?.language]);
 
+  const currentLanguageLabel =
+    LANGUAGE_OPTIONS.find((lang) => lang.value === currentLanguage)
+      ?.nativeLabel ?? currentLanguage;
+
   const handleChange = async (value: Language | null) => {
     if (!value) return;
     try {
       await updateSettings({ language: value });
-      // Language change is handled by the useEffect in layout.tsx
-      // after settings are successfully persisted
     } catch (error) {
       console.error("Failed to update language setting:", error);
-      // Settings update failed, so no language change will occur
     }
   };
 
@@ -61,7 +51,9 @@ export function LanguageSelector() {
       </div>
       <Select value={currentLanguage} onValueChange={handleChange}>
         <SelectTrigger id="language" className="w-[220px]">
-          <SelectValue placeholder="Select language" />
+          <SelectValue placeholder={currentLanguageLabel}>
+            {currentLanguageLabel}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {LANGUAGE_OPTIONS.map((lang) => (

@@ -2,8 +2,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { MacNotificationGuideDialog } from "./MacNotificationGuideDialog";
 import { useEnableNotifications } from "@/hooks/useEnableNotifications";
+import { useTranslation } from "react-i18next";
 
 export function ChatEventNotificationSwitch() {
+  const { t } = useTranslation("settings");
   const { isEnabled, enable, disable, showMacGuide, setShowMacGuide } =
     useEnableNotifications();
 
@@ -21,7 +23,9 @@ export function ChatEventNotificationSwitch() {
             }
           }}
         />
-        <Label htmlFor="chat-event-notifications">Enable notifications</Label>
+        <Label htmlFor="chat-event-notifications">
+          {t("workflow.notifications")}
+        </Label>
       </div>
       <MacNotificationGuideDialog
         open={showMacGuide}

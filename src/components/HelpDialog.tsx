@@ -36,6 +36,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { BugScreenshotDialog } from "./BugScreenshotDialog";
 import { type UserSettings } from "@/lib/schemas";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 // =============================================================================
 // Animation constants
@@ -175,6 +176,7 @@ function ReviewDetailsSection({
 
 /** Copy button with animated feedback. */
 function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation("home");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -196,7 +198,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       onClick={handleCopy}
       className="shrink-0 p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-      aria-label="Copy session ID"
+      aria-label={t("help.copySessionId")}
     >
       <AnimatePresence mode="wait" initial={false}>
         {copied ? (
@@ -235,6 +237,9 @@ interface HelpDialogProps {
 }
 
 export function HelpDialog({ isOpen, onClose }: HelpDialogProps) {
+  const { t } = useTranslation("home");
+  const { t: tc } = useTranslation("common");
+  const { t: te } = useTranslation("errors");
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [screen, setScreen] = useState<DialogScreen>("main");
@@ -316,7 +321,7 @@ ${formatLogsSection(debugInfo)}
 
   const handleUploadChatSession = async () => {
     if (!selectedChatId) {
-      alert("Please select a chat first");
+      alert(t("help.openChatFirst"));
       return;
     }
     setIsUploading(true);
@@ -326,9 +331,7 @@ ${formatLogsSection(debugInfo)}
       navigateTo("review");
     } catch (error) {
       console.error("Failed to upload chat session:", error);
-      alert(
-        "Failed to upload chat session. Please try again or report manually.",
-      );
+      alert(te("failedToUpload"));
     } finally {
       setIsUploading(false);
     }
@@ -363,7 +366,7 @@ ${formatLogsSection(debugInfo)}
       navigateTo("upload-complete");
     } catch (error) {
       console.error("Failed to upload chat logs:", error);
-      alert("Failed to upload chat logs. Please try again.");
+      alert(te("failedToUpload"));
     } finally {
       setIsUploading(false);
     }
@@ -426,11 +429,9 @@ ${formatLogsSection(debugInfo)}
       skipInitial={!hasNavigated.current}
     >
       <DialogHeader>
-        <DialogTitle>Need help with Dyad?</DialogTitle>
+        <DialogTitle>{t("help.needHelp")}</DialogTitle>
       </DialogHeader>
-      <DialogDescription>
-        If you need help or want to report an issue, here are some options:
-      </DialogDescription>
+      <DialogDescription>{t("help.helpOptions")}</DialogDescription>
       <div className="flex flex-col w-full mt-4 space-y-5">
         {/* Self-service help */}
         <Button
@@ -438,21 +439,21 @@ ${formatLogsSection(debugInfo)}
           onClick={() => ipc.system.openExternalUrl("https://www.dyad.sh/docs")}
           className="w-full py-6 bg-(--background-lightest)"
         >
-          <BookOpenIcon className="mr-2 h-5 w-5" /> Open Docs
+          <BookOpenIcon className="mr-2 h-5 w-5" /> {t("help.openDocs")}
         </Button>
         <Button
           variant="default"
           onClick={() => setIsHelpBotOpen(true)}
           className="w-full py-6 border-primary/50 shadow-sm shadow-primary/10 transition-all hover:shadow-md hover:shadow-primary/15"
         >
-          <SparklesIcon className="mr-2 h-5 w-5" /> Chat with Dyad help bot
+          <SparklesIcon className="mr-2 h-5 w-5" /> {t("help.chatWithHelpBot")}
         </Button>
 
         {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Report an issue
+            {t("help.reportAnIssue")}
           </span>
           <div className="h-px flex-1 bg-border" />
         </div>
@@ -463,11 +464,12 @@ ${formatLogsSection(debugInfo)}
           <div className="border rounded-lg p-4 space-y-3 relative">
             <div className="flex items-center gap-2">
               <MessageSquareIcon className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold">AI issues</span>
+              <span className="text-sm font-semibold">
+                {t("help.aiIssues")}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Best for AI quality issues. Uploads your chat session and code for
-              the team to reproduce and fix the problem.
+              {t("help.aiIssuesDescription")}
             </p>
             <Button
               variant="outline"
@@ -476,12 +478,14 @@ ${formatLogsSection(debugInfo)}
               className="w-full bg-(--background-lightest)"
             >
               <UploadIcon className="mr-2 h-4 w-4" />{" "}
-              {isUploading ? "Preparing Upload..." : "Upload Chat Session"}
+              {isUploading
+                ? t("help.preparingUpload")
+                : t("help.uploadChatSession")}
             </Button>
             {!selectedChatId && (
               <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 <AlertCircleIcon className="h-3 w-3 shrink-0" />
-                Open a chat first to upload a session.
+                {t("help.openChatFirst")}
               </p>
             )}
           </div>
@@ -490,11 +494,12 @@ ${formatLogsSection(debugInfo)}
           <div className="border rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-2">
               <BugIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold">Non-AI issues</span>
+              <span className="text-sm font-semibold">
+                {t("help.nonAiIssues")}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Includes error logs to troubleshoot non-AI issues with Dyad (UI
-              bugs, crashes, setup problems, etc.).
+              {t("help.nonAiIssuesDescription")}
             </p>
             <Button
               variant="outline"
@@ -506,7 +511,7 @@ ${formatLogsSection(debugInfo)}
               className="w-full bg-(--background-lightest)"
             >
               <BugIcon className="mr-2 h-4 w-4" />{" "}
-              {isLoading ? "Preparing Report..." : "Report a Bug"}
+              {isLoading ? t("help.preparingReport") : t("help.reportBug")}
             </Button>
           </div>
         </div>
@@ -530,52 +535,65 @@ ${formatLogsSection(debugInfo)}
             >
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
-            OK to upload chat session?
+            {t("help.okToUpload")}
           </DialogTitle>
         </DialogHeader>
-        <DialogDescription>
-          Please review the information that will be submitted. Your chat
-          messages, system information, and a snapshot of your codebase will be
-          included.
-        </DialogDescription>
+        <DialogDescription>{t("help.reviewSubmission")}</DialogDescription>
 
         <div className="space-y-2 overflow-y-auto flex-grow mt-4">
-          <ReviewDetailsSection title="Chat Messages" mono={false}>
+          <ReviewDetailsSection title={t("help.chatMessages")} mono={false}>
             {debugBundle.chat.messages.map((msg) => (
               <div key={msg.id} className="mb-2">
                 <span className="font-semibold">
-                  {msg.role === "user" ? "You" : "Assistant"}:{" "}
+                  {msg.role === "user" ? t("help.you") : t("help.assistant")}
+                  :{" "}
                 </span>
                 <span>{msg.content}</span>
               </div>
             ))}
           </ReviewDetailsSection>
 
-          <ReviewDetailsSection title="Codebase Snapshot">
+          <ReviewDetailsSection title={t("help.codebaseSnapshot")}>
             {debugBundle.codebase}
           </ReviewDetailsSection>
 
-          <ReviewDetailsSection title="Logs">
+          <ReviewDetailsSection title={t("help.logs")}>
             {debugBundle.logs}
           </ReviewDetailsSection>
 
-          <ReviewDetailsSection title="System Information" mono={false}>
-            <p>Dyad Version: {debugBundle.system.dyadVersion}</p>
-            <p>Platform: {debugBundle.system.platform}</p>
-            <p>Architecture: {debugBundle.system.architecture}</p>
+          <ReviewDetailsSection
+            title={t("help.systemInformation")}
+            mono={false}
+          >
             <p>
-              Node Version: {debugBundle.system.nodeVersion || "Not available"}
+              {t("help.dyadVersion")} {debugBundle.system.dyadVersion}
+            </p>
+            <p>
+              {t("help.platform")} {debugBundle.system.platform}
+            </p>
+            <p>
+              {t("help.architecture")} {debugBundle.system.architecture}
+            </p>
+            <p>
+              {t("help.nodeVersion")}{" "}
+              {debugBundle.system.nodeVersion || t("help.notAvailable")}
             </p>
           </ReviewDetailsSection>
 
-          <ReviewDetailsSection title="Settings" data={debugBundle.settings} />
-          <ReviewDetailsSection title="App Metadata" data={debugBundle.app} />
           <ReviewDetailsSection
-            title="Custom Providers & Models"
+            title={t("help.settingsSection")}
+            data={debugBundle.settings}
+          />
+          <ReviewDetailsSection
+            title={t("help.appMetadata")}
+            data={debugBundle.app}
+          />
+          <ReviewDetailsSection
+            title={t("help.customProvidersAndModels")}
             data={debugBundle.providers}
           />
           <ReviewDetailsSection
-            title="MCP Servers"
+            title={t("help.mcpServers")}
             data={debugBundle.mcpServers}
           />
         </div>
@@ -586,7 +604,7 @@ ${formatLogsSection(debugInfo)}
             onClick={handleCancelReview}
             className="flex items-center"
           >
-            <XIcon className="mr-2 h-4 w-4" /> Cancel
+            <XIcon className="mr-2 h-4 w-4" /> {tc("cancel")}
           </Button>
           <Button
             onClick={handleSubmitChatLogs}
@@ -594,10 +612,10 @@ ${formatLogsSection(debugInfo)}
             disabled={isUploading}
           >
             {isUploading ? (
-              "Uploading..."
+              tc("uploading")
             ) : (
               <>
-                <CheckIcon className="mr-2 h-4 w-4" /> Upload
+                <CheckIcon className="mr-2 h-4 w-4" /> {t("help.upload")}
               </>
             )}
           </Button>
@@ -608,12 +626,14 @@ ${formatLogsSection(debugInfo)}
   const renderUploadCompleteScreen = () => (
     <AnimatedScreen screenKey="upload-complete" direction={direction}>
       <DialogHeader>
-        <DialogTitle>Upload Complete</DialogTitle>
+        <DialogTitle>{t("help.uploadComplete")}</DialogTitle>
       </DialogHeader>
 
       <div className="flex items-center gap-2.5 mt-3">
         <CheckIcon className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
-        <span className="text-base font-medium">Chat session uploaded</span>
+        <span className="text-base font-medium">
+          {t("help.chatSessionUploaded")}
+        </span>
       </div>
 
       <div className="bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-md flex items-center gap-2 font-mono text-sm mt-2">
@@ -627,15 +647,14 @@ ${formatLogsSection(debugInfo)}
         size="lg"
       >
         <ExternalLinkIcon className="mr-2 h-5 w-5" />
-        Create GitHub Issue
+        {t("help.openGithubIssue")}
       </Button>
 
       <div className="border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 mt-3">
         <div className="flex items-start gap-2">
           <AlertCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-700 dark:text-amber-400/80">
-            Your upload will not be reviewed without a linked GitHub issue. The
-            issue will be pre-filled with your session ID and system info.
+            {t("help.linkIssueRequired")}
           </p>
         </div>
       </div>

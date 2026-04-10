@@ -28,12 +28,9 @@ vi.mock("../../../../../../supabase_admin/supabase_utils", () => ({
   isSharedServerModule: vi.fn(() => false),
 }));
 
-vi.mock(
-  "../../../../../../supabase_admin/supabase_management_client",
-  () => ({
-    deploySupabaseFunction: vi.fn(),
-  }),
-);
+vi.mock("../../../../../../supabase_admin/supabase_management_client", () => ({
+  deploySupabaseFunction: vi.fn(),
+}));
 
 describe("editFileTool", () => {
   const createContext = (): AgentContext => ({
@@ -76,8 +73,12 @@ describe("editFileTool", () => {
 
     vi.mocked(fs.readFile).mockResolvedValue(originalContent);
     vi.mocked(fs.stat)
-      .mockResolvedValueOnce({ mtimeMs: 100 } as Awaited<ReturnType<typeof fs.stat>>)
-      .mockResolvedValueOnce({ mtimeMs: 101 } as Awaited<ReturnType<typeof fs.stat>>);
+      .mockResolvedValueOnce({ mtimeMs: 100 } as Awaited<
+        ReturnType<typeof fs.stat>
+      >)
+      .mockResolvedValueOnce({ mtimeMs: 101 } as Awaited<
+        ReturnType<typeof fs.stat>
+      >);
 
     await editFileTool.execute(
       {
@@ -96,7 +97,7 @@ describe("editFileTool", () => {
 
   it("matches straight quotes against curly quotes and preserves quote style", async () => {
     const context = createContext();
-    const originalContent = 'const label = “Play”;';
+    const originalContent = "const label = “Play”;";
     context.readFileState["src/hooks/useTetris.ts"] = {
       content: originalContent,
       modifiedTimeMs: 100,
@@ -104,8 +105,12 @@ describe("editFileTool", () => {
 
     vi.mocked(fs.readFile).mockResolvedValue(originalContent);
     vi.mocked(fs.stat)
-      .mockResolvedValueOnce({ mtimeMs: 100 } as Awaited<ReturnType<typeof fs.stat>>)
-      .mockResolvedValueOnce({ mtimeMs: 101 } as Awaited<ReturnType<typeof fs.stat>>);
+      .mockResolvedValueOnce({ mtimeMs: 100 } as Awaited<
+        ReturnType<typeof fs.stat>
+      >)
+      .mockResolvedValueOnce({ mtimeMs: 101 } as Awaited<
+        ReturnType<typeof fs.stat>
+      >);
 
     await editFileTool.execute(
       {
