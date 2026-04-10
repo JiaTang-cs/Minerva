@@ -8,6 +8,7 @@ import { OpenRouterSetupBanner, SetupBanner } from "../SetupBanner";
 import { useStreamChat } from "@/hooks/useStreamChat";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
 import { questionnaireSubmittedChatIdsAtom } from "@/atoms/planAtoms";
+import { askUserQuestionSubmittedChatIdsAtom } from "@/atoms/designAtoms";
 import { useAtomValue, useSetAtom } from "jotai";
 import { CheckCircle2, Loader2, RefreshCw, Undo } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,9 @@ function FooterComponent({ context }: { context?: FooterContext }) {
   const { t } = useTranslation("chat");
   const { t: tc } = useTranslation("common");
   const submittedChatIds = useAtomValue(questionnaireSubmittedChatIdsAtom);
+  const askUserQuestionSubmittedChatIds = useAtomValue(
+    askUserQuestionSubmittedChatIdsAtom,
+  );
   if (!context) return null;
 
   const {
@@ -76,6 +80,10 @@ function FooterComponent({ context }: { context?: FooterContext }) {
 
   const questionnaireState =
     selectedChatId != null ? submittedChatIds.get(selectedChatId) : undefined;
+  const askUserQuestionState =
+    selectedChatId != null
+      ? askUserQuestionSubmittedChatIds.get(selectedChatId)
+      : undefined;
 
   return (
     <>
@@ -229,6 +237,18 @@ function FooterComponent({ context }: { context?: FooterContext }) {
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground py-2">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               {t("answersSubmitted")}
+            </div>
+          </div>
+        </div>
+      )}
+      {askUserQuestionState && (
+        <div
+          className={`flex justify-start px-4 duration-300 ${askUserQuestionState === "fading" ? "animate-out fade-out-0 slide-out-to-bottom-2" : "animate-in fade-in-0 slide-in-from-bottom-2"}`}
+        >
+          <div className="max-w-3xl w-full mx-auto">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground py-2">
+              <CheckCircle2 className="h-4 w-4 text-amber-500" />
+              {t("askUserQuestionAnswered")}
             </div>
           </div>
         </div>

@@ -47,6 +47,7 @@
   "cancelled": "Cancelled",
   "responseCancelledBeforeContent": "Response cancelled before any content was generated.",
   "answersSubmitted": "Answers submitted",
+  "askUserQuestionAnswered": "Ask user question answered",
   "noMessagesYet": "No messages yet",
   "failedUndoChanges": "Failed to undo changes",
   "failedRetryMessage": "Failed to retry message",
@@ -180,7 +181,9 @@
     "agent": "Agent",
     "agentDescription": "Better at bigger tasks and debugging",
     "plan": "Plan",
-    "planDescription": "Design before you build"
+    "planDescription": "Design before you build",
+    "design": "Design",
+    "designDescription": "Generate and refine HTML design drafts"
   },
   "modelPicker": {
     "modelLabel": "Model:",

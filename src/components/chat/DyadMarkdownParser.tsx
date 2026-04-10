@@ -41,6 +41,8 @@ import { DyadCompaction } from "./DyadCompaction";
 import { DyadWritePlan } from "./DyadWritePlan";
 import { DyadExitPlan } from "./DyadExitPlan";
 import { DyadQuestionnaire } from "./DyadQuestionnaire";
+import { DyadAskUserQuestion } from "./DyadAskUserQuestion";
+import { DyadDesignDraft } from "./DyadDesignDraft";
 import { DyadStepLimit } from "./DyadStepLimit";
 import { mapActionToButton } from "./ChatInput";
 import { SuggestedAction } from "@/lib/schemas";
@@ -85,6 +87,8 @@ const DYAD_CUSTOM_TAGS = [
   "dyad-write-plan",
   "dyad-exit-plan",
   "dyad-questionnaire",
+  "dyad-ask-user-question",
+  "dyad-design-draft",
   // Step limit notification
   "dyad-step-limit",
 ];
@@ -821,6 +825,32 @@ function renderCustomTag(
 
     case "dyad-questionnaire":
       return <DyadQuestionnaire>{content}</DyadQuestionnaire>;
+
+    case "dyad-ask-user-question":
+      return (
+        <DyadAskUserQuestion
+          node={{
+            properties: {
+              count: attributes.count || "",
+            },
+          }}
+        >
+          {content}
+        </DyadAskUserQuestion>
+      );
+
+    case "dyad-design-draft":
+      return (
+        <DyadDesignDraft
+          node={{
+            properties: {
+              action: attributes.action || "",
+              draftId: attributes["draft-id"] || "",
+              title: attributes.title || "",
+            },
+          }}
+        />
+      );
 
     case "dyad-step-limit":
       return (

@@ -67,6 +67,7 @@ import { ChatErrorBox } from "./ChatErrorBox";
 import { AgentConsentBanner } from "./AgentConsentBanner";
 import { TodoList } from "./TodoList";
 import { QuestionnaireInput } from "./QuestionnaireInput";
+import { AskUserQuestionInput } from "./AskUserQuestionInput";
 import { QueuedMessagesList } from "./QueuedMessagesList";
 import {
   selectedComponentsPreviewAtom,
@@ -691,8 +692,9 @@ export function ChatInput({ chatId }: { chatId?: number }) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {/* Show active questionnaire if exists */}
+          {/* Show active ask-user-question surfaces if they exist */}
           <QuestionnaireInput />
+          <AskUserQuestionInput />
 
           {/* Show todo list if there are todos for this chat */}
           {chatTodos.length > 0 && <TodoList todos={chatTodos} />}

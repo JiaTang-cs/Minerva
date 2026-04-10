@@ -47,6 +47,7 @@
   "cancelled": "已取消",
   "responseCancelledBeforeContent": "响应在生成任何内容之前已被取消。",
   "answersSubmitted": "答案已提交",
+  "askUserQuestionAnswered": "Ask user question 已回答",
   "noMessagesYet": "还没有消息",
   "failedUndoChanges": "撤销更改失败",
   "failedRetryMessage": "重试消息失败",
@@ -180,7 +181,9 @@
     "agent": "代理",
     "agentDescription": "更擅长处理大型任务和调试",
     "plan": "计划",
-    "planDescription": "先设计，再动手实现"
+    "planDescription": "先设计，再动手实现",
+    "design": "设计",
+    "designDescription": "生成并迭代 HTML 设计稿"
   },
   "modelPicker": {
     "modelLabel": "模型：",

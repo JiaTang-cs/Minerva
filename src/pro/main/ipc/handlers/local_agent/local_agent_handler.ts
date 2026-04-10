@@ -261,6 +261,7 @@ export async function handleLocalAgentStream(
     dyadRequestId,
     readOnly = false,
     planModeOnly = false,
+    designModeOnly = false,
     messageOverride,
   }: {
     placeholderMessageId: number;
@@ -276,6 +277,10 @@ export async function handleLocalAgentStream(
      * This includes read-only exploration tools and planning-specific tools.
      */
     planModeOnly?: boolean;
+    /**
+     * If true, only include design exploration tools and design-draft tools.
+     */
+    designModeOnly?: boolean;
     /**
      * If provided, use these messages instead of fetching from the database.
      * Used for summarization where messages need to be transformed.
@@ -463,7 +468,7 @@ export async function handleLocalAgentStream(
     const persistedTodos = await loadTodos(appPath, chat.id);
     // Ensure .dyad/ is gitignored (idempotent; also done by compaction/plans)
     // Skip in read-only/plan-only mode to avoid modifying the workspace
-    if (!readOnly && !planModeOnly) {
+    if (!readOnly && !planModeOnly && !designModeOnly) {
       await ensureDyadGitignored(appPath).catch((err: unknown) =>
         logger.warn("Failed to ensure .dyad gitignored:", err),
       );
@@ -551,9 +556,12 @@ export async function handleLocalAgentStream(
     const agentTools = buildAgentToolSet(ctx, {
       readOnly,
       planModeOnly,
+      designModeOnly,
     });
     const mcpTools =
-      readOnly || planModeOnly ? {} : await getMcpTools(event, ctx);
+      readOnly || planModeOnly || designModeOnly
+        ? {}
+        : await getMcpTools(event, ctx);
     const allTools: ToolSet = { ...agentTools, ...mcpTools };
 
     // Prepare message history with graceful fallback
@@ -591,6 +599,7 @@ export async function handleLocalAgentStream(
       !messageOverride &&
       !readOnly &&
       !planModeOnly &&
+      !designModeOnly &&
       persistedTodos.length > 0 &&
       hasIncompleteTodos(persistedTodos)
     ) {
@@ -1144,6 +1153,7 @@ export async function handleLocalAgentStream(
         !shouldRunTodoFollowUpPass({
           readOnly,
           planModeOnly,
+          designModeOnly,
           passEndedWithText,
           todos: ctx.todos,
           todoFollowUpLoops,
@@ -1212,8 +1222,8 @@ export async function handleLocalAgentStream(
       logger.warn("Failed to save AI messages JSON:", err);
     }
 
-    // In read-only and plan mode, skip deploys and commits
-    if (!readOnly && !planModeOnly) {
+    // In read-only, plan, and design mode, skip deploys and commits
+    if (!readOnly && !planModeOnly && !designModeOnly) {
       // Deploy all Supabase functions if shared modules changed
       await deployAllFunctionsIfNeeded(ctx);
 
@@ -1248,7 +1258,7 @@ export async function handleLocalAgentStream(
     // Send completion
     safeSend(event.sender, "chat:response:end", {
       chatId: req.chatId,
-      updatedFiles: !readOnly,
+      updatedFiles: !readOnly && !designModeOnly,
       chatSummary: ctx.chatSummary,
       warningMessages:
         warningMessages.length > 0 ? [...new Set(warningMessages)] : undefined,
@@ -1481,6 +1491,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function shouldRunTodoFollowUpPass(params: {
   readOnly: boolean;
   planModeOnly: boolean;
+  designModeOnly?: boolean;
   passEndedWithText: boolean;
   todos: AgentContext["todos"];
   todoFollowUpLoops: number;
@@ -1489,6 +1500,7 @@ function shouldRunTodoFollowUpPass(params: {
   const {
     readOnly,
     planModeOnly,
+    designModeOnly,
     passEndedWithText,
     todos,
     todoFollowUpLoops,
@@ -1497,6 +1509,7 @@ function shouldRunTodoFollowUpPass(params: {
   return (
     !readOnly &&
     !planModeOnly &&
+    !designModeOnly &&
     passEndedWithText &&
     hasIncompleteTodos(todos) &&
     todoFollowUpLoops < maxTodoFollowUpLoops

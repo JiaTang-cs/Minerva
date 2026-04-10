@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { LocalAgentNewChatToast } from "./LocalAgentNewChatToast";
 import { useAtomValue } from "jotai";
 import { chatMessagesByIdAtom } from "@/atoms/chatAtoms";
-import { Hammer, Bot, MessageCircle, Lightbulb } from "lucide-react";
+import { Hammer, Bot, MessageCircle, Lightbulb, Palette } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export function ChatModeSelector() {
@@ -79,6 +79,8 @@ export function ChatModeSelector() {
         return t("chatMode.agent");
       case "plan":
         return t("chatMode.plan");
+      case "design":
+        return t("chatMode.design");
       default:
         return t("chatMode.build");
     }
@@ -94,6 +96,8 @@ export function ChatModeSelector() {
         return <Bot size={14} />;
       case "plan":
         return <Lightbulb size={14} />;
+      case "design":
+        return <Palette size={14} />;
       default:
         return <Hammer size={14} />;
     }
@@ -118,8 +122,10 @@ export function ChatModeSelector() {
                     : selectedMode === "ask"
                       ? "bg-purple-500/10 text-purple-600 hover:bg-purple-500/15 dark:bg-purple-500/15 dark:text-purple-400 dark:hover:bg-purple-500/20"
                       : selectedMode === "plan"
-                        ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/15 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/20"
-                        : "text-foreground/80 hover:text-foreground hover:bg-muted/60",
+                      ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/15 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                      : selectedMode === "design"
+                        ? "bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                      : "text-foreground/80 hover:text-foreground hover:bg-muted/60",
                 )}
                 size="sm"
               />
@@ -147,6 +153,17 @@ export function ChatModeSelector() {
               </div>
               <span className="text-xs text-muted-foreground ml-[22px]">
                 {t("chatMode.agentDescription")}
+              </span>
+            </div>
+          </SelectItem>
+          <SelectItem value="design">
+            <div className="flex flex-col items-start">
+              <div className="flex items-center gap-1.5">
+                <Palette size={14} className="text-amber-500" />
+                <span className="font-medium">{t("chatMode.design")}</span>
+              </div>
+              <span className="text-xs text-muted-foreground ml-[22px]">
+                {t("chatMode.designDescription")}
               </span>
             </div>
           </SelectItem>

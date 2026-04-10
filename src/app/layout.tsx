@@ -16,6 +16,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { DEFAULT_ZOOM_LEVEL } from "@/lib/schemas";
 import { selectedComponentsPreviewAtom } from "@/atoms/previewAtoms";
 import { usePlanEvents } from "@/hooks/usePlanEvents";
+import { useDesignEvents } from "@/hooks/useDesignEvents";
 import { useZoomShortcuts } from "@/hooks/useZoomShortcuts";
 import { useQueueProcessor } from "@/hooks/useQueueProcessor";
 import i18n from "@/i18n";
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   // Initialize plan events listener
   usePlanEvents();
+  useDesignEvents();
 
   // Zoom keyboard shortcuts (Ctrl/Cmd + =/- /0)
   useZoomShortcuts();

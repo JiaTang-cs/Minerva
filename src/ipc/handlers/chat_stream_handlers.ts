@@ -644,7 +644,8 @@ ${componentSnippet}
         );
         const willUseLocalAgentStream =
           (settings.selectedChatMode === "local-agent" ||
-            settings.selectedChatMode === "ask") &&
+            settings.selectedChatMode === "ask" ||
+            settings.selectedChatMode === "design") &&
           !mentionedAppsCodebases.length;
 
         const isDeepContextEnabled =
@@ -811,7 +812,8 @@ ${componentSnippet}
             getSupabaseAvailableSystemPrompt(supabaseClientCode) +
             "\n\n" +
             // For local agent, we will explicitly fetch the database context when needed.
-            (settings.selectedChatMode === "local-agent"
+            (settings.selectedChatMode === "local-agent" ||
+            settings.selectedChatMode === "design"
               ? ""
               : await getSupabaseContext({
                   supabaseProjectId: updatedChat.app.supabaseProjectId,
@@ -823,6 +825,7 @@ ${componentSnippet}
           !updatedChat.app?.neonProjectId &&
           // In local agent mode, we will suggest supabase as part of the add-integration tool
           settings.selectedChatMode !== "local-agent" &&
+          settings.selectedChatMode !== "design" &&
           // If in security review mode, we don't need to mention supabase is available.
           !isSecurityReviewIntent
         ) {
@@ -1204,6 +1207,27 @@ This conversation includes one or more image attachments. When the user uploads 
             systemPrompt: planModeSystemPrompt,
             dyadRequestId: dyadRequestId ?? "[no-request-id]",
             planModeOnly: true,
+            messageOverride: isSummarizeIntent ? chatMessages : undefined,
+          });
+          return;
+        }
+
+        if (
+          settings.selectedChatMode === "design" &&
+          !mentionedAppsCodebases.length
+        ) {
+          const designModeSystemPrompt = constructSystemPrompt({
+            aiRules,
+            chatMode: "design",
+            enableTurboEditsV2: false,
+            themePrompt,
+          });
+
+          await handleLocalAgentStream(event, req, abortController, {
+            placeholderMessageId: placeholderAssistantMessage.id,
+            systemPrompt: designModeSystemPrompt,
+            dyadRequestId: dyadRequestId ?? "[no-request-id]",
+            designModeOnly: true,
             messageOverride: isSummarizeIntent ? chatMessages : undefined,
           });
           return;

@@ -53,6 +53,7 @@ export { freeAgentQuotaContracts } from "./free_agent_quota";
 export { audioContracts } from "./audio";
 export { mediaContracts } from "./media";
 export { imageGenerationContracts } from "./image_generation";
+export { designContracts, designEvents } from "./design";
 
 // =============================================================================
 // Client Exports
@@ -85,6 +86,7 @@ export { freeAgentQuotaClient } from "./free_agent_quota";
 export { audioClient } from "./audio";
 export { mediaClient } from "./media";
 export { imageGenerationClient } from "./image_generation";
+export { designClient, designEventClient } from "./design";
 
 // =============================================================================
 // Type Exports
@@ -127,6 +129,14 @@ export type {
   TokenCountParams,
   TokenCountResult,
 } from "./chat";
+export type {
+  DesignDraft,
+  AskUserQuestion,
+  AskUserQuestionPayload,
+  AskUserQuestionResponse,
+  CreateDesignDraftParams,
+  UpdateDesignDraftParams,
+} from "./design";
 
 // Agent types
 export type {
@@ -374,6 +384,7 @@ import { freeAgentQuotaClient } from "./free_agent_quota";
 import { audioClient } from "./audio";
 import { mediaClient } from "./media";
 import { imageGenerationClient } from "./image_generation";
+import { designClient, designEventClient } from "./design";
 
 /**
  * Unified IPC client with all domains organized by namespace.
@@ -432,6 +443,7 @@ export const ipc = {
   audio: audioClient,
   media: mediaClient,
   imageGeneration: imageGenerationClient,
+  design: designClient,
 
   // Event clients for main->renderer pub/sub
   events: {
@@ -440,5 +452,6 @@ export const ipc = {
     mcp: mcpEventClient,
     system: systemEventClient,
     misc: miscEventClient,
+    design: designEventClient,
   },
 } as const;

@@ -35,6 +35,8 @@ export function DefaultChatModeSelector() {
         return tChat("chatMode.ask");
       case "plan":
         return tChat("chatMode.plan");
+      case "design":
+        return tChat("chatMode.design");
       default:
         throw new Error(`Unknown chat mode: ${mode}`);
     }
@@ -70,6 +72,14 @@ export function DefaultChatModeSelector() {
                 <span className="font-medium">{tChat("chatMode.build")}</span>
                 <span className="text-xs text-muted-foreground">
                   {t("workflow.buildDescription")}
+                </span>
+              </div>
+            </SelectItem>
+            <SelectItem value="design">
+              <div className="flex flex-col items-start">
+                <span className="font-medium">{tChat("chatMode.design")}</span>
+                <span className="text-xs text-muted-foreground">
+                  {tChat("chatMode.designDescription")}
                 </span>
               </div>
             </SelectItem>

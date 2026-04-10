@@ -33,6 +33,9 @@ import { codeSearchTool } from "./tools/code_search";
 import { planningQuestionnaireTool } from "./tools/planning_questionnaire";
 import { writePlanTool } from "./tools/write_plan";
 import { exitPlanTool } from "./tools/exit_plan";
+import { askUserQuestionTool } from "./tools/ask_user_question";
+import { createDesignDraftTool } from "./tools/create_design_draft";
+import { updateDesignDraftTool } from "./tools/update_design_draft";
 import type { LanguageModelV3ToolResultOutput } from "@ai-sdk/provider";
 import {
   escapeXmlAttr,
@@ -93,6 +96,9 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   planningQuestionnaireTool,
   writePlanTool,
   exitPlanTool,
+  askUserQuestionTool,
+  createDesignDraftTool,
+  updateDesignDraftTool,
 ];
 // ============================================================================
 // Agent Tool Name Type (derived from TOOL_DEFINITIONS)
@@ -150,32 +156,32 @@ export function clearPendingConsentsForChat(chatId: number): void {
 // Questionnaire Response Management
 // ============================================================================
 
-interface PendingQuestionnaireEntry {
+interface PendingAskUserQuestionEntry {
   chatId: number;
   resolve: (answers: Record<string, string> | null) => void;
 }
 
-const pendingQuestionnaireResolvers = new Map<
+const pendingAskUserQuestionResolvers = new Map<
   string,
-  PendingQuestionnaireEntry
+  PendingAskUserQuestionEntry
 >();
 
-const QUESTIONNAIRE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const ASK_USER_QUESTION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
-export function waitForQuestionnaireResponse(
+export function waitForAskUserQuestionResponse(
   requestId: string,
   chatId: number,
 ): Promise<Record<string, string> | null> {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => {
-      const entry = pendingQuestionnaireResolvers.get(requestId);
+      const entry = pendingAskUserQuestionResolvers.get(requestId);
       if (entry) {
-        pendingQuestionnaireResolvers.delete(requestId);
+        pendingAskUserQuestionResolvers.delete(requestId);
         entry.resolve(null);
       }
-    }, QUESTIONNAIRE_TIMEOUT_MS);
+    }, ASK_USER_QUESTION_TIMEOUT_MS);
 
-    pendingQuestionnaireResolvers.set(requestId, {
+    pendingAskUserQuestionResolvers.set(requestId, {
       chatId,
       resolve: (answers) => {
         clearTimeout(timeout);
@@ -185,13 +191,13 @@ export function waitForQuestionnaireResponse(
   });
 }
 
-export function resolveQuestionnaireResponse(
+export function resolveAskUserQuestionResponse(
   requestId: string,
   answers: Record<string, string> | null,
 ) {
-  const entry = pendingQuestionnaireResolvers.get(requestId);
+  const entry = pendingAskUserQuestionResolvers.get(requestId);
   if (entry) {
-    pendingQuestionnaireResolvers.delete(requestId);
+    pendingAskUserQuestionResolvers.delete(requestId);
     entry.resolve(answers);
   }
 }
@@ -201,13 +207,18 @@ export function resolveQuestionnaireResponse(
  * Called when a stream is cancelled/aborted to prevent orphaned promises.
  */
 export function clearPendingQuestionnairesForChat(chatId: number): void {
-  for (const [requestId, entry] of pendingQuestionnaireResolvers) {
+  for (const [requestId, entry] of pendingAskUserQuestionResolvers) {
     if (entry.chatId === chatId) {
-      pendingQuestionnaireResolvers.delete(requestId);
+      pendingAskUserQuestionResolvers.delete(requestId);
       entry.resolve(null);
     }
   }
 }
+
+// Backward-compatible aliases for planning questionnaire flow, which still
+// reuses the same resolver infrastructure.
+export const waitForQuestionnaireResponse = waitForAskUserQuestionResponse;
+export const resolveQuestionnaireResponse = resolveAskUserQuestionResponse;
 
 export function getDefaultConsent(toolName: AgentToolName): AgentToolConsent {
   const tool = TOOL_DEFINITIONS.find((t) => t.name === toolName);
@@ -369,6 +380,11 @@ export interface BuildAgentToolSetOptions {
    * Plan mode has access to read-only tools plus planning-specific tools.
    */
   planModeOnly?: boolean;
+  /**
+   * If true, only include tools allowed in design mode.
+   * Design mode can explore files but may only modify design drafts.
+   */
+  designModeOnly?: boolean;
 }
 
 const FILE_EDIT_TOOLS: Set<FileEditToolName> = new Set(FILE_EDIT_TOOL_NAMES);
@@ -414,6 +430,13 @@ const PLANNING_SPECIFIC_TOOLS = new Set([
   "planning_questionnaire",
 ]);
 
+const DESIGN_SPECIFIC_TOOLS = new Set([
+  "ask_user_question",
+  "create_design_draft",
+  "update_design_draft",
+  "set_chat_summary",
+]);
+
 /**
  * Build ToolSet for AI SDK from tool definitions
  */
@@ -438,8 +461,20 @@ export function buildAgentToolSet(
       continue;
     }
 
+    if (
+      options.designModeOnly &&
+      tool.modifiesState &&
+      !DESIGN_SPECIFIC_TOOLS.has(tool.name)
+    ) {
+      continue;
+    }
+
     // Skip plan-mode-only tools when NOT in plan mode
     if (!options.planModeOnly && PLAN_MODE_ONLY_TOOLS.has(tool.name)) {
+      continue;
+    }
+
+    if (options.designModeOnly && PLAN_MODE_ONLY_TOOLS.has(tool.name)) {
       continue;
     }
 
