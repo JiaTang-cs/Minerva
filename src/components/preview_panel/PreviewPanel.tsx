@@ -18,6 +18,7 @@ import { useRunApp } from "@/hooks/useRunApp";
 import { PublishPanel } from "./PublishPanel";
 import { SecurityPanel } from "./SecurityPanel";
 import { PlanPanel } from "./PlanPanel";
+import { DesignPanel } from "./DesignPanel";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useTranslation } from "react-i18next";
 import { ipc } from "@/ipc/types";
@@ -93,7 +94,7 @@ export function PreviewPanel() {
 
       // Start the app if it's selected
       // The backend will handle the case where the app is already running
-      if (selectedAppId !== null) {
+      if (selectedAppId !== null && previewMode !== "design") {
         console.debug(
           "Running app (will start if not already running)",
           selectedAppId,
@@ -115,7 +116,7 @@ export function PreviewPanel() {
     // 1. User manually stops them
     // 2. App is deleted
     // 3. Garbage collector determines they've been idle too long
-  }, [selectedAppId, runApp, notifyAppSelected]);
+  }, [selectedAppId, runApp, notifyAppSelected, previewMode]);
 
   // Note: We no longer stop all apps on unmount. The garbage collector
   // will handle cleanup of idle apps, and users may want apps to keep
@@ -160,6 +161,8 @@ export function PreviewPanel() {
                 <SecurityPanel />
               ) : previewMode === "plan" ? (
                 <PlanPanel />
+              ) : previewMode === "design" ? (
+                <DesignPanel />
               ) : (
                 <Problems />
               )}

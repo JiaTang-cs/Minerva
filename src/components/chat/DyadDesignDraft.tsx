@@ -1,5 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Check, FilePenLine } from "lucide-react";
+import { useSetAtom, useAtomValue } from "jotai";
+import { useQueryClient } from "@tanstack/react-query";
+import { previewModeAtom, selectedAppIdAtom } from "@/atoms/appAtoms";
+import { isPreviewOpenAtom } from "@/atoms/viewAtoms";
+import { selectedChatIdAtom } from "@/atoms/chatAtoms";
 
 interface DyadDesignDraftProps {
   node?: {
@@ -12,10 +17,30 @@ interface DyadDesignDraftProps {
 }
 
 export function DyadDesignDraft({ node }: DyadDesignDraftProps) {
+  const setPreviewMode = useSetAtom(previewModeAtom);
+  const setIsPreviewOpen = useSetAtom(isPreviewOpenAtom);
+  const selectedAppId = useAtomValue(selectedAppIdAtom);
+  const selectedChatId = useAtomValue(selectedChatIdAtom);
+  const queryClient = useQueryClient();
   const action = node?.properties?.action || "created";
   const title = node?.properties?.title || "Untitled design draft";
   const isUpdated = action === "updated";
   const label = isUpdated ? "Updated" : "Created";
+
+  useEffect(() => {
+    if (!selectedAppId || !selectedChatId) return;
+    queryClient.invalidateQueries({
+      queryKey: ["design-draft", "forChat", selectedAppId, selectedChatId],
+    });
+    setPreviewMode("design");
+    setIsPreviewOpen(true);
+  }, [
+    queryClient,
+    selectedAppId,
+    selectedChatId,
+    setIsPreviewOpen,
+    setPreviewMode,
+  ]);
 
   return (
     <div className="my-2.5 rounded-xl border border-border/80 bg-background shadow-sm">

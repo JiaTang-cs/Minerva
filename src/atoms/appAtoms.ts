@@ -13,7 +13,26 @@ export const previewModeAtom = atom<
   | "publish"
   | "security"
   | "plan"
+  | "design"
 >("preview");
+export const designDraftDirtyAtom = atom(false);
+export const designPendingNavigationAtom = atom<
+  | {
+      type: "switch-preview-mode";
+      mode:
+        | "preview"
+        | "code"
+        | "problems"
+        | "configure"
+        | "publish"
+        | "security"
+        | "design";
+    }
+  | {
+      type: "close-preview";
+    }
+  | null
+>(null);
 export const selectedVersionIdAtom = atom<string | null>(null);
 
 export const appConsoleEntriesAtom = atom<ConsoleEntry[]>([]);

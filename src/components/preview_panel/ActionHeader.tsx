@@ -1,5 +1,10 @@
 import { useAtom, useAtomValue } from "jotai";
-import { previewModeAtom, selectedAppIdAtom } from "../../atoms/appAtoms";
+import {
+  designDraftDirtyAtom,
+  designPendingNavigationAtom,
+  previewModeAtom,
+  selectedAppIdAtom,
+} from "../../atoms/appAtoms";
 import { ipc } from "@/ipc/types";
 
 import {
@@ -12,6 +17,7 @@ import {
   Wrench,
   Globe,
   Shield,
+  Palette,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -40,12 +46,15 @@ export type PreviewMode =
   | "problems"
   | "configure"
   | "publish"
-  | "security";
+  | "security"
+  | "design";
 
 // Preview Header component with preview mode toggle
 export const ActionHeader = () => {
   const { t } = useTranslation("home");
   const [previewMode, setPreviewMode] = useAtom(previewModeAtom);
+  const isDesignDraftDirty = useAtomValue(designDraftDirtyAtom);
+  const [, setDesignPendingNavigation] = useAtom(designPendingNavigationAtom);
   const [isPreviewOpen, setIsPreviewOpen] = useAtom(isPreviewOpenAtom);
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const previewRef = useRef<HTMLButtonElement>(null);
@@ -54,6 +63,7 @@ export const ActionHeader = () => {
   const configureRef = useRef<HTMLButtonElement>(null);
   const publishRef = useRef<HTMLButtonElement>(null);
   const securityRef = useRef<HTMLButtonElement>(null);
+  const designRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const { problemReport } = useCheckProblems(selectedAppId);
@@ -72,6 +82,22 @@ export const ActionHeader = () => {
   }, []);
 
   const selectPanel = (panel: PreviewMode) => {
+    if (previewMode === "design" && isDesignDraftDirty) {
+      if (panel !== "design") {
+        setDesignPendingNavigation({
+          type: "switch-preview-mode",
+          mode: panel,
+        });
+        setIsPreviewOpen(true);
+        return;
+      }
+
+      if (panel === "design" && isPreviewOpen) {
+        setDesignPendingNavigation({ type: "close-preview" });
+        return;
+      }
+    }
+
     if (previewMode === panel) {
       setIsPreviewOpen(!isPreviewOpen);
     } else {
@@ -140,6 +166,9 @@ export const ActionHeader = () => {
           break;
         case "security":
           targetRef = securityRef;
+          break;
+        case "design":
+          targetRef = designRef;
           break;
         default:
           return;
@@ -215,6 +244,13 @@ export const ActionHeader = () => {
             mass: 0.6,
           }}
         />
+        {renderButton(
+          "design",
+          designRef,
+          <Palette size={iconSize} />,
+          "Design",
+          "design-mode-button",
+        )}
         {renderButton(
           "preview",
           previewRef,

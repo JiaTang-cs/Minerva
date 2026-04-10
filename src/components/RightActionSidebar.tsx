@@ -1,6 +1,19 @@
 import { useAtom, useAtomValue } from "jotai";
-import { previewModeAtom, selectedAppIdAtom } from "../atoms/appAtoms";
-import { Eye, Code, AlertTriangle, Wrench, Globe, Shield } from "lucide-react";
+import {
+  designDraftDirtyAtom,
+  designPendingNavigationAtom,
+  previewModeAtom,
+  selectedAppIdAtom,
+} from "../atoms/appAtoms";
+import {
+  Eye,
+  Code,
+  AlertTriangle,
+  Wrench,
+  Globe,
+  Shield,
+  Palette,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useCheckProblems } from "@/hooks/useCheckProblems";
 import { isPreviewOpenAtom } from "@/atoms/viewAtoms";
@@ -11,11 +24,29 @@ import type { PreviewMode } from "./preview_panel/ActionHeader";
 export const RightActionSidebar = () => {
   const { t } = useTranslation("home");
   const [previewMode, setPreviewMode] = useAtom(previewModeAtom);
+  const isDesignDraftDirty = useAtomValue(designDraftDirtyAtom);
+  const [, setDesignPendingNavigation] = useAtom(designPendingNavigationAtom);
   const [isPreviewOpen, setIsPreviewOpen] = useAtom(isPreviewOpenAtom);
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { problemReport } = useCheckProblems(selectedAppId);
 
   const selectPanel = (panel: PreviewMode) => {
+    if (previewMode === "design" && isDesignDraftDirty) {
+      if (panel !== "design") {
+        setDesignPendingNavigation({
+          type: "switch-preview-mode",
+          mode: panel,
+        });
+        setIsPreviewOpen(true);
+        return;
+      }
+
+      if (panel === "design" && isPreviewOpen) {
+        setDesignPendingNavigation({ type: "close-preview" });
+        return;
+      }
+    }
+
     if (previewMode === panel) {
       setIsPreviewOpen(!isPreviewOpen);
     } else {
@@ -78,6 +109,12 @@ export const RightActionSidebar = () => {
     <div className="flex flex-col h-full w-16 pl-1 -mr-1.5 bg-sidebar border-l border-sidebar-border">
       {/* Main action buttons */}
       <div className="flex flex-col items-center gap-1 pt-2 flex-1">
+        {renderButton(
+          "design",
+          <Palette size={iconSize} />,
+          "Design",
+          "design-mode-button",
+        )}
         {renderButton(
           "preview",
           <Eye size={iconSize} />,
