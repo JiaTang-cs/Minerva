@@ -59,7 +59,7 @@ import {
 import { processNumericValue, rgbToHex } from "@/utils/style-utils";
 
 type DesignViewMode = "view" | "edit";
-type InspectorPanel = "layout" | "styles" | "drag" | null;
+type InspectorPanel = "layout" | "styles" | null;
 type CanvasTool = "hand" | "select";
 type DeviceMode = "desktop" | "tablet" | "mobile";
 type PreviewMode =
@@ -147,6 +147,7 @@ interface SelectedElementStyles {
   fontFamily: string;
   lineHeight: string;
   textAlign: string;
+  position: string;
 }
 
 interface SelectedElementSnapshot {
@@ -306,12 +307,12 @@ function buildMinimapViewModel({
     width: Math.max(
       1,
       Math.max(nodeBounds.maxX, visibleWorldRight) -
-        Math.min(nodeBounds.minX, visibleWorldLeft),
+      Math.min(nodeBounds.minX, visibleWorldLeft),
     ),
     height: Math.max(
       1,
       Math.max(nodeBounds.maxY, visibleWorldBottom) -
-        Math.min(nodeBounds.minY, visibleWorldTop),
+      Math.min(nodeBounds.minY, visibleWorldTop),
     ),
   };
   const innerWidth = Math.max(1, MINIMAP_SIZE.width - MINIMAP_SIZE.padding * 2);
@@ -380,6 +381,16 @@ function injectDesignRuntime(html: string): string {
     outline: 2px solid #2563eb !important;
     outline-offset: 2px !important;
   }
+
+  [data-dyad-dragging="true"] {
+    opacity: 0.7;
+    cursor: grabbing !important;
+    z-index: 9999;
+  }
+
+  [data-dyad-selected="true"][data-dyad-dragging="true"] {
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3) !important;
+  }
 </style>`;
 
   const runtimeScript = `
@@ -388,6 +399,7 @@ function injectDesignRuntime(html: string): string {
   const ELEMENT_SELECTOR = 'body *';
   let selectedId = null;
   let editMode = false;
+  let dragSession = null;
 
   const shouldTrack = (element) => {
     if (!(element instanceof HTMLElement)) return false;
@@ -460,6 +472,7 @@ function injectDesignRuntime(html: string): string {
         fontFamily: styles.fontFamily,
         lineHeight: styles.lineHeight,
         textAlign: styles.textAlign,
+        position: styles.position,
       },
     };
   };
@@ -486,6 +499,98 @@ function injectDesignRuntime(html: string): string {
       },
       '*',
     );
+  };
+
+  // Drag session management
+  const startElementDrag = (dyadId, pointerX, pointerY) => {
+    const el = document.querySelector('[data-dyad-id="' + dyadId + '"]');
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+
+    dragSession = {
+      dyadId,
+      element: el,
+      offsetX: pointerX - rect.left,
+      offsetY: pointerY - rect.top,
+      originalParent: el.parentElement,
+      originalIndex: [...el.parentElement.children].indexOf(el),
+      isAbsolute: window.getComputedStyle(el).position === 'absolute',
+      lastPointerX: pointerX,
+      lastPointerY: pointerY,
+      started: true,
+    };
+
+    el.setAttribute('data-dyad-dragging', 'true');
+    el.style.opacity = '0.7';
+    parent.postMessage({ type: 'dyad-design:drag-started', dyadId }, '*');
+  };
+
+  const updateElementDrag = (pointerX, pointerY) => {
+    if (!dragSession || !dragSession.started) return;
+
+    const { element, isAbsolute, offsetX, offsetY } = dragSession;
+
+    if (isAbsolute) {
+      element.style.left = (pointerX - offsetX) + 'px';
+      element.style.top = (pointerY - offsetY) + 'px';
+    }
+  };
+
+  const endElementDrag = () => {
+    if (!dragSession || !dragSession.started) return;
+
+    const { element, isAbsolute, originalParent, originalIndex } = dragSession;
+
+    element.removeAttribute('data-dyad-dragging');
+    element.style.opacity = '1';
+
+    if (isAbsolute) {
+      parent.postMessage({ type: 'dyad-design:drag-ended', relocated: true }, '*');
+    } else {
+      // Flow layout: execute DOM reorder
+      const elBelow = document.elementFromPoint(
+        dragSession.lastPointerX || 0,
+        dragSession.lastPointerY || 0
+      );
+
+      if (elBelow && !element.contains(elBelow)) {
+        let container = elBelow.closest('[data-dyad-id]') || elBelow.parentElement;
+        if (container && !container.contains(element)) {
+          container = originalParent;
+        }
+
+        if (container && container !== element) {
+          const children = [...container.children].filter(c =>
+            c !== element && !c.dataset.dyadDesignRuntime
+          );
+
+          let insertIndex = children.length;
+          const pointerY = dragSession.lastPointerY || 0;
+          for (let i = 0; i < children.length; i++) {
+            const rect = children[i].getBoundingClientRect();
+            if (pointerY < rect.top + rect.height / 2) {
+              insertIndex = i;
+              break;
+            }
+          }
+
+          if (insertIndex < children.length) {
+            container.insertBefore(element, children[insertIndex]);
+          } else {
+            container.appendChild(element);
+          }
+
+          parent.postMessage({ type: 'dyad-design:drag-ended', relocated: true }, '*');
+          dragSession = null;
+          return;
+        }
+      }
+
+      parent.postMessage({ type: 'dyad-design:drag-ended', relocated: false }, '*');
+    }
+
+    dragSession = null;
   };
 
   const serializeDocument = () => {
@@ -677,6 +782,41 @@ function injectDesignRuntime(html: string): string {
     },
     true,
   );
+
+  // Drag event listeners
+  document.addEventListener('pointermove', (e) => {
+    if (dragSession) {
+      e.preventDefault();
+      dragSession.lastPointerX = e.clientX;
+      dragSession.lastPointerY = e.clientY;
+      updateElementDrag(e.clientX, e.clientY);
+    }
+  }, { passive: false });
+
+  document.addEventListener('pointerup', (e) => {
+    if (dragSession) {
+      e.preventDefault();
+      endElementDrag();
+    }
+  });
+
+  // In select mode, clicking on selected element starts drag
+  document.addEventListener('pointerdown', (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (editMode) {
+      const selectedEl = document.querySelector('[data-dyad-selected="true"]');
+      if (selectedEl && (selectedEl === target || selectedEl.contains(target))) {
+        const dyadId = selectedEl.dataset.dyadId;
+        if (dyadId) {
+          e.preventDefault();
+          e.stopPropagation();
+          startElementDrag(dyadId, e.clientX, e.clientY);
+        }
+      }
+    }
+  }, true);
 
   ensureIds();
   parent.postMessage({ type: 'dyad-design:ready' }, '*');
@@ -995,29 +1135,6 @@ function StyleInspector({
   );
 }
 
-function DragInspector({
-  selectedElement,
-}: {
-  selectedElement: SelectedElementSnapshot | null;
-}) {
-  return (
-    <div className="w-[360px] rounded-[30px] border border-[#ece5da] bg-white/98 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur">
-      <div className="space-y-4 text-sm text-slate-500">
-        <div className="rounded-[22px] border border-[#efe9df] bg-[#faf8f4] px-5 py-4">
-          Target:{" "}
-          <span className="font-medium text-slate-800">
-            {selectedElement?.tagName ?? "none"}
-          </span>
-        </div>
-        <div className="rounded-[22px] border border-[#efe9df] bg-[#faf8f4] px-5 py-4">
-          Drag/reorder stays in the next phase. This panel remains as the shell
-          for later DOM relocation tooling.
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export const DesignPanel: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -1046,6 +1163,7 @@ export const DesignPanel: React.FC = () => {
   const [viewport, setViewport] = useState(DEFAULT_VIEWPORT);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [isDraggingElement, setIsDraggingElement] = useState(false);
   const [inspectorPanel, setInspectorPanel] = useState<InspectorPanel>(null);
   const [selectedElement, setSelectedElement] =
     useState<SelectedElementSnapshot | null>(null);
@@ -1063,7 +1181,10 @@ export const DesignPanel: React.FC = () => {
   const frameDimensions = DEVICE_DIMENSIONS[deviceMode];
   const nodeHeight = Math.max(contentHeight, frameDimensions.height);
   const isCanvasEditingEnabled =
-    viewMode === "edit" && canvasTool === "select" && !isPanning;
+    viewMode === "edit" &&
+    canvasTool === "select" &&
+    !isPanning &&
+    !isDraggingElement;
   const activePendingAction = localPendingAction ?? designPendingNavigation;
   const canvasNodes = useMemo<CanvasNode[]>(
     () => [
@@ -1249,6 +1370,21 @@ export const DesignPanel: React.FC = () => {
         if (typeof data.error === "string") {
           showError(data.error);
         }
+      }
+
+      if (data.type === "dyad-design:drag-started") {
+        setIsDraggingElement(true);
+        return;
+      }
+
+      if (data.type === "dyad-design:drag-ended") {
+        setIsDraggingElement(false);
+        if (data.relocated) {
+          setTimeout(() => {
+            void requestSerializedHtml();
+          }, 100);
+        }
+        return;
       }
     };
 
@@ -1646,8 +1782,7 @@ export const DesignPanel: React.FC = () => {
         <div className="absolute bottom-8 left-6 z-20 flex flex-col gap-1.5 rounded-[24px] border border-white/70 bg-white/96 px-2 py-3 shadow-[0_12px_34px_rgba(15,23,42,0.08)] backdrop-blur">
           {[
             { key: "hand", icon: Hand, label: "Hand" },
-            { key: "select", icon: MousePointer2, label: "Select" },
-            { key: "layers", icon: Layers3, label: "Layers" },
+            { key: "select", icon: MousePointer2, label: "Cursor" },
             { key: "layout", icon: MoveHorizontal, label: "Layout" },
             { key: "styles", icon: Palette, label: "Styles" },
             { key: "pin", icon: Pin, label: "Pin" },
@@ -1659,7 +1794,7 @@ export const DesignPanel: React.FC = () => {
               title={label}
               onClick={() => {
                 if (key === "hand" || key === "select") {
-                  requestCanvasToolChange(key);
+                  requestCanvasToolChange(key as CanvasTool);
                 }
               }}
               className={cn(
@@ -1721,7 +1856,7 @@ export const DesignPanel: React.FC = () => {
           className={cn(
             "absolute inset-0 overflow-hidden touch-none",
             canvasTool === "hand" &&
-              (isPanning ? "cursor-grabbing" : "cursor-grab"),
+            (isPanning ? "cursor-grabbing" : "cursor-grab"),
           )}
           onWheel={handleViewportWheel}
           onPointerDown={(event) => {
@@ -1765,7 +1900,7 @@ export const DesignPanel: React.FC = () => {
           </div>
         </div>
 
-        {viewMode === "edit" && selectedElement && (
+        {viewMode === "edit" && (
           <>
             <div className="absolute left-1/2 top-[80px] z-20 -translate-x-1/2 rounded-[18px] border border-white/70 bg-white/95 p-1 shadow-[0_8px_24px_rgba(15,23,42,0.07)] backdrop-blur">
               <div className="flex items-center gap-0.5 px-1">
@@ -1800,31 +1935,29 @@ export const DesignPanel: React.FC = () => {
                     dividerAfter: true,
                   },
                   {
-                    key: "drag",
-                    icon: MousePointer2,
-                    onClick: () =>
-                      setInspectorPanel((prev) =>
-                        prev === "drag" ? null : "drag",
-                      ),
-                  },
-                  {
                     key: "delete",
                     icon: Trash2,
-                    onClick: removeSelectedElement,
+                    onClick: selectedElement ? removeSelectedElement : undefined,
+                    disabled: !selectedElement,
                   },
                   {
                     key: "more",
                     icon: MoreHorizontal,
                     onClick: () => setInspectorPanel(null),
                   },
-                ].map(({ key, icon: Icon, onClick, dividerAfter }) => (
+                ].map(({ key, icon: Icon, onClick, dividerAfter, disabled }) => (
                   <React.Fragment key={key}>
                     <button
                       type="button"
                       onClick={onClick}
+                      disabled={disabled}
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-[12px] text-slate-500 transition-colors hover:bg-[#f7f4ef]",
-                        inspectorPanel === key && "bg-[#f3efe8] text-slate-900",
+                        "flex h-8 w-8 items-center justify-center rounded-[12px] transition-colors hover:bg-[#f7f4ef]",
+                        inspectorPanel === key
+                          ? "bg-[#f3efe8] text-slate-900"
+                          : disabled
+                            ? "text-slate-300 cursor-not-allowed"
+                            : "text-slate-500",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -1837,32 +1970,33 @@ export const DesignPanel: React.FC = () => {
               </div>
             </div>
 
-            <div className="absolute left-1/2 top-[132px] z-20 -translate-x-1/2">
-              {inspectorPanel === "layout" && (
-                <LayoutInspector
-                  selectedElement={selectedElement}
-                  onApplyStyles={applyStylesToSelection}
-                />
-              )}
-              {inspectorPanel === "styles" && (
-                <StyleInspector
-                  selectedElement={selectedElement}
-                  onApplyStyles={applyStylesToSelection}
-                />
-              )}
-              {inspectorPanel === "drag" && (
-                <DragInspector selectedElement={selectedElement} />
-              )}
-            </div>
+            {inspectorPanel && (
+              <div className="absolute left-1/2 top-[132px] z-20 -translate-x-1/2">
+                {inspectorPanel === "layout" && (
+                  <LayoutInspector
+                    selectedElement={selectedElement}
+                    onApplyStyles={applyStylesToSelection}
+                  />
+                )}
+                {inspectorPanel === "styles" && (
+                  <StyleInspector
+                    selectedElement={selectedElement}
+                    onApplyStyles={applyStylesToSelection}
+                  />
+                )}
+              </div>
+            )}
 
-            <div className="absolute bottom-8 right-8 z-20 rounded-[20px] border border-white/70 bg-white/96 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
-              <div className="text-[13px] font-medium text-slate-900">
-                {selectedElement.tagName}
+            {selectedElement && (
+              <div className="absolute bottom-8 right-8 z-20 rounded-[20px] border border-white/70 bg-white/96 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
+                <div className="text-[13px] font-medium text-slate-900">
+                  {selectedElement.tagName}
+                </div>
+                <div className="max-w-[220px] truncate text-[11px] text-slate-500">
+                  {selectedElement.text || "Selected element"}
+                </div>
               </div>
-              <div className="max-w-[220px] truncate text-[11px] text-slate-500">
-                {selectedElement.text || "Selected element"}
-              </div>
-            </div>
+            )}
           </>
         )}
 
