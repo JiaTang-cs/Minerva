@@ -21,8 +21,8 @@ export type DyadAccentColor =
 
 const ACCENT_BORDER: Record<DyadAccentColor, string> = {
   blue: "border-l-blue-500",
-  purple: "border-l-purple-500",
-  violet: "border-l-violet-500",
+  purple: "border-l-blue-400",
+  violet: "border-l-blue-500",
   red: "border-l-red-500",
   amber: "border-l-amber-500",
   green: "border-l-green-500",
@@ -36,9 +36,9 @@ const ACCENT_BORDER: Record<DyadAccentColor, string> = {
 const ACCENT_ICON_BG: Record<DyadAccentColor, string> = {
   blue: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
   purple:
-    "bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400",
+    "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
   violet:
-    "bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400",
+    "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
   red: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400",
   amber: "bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400",
   green: "bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400",
@@ -54,9 +54,9 @@ const ACCENT_ICON_BG: Record<DyadAccentColor, string> = {
 const ACCENT_BADGE: Record<DyadAccentColor, string> = {
   blue: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ring-blue-200 dark:ring-blue-800",
   purple:
-    "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 ring-purple-200 dark:ring-purple-800",
+    "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ring-blue-200 dark:ring-blue-800",
   violet:
-    "bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 ring-violet-200 dark:ring-violet-800",
+    "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ring-blue-200 dark:ring-blue-800",
   red: "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 ring-red-200 dark:ring-red-800",
   amber:
     "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 ring-amber-200 dark:ring-amber-800",

@@ -371,7 +371,7 @@ export function VisualEditingToolbar({
           render={
             <button
               onClick={handleDeselectComponent}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-[#7f22fe] dark:text-gray-200"
+              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
               aria-label="Deselect Component"
             />
           }

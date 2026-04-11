@@ -23,7 +23,7 @@ export function StylePopover({
   return (
     <Popover>
       <PopoverTrigger
-        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-[#7f22fe] dark:text-gray-200"
+        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
         aria-label={tooltip}
         title={tooltip}
       >
@@ -31,7 +31,7 @@ export function StylePopover({
       </PopoverTrigger>
       <PopoverContent side={side} className="w-64">
         <div className="space-y-3">
-          <h4 className="font-medium text-sm" style={{ color: "#7f22fe" }}>
+          <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
             {title}
           </h4>
           {children}
