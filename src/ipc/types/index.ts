@@ -131,6 +131,7 @@ export type {
 } from "./chat";
 export type {
   DesignDraft,
+  DesignExitPayload,
   AskUserQuestion,
   AskUserQuestionPayload,
   AskUserQuestionResponse,

@@ -36,6 +36,7 @@ import { exitPlanTool } from "./tools/exit_plan";
 import { askUserQuestionTool } from "./tools/ask_user_question";
 import { createDesignDraftTool } from "./tools/create_design_draft";
 import { updateDesignDraftTool } from "./tools/update_design_draft";
+import { exitDesignTool } from "./tools/exit_design";
 import type { LanguageModelV3ToolResultOutput } from "@ai-sdk/provider";
 import {
   escapeXmlAttr,
@@ -99,6 +100,7 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   askUserQuestionTool,
   createDesignDraftTool,
   updateDesignDraftTool,
+  exitDesignTool,
 ];
 // ============================================================================
 // Agent Tool Name Type (derived from TOOL_DEFINITIONS)
@@ -434,6 +436,7 @@ const DESIGN_SPECIFIC_TOOLS = new Set([
   "ask_user_question",
   "create_design_draft",
   "update_design_draft",
+  "exit_design",
   "set_chat_summary",
 ]);
 

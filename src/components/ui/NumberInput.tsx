@@ -10,6 +10,7 @@ interface NumberInputProps {
   step?: string;
   min?: string;
   className?: string;
+  inputClassName?: string;
 }
 
 export function NumberInput({
@@ -21,6 +22,7 @@ export function NumberInput({
   step = "1",
   min = "0",
   className = "",
+  inputClassName = "",
 }: NumberInputProps) {
   return (
     <div className={className}>
@@ -31,7 +33,7 @@ export function NumberInput({
         id={id}
         type="number"
         placeholder={placeholder}
-        className="mt-1 h-8 text-xs"
+        className={`mt-1 h-8 text-xs ${inputClassName}`}
         value={value.replace(/[^\d.-]/g, "") || ""}
         onChange={(e) => onChange(e.target.value)}
         step={step}

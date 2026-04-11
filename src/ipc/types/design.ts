@@ -41,6 +41,13 @@ export type AskUserQuestionResponse = z.infer<
   typeof AskUserQuestionResponseSchema
 >;
 
+export const DesignExitSchema = z.object({
+  chatId: z.number(),
+  draftId: z.string(),
+});
+
+export type DesignExitPayload = z.infer<typeof DesignExitSchema>;
+
 export const DesignDraftSchema = z.object({
   id: z.string(),
   appId: z.number(),
@@ -85,6 +92,11 @@ export const designEvents = {
   askUserQuestion: defineEvent({
     channel: "design:ask-user-question",
     payload: AskUserQuestionPayloadSchema,
+  }),
+
+  exit: defineEvent({
+    channel: "design:exit",
+    payload: DesignExitSchema,
   }),
 } as const;
 

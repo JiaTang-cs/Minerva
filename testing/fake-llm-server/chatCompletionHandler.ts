@@ -84,6 +84,11 @@ export const createChatCompletionHandler =
       return handleLocalAgentFixture(req, res, "exit-plan");
     }
 
+    // Route design build handoff to exit-design fixture
+    if (userTextContent.trim() === "/build") {
+      return handleLocalAgentFixture(req, res, "exit-design");
+    }
+
     let messageContent = CANNED_MESSAGE;
 
     // Route plan comment messages to generate dump for testing

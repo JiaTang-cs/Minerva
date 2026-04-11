@@ -40,6 +40,7 @@ import { DyadStatus } from "./DyadStatus";
 import { DyadCompaction } from "./DyadCompaction";
 import { DyadWritePlan } from "./DyadWritePlan";
 import { DyadExitPlan } from "./DyadExitPlan";
+import { DyadExitDesign } from "./DyadExitDesign";
 import { DyadQuestionnaire } from "./DyadQuestionnaire";
 import { DyadAskUserQuestion } from "./DyadAskUserQuestion";
 import { DyadDesignDraft } from "./DyadDesignDraft";
@@ -86,6 +87,7 @@ const DYAD_CUSTOM_TAGS = [
   // Plan mode tags
   "dyad-write-plan",
   "dyad-exit-plan",
+  "dyad-exit-design",
   "dyad-questionnaire",
   "dyad-ask-user-question",
   "dyad-design-draft",
@@ -822,6 +824,9 @@ function renderCustomTag(
           }}
         />
       );
+
+    case "dyad-exit-design":
+      return <DyadExitDesign />;
 
     case "dyad-questionnaire":
       return <DyadQuestionnaire>{content}</DyadQuestionnaire>;

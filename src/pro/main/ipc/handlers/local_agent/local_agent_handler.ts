@@ -73,6 +73,7 @@ import { parseMcpToolKey, sanitizeMcpName } from "@/ipc/utils/mcp_tool_utils";
 import { addIntegrationTool } from "./tools/add_integration";
 import { writePlanTool } from "./tools/write_plan";
 import { exitPlanTool } from "./tools/exit_plan";
+import { exitDesignTool } from "./tools/exit_design";
 import {
   appendCancelledResponseNotice,
   filterCancelledMessagePairs,
@@ -698,6 +699,7 @@ export async function handleLocalAgentStream(
                     hasToolCall(exitPlanTool.name),
                   ]
                 : []),
+              ...(designModeOnly ? [hasToolCall(exitDesignTool.name)] : []),
             ],
             abortSignal: abortController.signal,
             // Inject pending user messages (e.g., images from web_crawl) between steps

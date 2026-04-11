@@ -94,6 +94,8 @@ import { replacePromptReference } from "../utils/replacePromptReference";
 import { replaceSlashSkillReference } from "../utils/replaceSlashSkillReference";
 import { resolveMediaMentions } from "../utils/resolve_media_mentions";
 import { parsePlanFile, validatePlanId } from "./planUtils";
+import { getDesignDraftFile } from "./design_handlers";
+import { createBuildFromDesignPrompt } from "./designBuildPrompt";
 import { ensureDyadGitignored } from "./gitignoreUtils";
 import { DYAD_MEDIA_DIR_NAME } from "../utils/media_path_utils";
 import { mcpManager } from "../utils/mcp_manager";
@@ -440,6 +442,7 @@ export function registerChatStreamHandlers() {
       // Keep the original short form for display in the UI; the expanded
       // content is only injected into the AI message history.
       let implementPlanDisplayPrompt: string | undefined;
+      let buildFromDesignDisplayPrompt: string | undefined;
       const implementPlanMatch = userPrompt.match(/^\/implement-plan=(.+)$/);
       if (implementPlanMatch) {
         try {
@@ -469,6 +472,19 @@ You may update the plan at \`${planPath}\` to mark your progress.`;
         } catch (e) {
           implementPlanDisplayPrompt = undefined;
           logger.error("Failed to expand /implement-plan= prompt:", e);
+        }
+      }
+
+      const buildFromDesignMatch = userPrompt.match(/^\/build-from-design=(.+)$/);
+      if (buildFromDesignMatch) {
+        try {
+          buildFromDesignDisplayPrompt = "/build";
+          const draftId = buildFromDesignMatch[1];
+          const draft = await getDesignDraftFile(chat.app.id, draftId);
+          userPrompt = createBuildFromDesignPrompt(draft);
+        } catch (e) {
+          buildFromDesignDisplayPrompt = undefined;
+          logger.error("Failed to expand /build-from-design= prompt:", e);
         }
       }
 
@@ -522,7 +538,10 @@ ${componentSnippet}
           chatId: req.chatId,
           role: "user",
           content:
-            implementPlanDisplayPrompt ?? displayUserPrompt ?? userPrompt,
+            implementPlanDisplayPrompt ??
+            buildFromDesignDisplayPrompt ??
+            displayUserPrompt ??
+            userPrompt,
         })
         .returning({ id: messages.id });
       const userMessageId = insertedUserMessage.id;
@@ -696,7 +715,11 @@ ${componentSnippet}
         // The DB stores display-friendly versions (short /implement-plan= form
         // or clean <dyad-attachment> tags). Replace the last user message with the
         // full AI prompt so the model receives expanded plan content or attachment paths.
-        if (implementPlanDisplayPrompt || displayUserPrompt) {
+        if (
+          implementPlanDisplayPrompt ||
+          buildFromDesignDisplayPrompt ||
+          displayUserPrompt
+        ) {
           for (let i = messageHistory.length - 1; i >= 0; i--) {
             if (messageHistory[i].role === "user") {
               messageHistory[i] = {

@@ -16,6 +16,7 @@ import { useChats } from "@/hooks/useChats";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
 import { usePlanImplementation } from "@/hooks/usePlanImplementation";
+import { useDesignBuildImplementation } from "@/hooks/useDesignBuildImplementation";
 
 const DEFAULT_CHAT_PANEL_SIZE = 50;
 
@@ -41,6 +42,7 @@ export default function ChatPage() {
 
   // Handle plan implementation when a plan is accepted
   usePlanImplementation();
+  useDesignBuildImplementation();
 
   useEffect(() => {
     if (!chatId && chats.length && !loading) {

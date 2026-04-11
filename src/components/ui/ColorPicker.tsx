@@ -6,6 +6,7 @@ interface ColorPickerProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  inputClassName?: string;
 }
 
 export function ColorPicker({
@@ -13,6 +14,7 @@ export function ColorPicker({
   value,
   onChange,
   className = "",
+  inputClassName = "",
 }: ColorPickerProps) {
   return (
     <div className={`flex gap-2 ${className}`}>
@@ -26,7 +28,7 @@ export function ColorPicker({
       <Input
         type="text"
         placeholder="#000000"
-        className="h-8 text-xs flex-1"
+        className={`h-8 text-xs flex-1 ${inputClassName}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Request, type Response } from "express";
 import { createServer } from "http";
 import cors from "cors";
 import { createChatCompletionHandler } from "./chatCompletionHandler";
@@ -74,11 +74,11 @@ export const CANNED_MESSAGE = `
   More
   EOM`;
 
-app.get("/health", (req, res) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.send("OK");
 });
 
-app.get("/api/language-model-catalog", (req, res) => {
+app.get("/api/language-model-catalog", (_req: Request, res: Response) => {
   res.json({
     version: "e2e-test-catalog-v1",
     expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
@@ -239,7 +239,7 @@ app.get("/api/language-model-catalog", (req, res) => {
 });
 
 // Ollama-specific endpoints
-app.get("/ollama/api/tags", (req, res) => {
+app.get("/ollama/api/tags", (_req: Request, res: Response) => {
   const ollamaModels = {
     models: [
       {
@@ -275,7 +275,7 @@ app.get("/ollama/api/tags", (req, res) => {
 });
 
 // LM Studio specific endpoints
-app.get("/lmstudio/api/v0/models", (req, res) => {
+app.get("/lmstudio/api/v0/models", (_req: Request, res: Response) => {
   const lmStudioModels = {
     data: [
       {
@@ -369,11 +369,12 @@ app.post("/github/api/orgs/:org/repos", handleOrgRepos);
 app.get("/github/api/test/push-events", handleGetPushEvents);
 app.post("/github/api/test/clear-push-events", handleClearPushEvents);
 
-// GitHub Git endpoints - intercept all paths with /github/git prefix
-app.all("/github/git/*", handleGitPush);
+// GitHub Git endpoints - intercept all paths with /github/git prefix.
+// Express 5/path-to-regexp no longer accepts bare "*" suffix patterns.
+app.all(/^\/github\/git\/.*$/, handleGitPush);
 
 // Dyad Engine turbo-file-edit endpoint for edit_file tool
-app.post("/engine/v1/tools/turbo-file-edit", (req, res) => {
+app.post("/engine/v1/tools/turbo-file-edit", (req: Request, res: Response) => {
   const { path: filePath, description } = req.body;
   console.log(
     `* turbo-file-edit: ${filePath} - ${description || "no description"}`,
@@ -388,7 +389,7 @@ app.post("/engine/v1/tools/turbo-file-edit", (req, res) => {
 });
 
 // Dyad Engine code-search endpoint for code_search tool
-app.post("/engine/v1/tools/code-search", (req, res) => {
+app.post("/engine/v1/tools/code-search", (req: Request, res: Response) => {
   const { query, filesContext } = req.body;
   console.log(
     `* code-search: "${query}" - searching ${filesContext?.length || 0} files`,
@@ -409,7 +410,9 @@ app.post("/engine/v1/tools/code-search", (req, res) => {
 });
 
 // Dyad Engine image generation endpoint for generate_image tool
-app.post("/engine/v1/images/generations", (req, res) => {
+app.post(
+  "/engine/v1/images/generations",
+  (req: Request, res: Response) => {
   const { prompt, model } = req.body;
   console.log(
     `* images/generations: model=${model}, prompt="${prompt?.slice(0, 50)}..."`,
@@ -432,10 +435,11 @@ app.post("/engine/v1/images/generations", (req, res) => {
     console.error(`* images/generations error:`, error);
     res.status(400).json({ error: String(error) });
   }
-});
+  },
+);
 
 // Dyad Engine web-crawl endpoint for web_fetch tool
-app.post("/engine/v1/tools/web-crawl", (req, res) => {
+app.post("/engine/v1/tools/web-crawl", (req: Request, res: Response) => {
   const { url, markdownOnly } = req.body;
   console.log(`* web-crawl: url="${url}", markdownOnly=${markdownOnly}`);
 

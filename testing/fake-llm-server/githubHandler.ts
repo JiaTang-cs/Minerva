@@ -3,7 +3,15 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-const gitHttpMiddlewareFactory = require("git-http-mock-server/middleware");
+let gitHttpMiddlewareFactory:
+  | ((options: Record<string, unknown>) => Function)
+  | null = null;
+
+try {
+  gitHttpMiddlewareFactory = require("git-http-mock-server/middleware");
+} catch {
+  gitHttpMiddlewareFactory = null;
+}
 
 // Push event tracking for tests
 interface PushEvent {
@@ -354,6 +362,12 @@ export function handleClearPushEvents(req: Request, res: Response) {
 export function handleGitPush(req: Request, res: Response, next?: Function) {
   console.log("* GitHub Git operation requested:", req.method, req.url);
 
+  if (!gitHttpMiddlewareFactory) {
+    return res.status(500).json({
+      message: "git-http-mock-server is not installed",
+    });
+  }
+
   // Log request headers to see git operation details
   console.log("* Git Headers:", {
     "git-protocol": req.headers["git-protocol"],
@@ -392,7 +406,7 @@ export function handleGitPush(req: Request, res: Response, next?: Function) {
 
       // Collect request body to parse git protocol
       let body = "";
-      req.on("data", (chunk) => {
+      req.on("data", (chunk: Buffer) => {
         body += chunk.toString();
       });
       req.on("end", () => {

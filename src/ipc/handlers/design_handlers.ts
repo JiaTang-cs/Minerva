@@ -108,6 +108,14 @@ async function readDraftFile(
   }
 }
 
+export async function getDesignDraftFile(
+  appId: number,
+  draftId: string,
+): Promise<StoredDesignDraft> {
+  const designDir = await getDesignDir(appId);
+  return readDraftFile(designDir, draftId);
+}
+
 export async function getDesignDraftForChatFile(
   appId: number,
   chatId: number,
