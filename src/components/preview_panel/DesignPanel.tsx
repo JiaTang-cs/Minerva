@@ -25,8 +25,11 @@ import {
   Plus,
   GripHorizontal,
   AlertTriangle,
+  AlertCircle,
   RotateCcw,
   Save,
+  Loader2,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
@@ -391,6 +394,36 @@ function injectDesignRuntime(html: string): string {
   [data-dyad-selected="true"][data-dyad-dragging="true"] {
     box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3) !important;
   }
+
+  [data-dyad-drop-indicator] {
+    position: absolute;
+    background: rgba(59, 130, 246, 0.15);
+    border: 2px dashed #3b82f6;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10000;
+    transition: all 0.1s ease;
+  }
+
+  [data-dyad-drop-indicator="invalid"] {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+  }
+
+  [data-dyad-ghost] {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10001;
+    opacity: 0.85;
+    background: white;
+    border: 2px solid #2563eb;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #1e40af;
+    white-space: nowrap;
+  }
 </style>`;
 
   const runtimeScript = `
@@ -400,11 +433,202 @@ function injectDesignRuntime(html: string): string {
   let selectedId = null;
   let editMode = false;
   let dragSession = null;
+  let dropIndicator = null;
+  let ghostElement = null;
+
+  const INVALID_CONTAINER_TAGS = ['html', 'body', 'head', 'script', 'style', 'link', 'meta', 'svg', 'defs'];
 
   const shouldTrack = (element) => {
     if (!(element instanceof HTMLElement)) return false;
     const tag = element.tagName.toLowerCase();
-    return !['script', 'style', 'link', 'meta', 'head'].includes(tag);
+    return !INVALID_CONTAINER_TAGS.includes(tag);
+  };
+
+  const findTrackableParent = (element) => {
+    if (!element || !element instanceof HTMLElement) return null;
+    if (shouldTrack(element) && element.dataset.dyadId) return element;
+    if (element === document.body || element === document.documentElement) return null;
+    return findTrackableParent(element.parentElement);
+  };
+
+  const getElementPath = (element) => {
+    const path = [];
+    let current = element;
+    while (current && current !== document.body) {
+      if (current.dataset.dyadId) {
+        path.unshift(current.dataset.dyadId);
+      }
+      current = current.parentElement;
+    }
+    return path;
+  };
+
+  const getElementLayoutMode = (element) => {
+    const style = window.getComputedStyle(element);
+    if (style.position === 'absolute' || style.position === 'fixed') return 'absolute';
+    if (style.display === 'grid') return 'grid';
+    if (style.display === 'flex') return style.flexDirection === 'row' ? 'flex-row' : 'flex-col';
+    return 'block-flow';
+  };
+
+  const getChildrenForDrop = (container) => {
+    return [...container.children].filter(c =>
+      c.dataset.dyadId &&
+      c.dataset.dyadId !== dragSession?.dyadId &&
+      !c.dataset.dyadDesignRuntime &&
+      !c.hasAttribute('data-dyad-drop-indicator') &&
+      !c.hasAttribute('data-dyad-ghost')
+    );
+  };
+
+  const calculateDropIndex = (container, pointerX, pointerY) => {
+    const children = getChildrenForDrop(container);
+    if (children.length === 0) return 0;
+
+    const layoutMode = getElementLayoutMode(container);
+
+    if (layoutMode === 'absolute') {
+      return children.length;
+    }
+
+    if (layoutMode === 'flex-row' || layoutMode === 'grid') {
+      let closestIndex = children.length;
+      for (let i = 0; i < children.length; i++) {
+        const rect = children[i].getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        if (pointerX < midX) {
+          closestIndex = i;
+          break;
+        }
+      }
+      return closestIndex;
+    }
+
+    let insertIndex = children.length;
+    for (let i = 0; i < children.length; i++) {
+      const rect = children[i].getBoundingClientRect();
+      if (pointerY < rect.top + rect.height / 2) {
+        insertIndex = i;
+        break;
+      }
+    }
+    return insertIndex;
+  };
+
+  const isValidDropTarget = (targetEl, draggedEl) => {
+    if (!targetEl || !targetEl instanceof HTMLElement) return false;
+    if (targetEl === draggedEl) return false;
+    if (draggedEl && draggedEl.contains(targetEl)) return false;
+
+    const tag = targetEl.tagName.toLowerCase();
+    if (INVALID_CONTAINER_TAGS.includes(tag)) return false;
+
+    const layoutMode = getElementLayoutMode(targetEl);
+    if (layoutMode === 'absolute') return true;
+
+    return true;
+  };
+
+  const findValidDropTarget = (pointerX, pointerY, excludeEl) => {
+    const el = document.elementFromPoint(pointerX, pointerY);
+    if (!el || !el instanceof HTMLElement) return null;
+    if (el === excludeEl || (excludeEl && excludeEl.contains(el))) return null;
+
+    let container = el.closest('[data-dyad-id]');
+    if (!container) {
+      if (el.dataset.dyadId) {
+        container = el;
+      } else {
+        container = el.parentElement?.closest('[data-dyad-id]');
+      }
+    }
+
+    if (!container) return null;
+
+    while (container && !isValidDropTarget(container, excludeEl)) {
+      container = container.parentElement?.closest('[data-dyad-id]');
+    }
+
+    return container;
+  };
+
+  const updateDropIndicator = (container, index) => {
+    if (!container) {
+      if (dropIndicator) {
+        dropIndicator.remove();
+        dropIndicator = null;
+      }
+      return;
+    }
+
+    const children = getChildrenForDrop(container);
+    const rect = container.getBoundingClientRect();
+
+    if (!dropIndicator) {
+      dropIndicator = document.createElement('div');
+      dropIndicator.setAttribute('data-dyad-drop-indicator', 'true');
+      container.appendChild(dropIndicator);
+    }
+
+    dropIndicator.style.left = rect.left + 'px';
+    dropIndicator.style.top = rect.top + 'px';
+    dropIndicator.style.width = rect.width + 'px';
+    dropIndicator.style.height = rect.height + 'px';
+
+    let insertTop;
+    if (index === 0 || children.length === 0) {
+      insertTop = 0;
+    } else if (index >= children.length) {
+      const lastChild = children[children.length - 1];
+      const lastRect = lastChild.getBoundingClientRect();
+      insertTop = lastRect.bottom - rect.top;
+    } else {
+      const targetChild = children[index - 1];
+      const targetRect = targetChild.getBoundingClientRect();
+      insertTop = targetRect.bottom - rect.top;
+    }
+
+    dropIndicator.style.height = '4px';
+    dropIndicator.style.top = (rect.top + insertTop) + 'px';
+    dropIndicator.style.left = rect.left + 'px';
+    dropIndicator.style.width = rect.width + 'px';
+  };
+
+  const removeDropIndicator = () => {
+    if (dropIndicator) {
+      dropIndicator.remove();
+      dropIndicator = null;
+    }
+  };
+
+  const createGhostElement = (element) => {
+    if (ghostElement) ghostElement.remove();
+
+    const rect = element.getBoundingClientRect();
+    ghostElement = document.createElement('div');
+    ghostElement.setAttribute('data-dyad-ghost', 'true');
+    ghostElement.textContent = element.tagName.toLowerCase();
+
+    const style = window.getComputedStyle(element);
+    ghostElement.style.width = rect.width + 'px';
+    ghostElement.style.height = rect.height + 'px';
+
+    document.body.appendChild(ghostElement);
+    return ghostElement;
+  };
+
+  const updateGhostPosition = (x, y) => {
+    if (ghostElement) {
+      ghostElement.style.left = x + 'px';
+      ghostElement.style.top = y + 'px';
+    }
+  };
+
+  const removeGhostElement = () => {
+    if (ghostElement) {
+      ghostElement.remove();
+      ghostElement = null;
+    }
   };
 
   const toCssPropertyName = (property) =>
@@ -502,11 +726,20 @@ function injectDesignRuntime(html: string): string {
   };
 
   // Drag session management
-  const startElementDrag = (dyadId, pointerX, pointerY) => {
+  const DRAG_THRESHOLD = 5;
+  let dragStartX = 0;
+  let dragStartY = 0;
+
+  const startElementDrag = (dyadId, pointerX, pointerY, immediate = false) => {
     const el = document.querySelector('[data-dyad-id="' + dyadId + '"]');
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+    const style = window.getComputedStyle(el);
+    const isAbsolute = style.position === 'absolute' || style.position === 'fixed';
+
+    dragStartX = pointerX;
+    dragStartY = pointerY;
 
     dragSession = {
       dyadId,
@@ -515,78 +748,135 @@ function injectDesignRuntime(html: string): string {
       offsetY: pointerY - rect.top,
       originalParent: el.parentElement,
       originalIndex: [...el.parentElement.children].indexOf(el),
-      isAbsolute: window.getComputedStyle(el).position === 'absolute',
+      originalParentPath: getElementPath(el.parentElement),
+      isAbsolute,
       lastPointerX: pointerX,
       lastPointerY: pointerY,
       started: true,
+      moved: false,
     };
 
-    el.setAttribute('data-dyad-dragging', 'true');
-    el.style.opacity = '0.7';
+    if (immediate) {
+      createGhostElement(el);
+      el.setAttribute('data-dyad-dragging', 'true');
+      el.style.opacity = '0.3';
+    }
+
     parent.postMessage({ type: 'dyad-design:drag-started', dyadId }, '*');
+  };
+
+  const isInDragHandle = (element, x, y) => {
+    const rect = element.getBoundingClientRect();
+    const handleSize = 20;
+    const isNearEdge = (
+      x < rect.left + handleSize ||
+      x > rect.right - handleSize ||
+      y < rect.top + handleSize ||
+      y > rect.bottom - handleSize
+    );
+    return isNearEdge;
   };
 
   const updateElementDrag = (pointerX, pointerY) => {
     if (!dragSession || !dragSession.started) return;
 
     const { element, isAbsolute, offsetX, offsetY } = dragSession;
+    dragSession.lastPointerX = pointerX;
+    dragSession.lastPointerY = pointerY;
+
+    const dx = pointerX - dragStartX;
+    const dy = pointerY - dragStartY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (!dragSession.moved && distance < DRAG_THRESHOLD) {
+      return;
+    }
+
+    dragSession.moved = true;
+
+    if (!element.hasAttribute('data-dyad-dragging')) {
+      createGhostElement(element);
+      element.setAttribute('data-dyad-dragging', 'true');
+      element.style.opacity = '0.3';
+    }
+
+    if (ghostElement) {
+      updateGhostPosition(pointerX - 20, pointerY - 10);
+    }
 
     if (isAbsolute) {
-      element.style.left = (pointerX - offsetX) + 'px';
-      element.style.top = (pointerY - offsetY) + 'px';
+      const rect = element.getBoundingClientRect();
+      const containerRect = element.parentElement.getBoundingClientRect();
+      const newLeft = pointerX - offsetX - containerRect.left;
+      const newTop = pointerY - offsetY - containerRect.top;
+      element.style.left = newLeft + 'px';
+      element.style.top = newTop + 'px';
+    } else {
+      const dropTarget = findValidDropTarget(pointerX, pointerY, element);
+      if (dropTarget) {
+        const insertIndex = calculateDropIndex(dropTarget, pointerX, pointerY);
+        updateDropIndicator(dropTarget, insertIndex);
+        dragSession.candidateParent = dropTarget;
+        dragSession.candidateIndex = insertIndex;
+      } else {
+        removeDropIndicator();
+        dragSession.candidateParent = null;
+        dragSession.candidateIndex = null;
+      }
     }
   };
 
   const endElementDrag = () => {
     if (!dragSession || !dragSession.started) return;
 
-    const { element, isAbsolute, originalParent, originalIndex } = dragSession;
+    const { element, isAbsolute, originalParent, originalIndex, candidateParent, candidateIndex, moved } = dragSession;
 
+    removeDropIndicator();
+    removeGhostElement();
     element.removeAttribute('data-dyad-dragging');
     element.style.opacity = '1';
 
-    if (isAbsolute) {
-      parent.postMessage({ type: 'dyad-design:drag-ended', relocated: true }, '*');
-    } else {
-      // Flow layout: execute DOM reorder
-      const elBelow = document.elementFromPoint(
-        dragSession.lastPointerX || 0,
-        dragSession.lastPointerY || 0
-      );
+    let relocated = false;
 
-      if (elBelow && !element.contains(elBelow)) {
-        let container = elBelow.closest('[data-dyad-id]') || elBelow.parentElement;
-        if (container && !container.contains(element)) {
-          container = originalParent;
-        }
+    // Only relocate if element actually moved beyond threshold
+    if (moved) {
+      if (isAbsolute) {
+        relocated = true;
+      } else if (candidateParent && candidateIndex !== null) {
+        const children = getChildrenForDrop(candidateParent);
 
-        if (container && container !== element) {
-          const children = [...container.children].filter(c =>
-            c !== element && !c.dataset.dyadDesignRuntime
-          );
-
-          let insertIndex = children.length;
-          const pointerY = dragSession.lastPointerY || 0;
-          for (let i = 0; i < children.length; i++) {
-            const rect = children[i].getBoundingClientRect();
-            if (pointerY < rect.top + rect.height / 2) {
-              insertIndex = i;
-              break;
+        if (element.parentElement !== candidateParent || 
+            [...element.parentElement.children].indexOf(element) !== candidateIndex) {
+          if (candidateIndex === 0) {
+            candidateParent.insertBefore(element, children[0] || null);
+          } else if (candidateIndex >= children.length) {
+            candidateParent.appendChild(element);
+          } else {
+            const insertBeforeEl = children[candidateIndex];
+            if (insertBeforeEl && insertBeforeEl !== element) {
+              candidateParent.insertBefore(element, insertBeforeEl);
+            } else {
+              const nextEl = children[candidateIndex + 1];
+              if (nextEl) {
+                candidateParent.insertBefore(element, nextEl);
+              } else {
+                candidateParent.appendChild(element);
+              }
             }
           }
-
-          if (insertIndex < children.length) {
-            container.insertBefore(element, children[insertIndex]);
-          } else {
-            container.appendChild(element);
-          }
-
-          parent.postMessage({ type: 'dyad-design:drag-ended', relocated: true }, '*');
-          dragSession = null;
-          return;
+          relocated = true;
         }
       }
+    }
 
+    if (relocated) {
+      sendSerializedHtml();
+      parent.postMessage({ type: 'dyad-design:drag-ended', relocated: true }, '*');
+      // Re-select the element at its new position so user can edit properties immediately
+      if (element.dataset.dyadId) {
+        selectElement(element);
+      }
+    } else {
       parent.postMessage({ type: 'dyad-design:drag-ended', relocated: false }, '*');
     }
 
@@ -773,6 +1063,7 @@ function injectDesignRuntime(html: string): string {
     'click',
     (event) => {
       if (!editMode) return;
+      if (dragSession) return; // Don't select during drag
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
       if (!shouldTrack(target)) return;
@@ -785,38 +1076,56 @@ function injectDesignRuntime(html: string): string {
 
   // Drag event listeners
   document.addEventListener('pointermove', (e) => {
-    if (dragSession) {
+    if (dragSession && dragSession.started) {
       e.preventDefault();
-      dragSession.lastPointerX = e.clientX;
-      dragSession.lastPointerY = e.clientY;
       updateElementDrag(e.clientX, e.clientY);
     }
   }, { passive: false });
 
   document.addEventListener('pointerup', (e) => {
-    if (dragSession) {
+    if (dragSession && dragSession.started) {
       e.preventDefault();
       endElementDrag();
     }
   });
 
-  // In select mode, clicking on selected element starts drag
+  // In select mode, clicking on any element starts selection
+  // Drag only starts after mouse moves beyond threshold
   document.addEventListener('pointerdown', (e) => {
     const target = e.target;
     if (!(target instanceof HTMLElement)) return;
 
-    if (editMode) {
-      const selectedEl = document.querySelector('[data-dyad-selected="true"]');
-      if (selectedEl && (selectedEl === target || selectedEl.contains(target))) {
-        const dyadId = selectedEl.dataset.dyadId;
+    if (editMode && shouldTrack(target)) {
+      const trackableEl = findTrackableParent(target);
+      if (trackableEl) {
+        ensureIds();
+        const dyadId = trackableEl.dataset.dyadId;
         if (dyadId) {
           e.preventDefault();
           e.stopPropagation();
-          startElementDrag(dyadId, e.clientX, e.clientY);
+
+          // Only select, don't start drag immediately
+          selectElement(trackableEl);
+
+          // Initialize drag session but don't start yet
+          startElementDrag(dyadId, e.clientX, e.clientY, false);
         }
       }
     }
   }, true);
+
+  // Clean up drag session on pointer cancel
+  document.addEventListener('pointercancel', () => {
+    if (dragSession) {
+      removeDropIndicator();
+      removeGhostElement();
+      if (dragSession.element) {
+        dragSession.element.removeAttribute('data-dyad-dragging');
+        dragSession.element.style.opacity = '1';
+      }
+      dragSession = null;
+    }
+  });
 
   ensureIds();
   parent.postMessage({ type: 'dyad-design:ready' }, '*');
@@ -1169,11 +1478,13 @@ export const DesignPanel: React.FC = () => {
     useState<SelectedElementSnapshot | null>(null);
   const [contentHeight, setContentHeight] = useState(900);
   const [savedHtml, setSavedHtml] = useState<string | null>(null);
+  const [originalHtml, setOriginalHtml] = useState<string | null>(null);
   const [pendingSerializedHtml, setPendingSerializedHtml] = useState<
     string | null
   >(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isRuntimeReady, setIsRuntimeReady] = useState(false);
   const [localPendingAction, setLocalPendingAction] =
     useState<PendingAction | null>(null);
@@ -1390,12 +1701,19 @@ export const DesignPanel: React.FC = () => {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [savedHtml]);
+  }, [savedHtml, requestSerializedHtml]);
 
   const srcDoc = useMemo(() => {
     if (!draft?.html) return "";
     return injectDesignRuntime(draft.html);
   }, [draft?.html]);
+
+  // Store original HTML when draft loads (for Reset functionality)
+  useEffect(() => {
+    if (draft?.html && !originalHtml) {
+      setOriginalHtml(draft.html);
+    }
+  }, [draft?.html, originalHtml]);
 
   useEffect(() => {
     if (!isRuntimeReady || savedHtml || !draft) return;
@@ -1562,17 +1880,20 @@ export const DesignPanel: React.FC = () => {
   };
 
   const resetDraftToSaved = () => {
-    if (!savedHtml || !iframeRef.current?.contentWindow) return;
+    // Reset to the original HTML loaded from server (before any edits)
+    if (!originalHtml || !iframeRef.current?.contentWindow) return;
 
     iframeRef.current.contentWindow.postMessage(
       {
         type: "dyad-design:reset-to-html",
-        html: savedHtml,
+        html: originalHtml,
       },
       "*",
     );
-    setPendingSerializedHtml(savedHtml);
+    setPendingSerializedHtml(originalHtml);
+    setSavedHtml(originalHtml);
     setIsDirty(false);
+    setSaveStatus('idle');
     setSelectedElement(null);
     setInspectorPanel(null);
   };
@@ -1580,7 +1901,6 @@ export const DesignPanel: React.FC = () => {
   const saveDesignChanges = useCallback(async () => {
     if (!draft || !appId) return false;
 
-    setIsSaving(true);
     try {
       const htmlToSave =
         pendingSerializedHtml ?? (await requestSerializedHtml()) ?? null;
@@ -1604,18 +1924,32 @@ export const DesignPanel: React.FC = () => {
       return true;
     } catch (error) {
       showError(`Failed to save design draft: ${error}`);
+      setSaveStatus('error');
       return false;
-    } finally {
-      setIsSaving(false);
     }
-  }, [
-    appId,
-    chatId,
-    draft,
-    pendingSerializedHtml,
-    queryClient,
-    requestSerializedHtml,
-  ]);
+  }, [draft, appId, pendingSerializedHtml, requestSerializedHtml, queryClient, chatId]);
+
+  // Auto-save when changes are detected (debounced 800ms)
+  useEffect(() => {
+    if (!isDirty || !draft || !appId) return;
+
+    const timer = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        const success = await saveDesignChanges();
+        if (success) {
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('idle'), 2000);
+        } else {
+          setSaveStatus('error');
+        }
+      } catch {
+        setSaveStatus('error');
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [isDirty, draft, appId, saveDesignChanges]);
 
   const clearPendingAction = () => {
     setLocalPendingAction(null);
@@ -2000,12 +2334,34 @@ export const DesignPanel: React.FC = () => {
           </>
         )}
 
-        {viewMode === "edit" && isDirty && (
+        {viewMode === "edit" && (
           <div className="absolute bottom-[72px] left-1/2 z-20 -translate-x-1/2 rounded-full border border-white/70 bg-white/96 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.12)] backdrop-blur">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Unsaved Changes
+                {saveStatus === 'saving' && (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                    <span className="text-blue-600">Saving...</span>
+                  </>
+                )}
+                {saveStatus === 'saved' && (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-green-600">Saved</span>
+                  </>
+                )}
+                {saveStatus === 'error' && (
+                  <>
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <span className="text-red-600">Save failed</span>
+                  </>
+                )}
+                {saveStatus === 'idle' && isDirty && (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                    <span>Editing...</span>
+                  </>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -2015,15 +2371,6 @@ export const DesignPanel: React.FC = () => {
               >
                 <RotateCcw className="h-4 w-4" />
                 Reset
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => void saveDesignChanges()}
-                disabled={isSaving}
-                className="rounded-full bg-slate-900 text-white hover:bg-slate-800"
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save"}
               </Button>
             </div>
           </div>
