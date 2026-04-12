@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type {
   ComponentSelection,
+  DesignElementSelection,
   FileAttachment,
   ChatAttachment,
 } from "@/ipc/types";
@@ -87,6 +88,8 @@ export function useStreamChat({
       redo,
       attachments,
       selectedComponents,
+      selectedDesignElements,
+      currentDesignDraftHtml,
       onSettled,
     }: {
       prompt: string;
@@ -94,6 +97,8 @@ export function useStreamChat({
       redo?: boolean;
       attachments?: FileAttachment[];
       selectedComponents?: ComponentSelection[];
+      selectedDesignElements?: DesignElementSelection[];
+      currentDesignDraftHtml?: string;
       onSettled?: (result: { success: boolean }) => void;
     }) => {
       if (
@@ -171,6 +176,8 @@ export function useStreamChat({
             redo,
             attachments: convertedAttachments,
             selectedComponents: selectedComponents ?? [],
+            selectedDesignElements: selectedDesignElements ?? [],
+            currentDesignDraftHtml,
           },
           {
             onChunk: ({
@@ -432,7 +439,14 @@ export function useStreamChat({
     updateQueuedMessage: (
       id: string,
       updates: Partial<
-        Pick<QueuedMessageItem, "prompt" | "attachments" | "selectedComponents">
+        Pick<
+          QueuedMessageItem,
+          | "prompt"
+          | "attachments"
+          | "selectedComponents"
+          | "selectedDesignElements"
+          | "currentDesignDraftHtml"
+        >
       >,
     ) => {
       if (chatId === undefined) return;

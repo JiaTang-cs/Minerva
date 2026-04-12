@@ -30,7 +30,11 @@ import {
 import { getDyadAppPath } from "../../paths/paths";
 import { buildDyadMediaUrl } from "../../lib/dyadMediaUrl";
 import { readSettings } from "../../main/settings";
-import type { ChatResponseEnd, ChatStreamParams } from "@/ipc/types";
+import type {
+  ChatResponseEnd,
+  ChatStreamParams,
+  DesignElementSelection,
+} from "@/ipc/types";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
 import {
   CodebaseFile,
@@ -153,6 +157,45 @@ function parseMcpToolKey(toolKey: string): {
   const serverName = toolKey.slice(0, lastIndex);
   const toolName = toolKey.slice(lastIndex + separator.length);
   return { serverName, toolName };
+}
+
+function formatDesignElementContext(
+  elements: DesignElementSelection[],
+  currentDesignDraftHtml?: string,
+): string {
+  const selectedElementsBlock = elements
+    .map((element, index) => {
+      const label = elements.length > 1 ? `${index + 1}. ` : "";
+      const pathLabel =
+        element.path.length > 0 ? element.path.join(" > ") : "[root selection]";
+      const textLabel = element.text ? `\nText: ${element.text}` : "";
+      const styleLabel = element.styleSummary
+        ? `\nStyle summary: ${element.styleSummary}`
+        : "";
+
+      return `${label}Element: <${element.tagName}> (dyad id: ${element.dyadId}, draft: ${element.draftId})
+Path: ${pathLabel}${textLabel}${styleLabel}
+Outer HTML:
+\`\`\`html
+${element.outerHtml}
+\`\`\``;
+    })
+    .join("\n\n");
+
+  const draftBlock = currentDesignDraftHtml
+    ? `\n\nCurrent full design draft HTML:
+\`\`\`html
+${currentDesignDraftHtml}
+\`\`\``
+    : "";
+
+  return `\n\nSelected design elements:
+${selectedElementsBlock}
+
+Editing guidance:
+- Prioritize editing the selected element(s) unless the user asked for a broader redesign.
+- Preserve existing data-dyad-id attributes for existing elements whenever possible.
+- If you restructure a selected element, keep its identity anchored to the closest surviving equivalent element.${draftBlock}`;
 }
 
 // Helper function to process stream chunks
@@ -530,6 +573,13 @@ ${componentSnippet}
 \`\`\`
 `;
         }
+      }
+
+      if (req.selectedDesignElements && req.selectedDesignElements.length > 0) {
+        userPrompt += formatDesignElementContext(
+          req.selectedDesignElements,
+          req.currentDesignDraftHtml,
+        );
       }
 
       const [insertedUserMessage] = await db

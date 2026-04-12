@@ -121,6 +121,7 @@ export type {
   Message,
   Chat,
   ComponentSelection,
+  DesignElementSelection,
   FileAttachment,
   ChatAttachment,
   ChatStreamParams,

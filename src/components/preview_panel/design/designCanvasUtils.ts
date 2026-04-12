@@ -104,6 +104,9 @@ export interface SelectedElementSnapshot {
   dyadId: string;
   tagName: string;
   text: string;
+  path: string[];
+  outerHtml: string;
+  styleSummary: string;
   rect: { x: number; y: number; width: number; height: number };
   styles: SelectedElementStyles;
 }
@@ -349,7 +352,7 @@ export function injectDesignRuntime(html: string): string {
   };
 
   const findTrackableParent = (element) => {
-    if (!element || !element instanceof HTMLElement) return null;
+    if (!element || !(element instanceof HTMLElement)) return null;
     if (shouldTrack(element) && element.dataset.dyadId) return element;
     if (element === document.body || element === document.documentElement) return null;
     return findTrackableParent(element.parentElement);
@@ -365,6 +368,32 @@ export function injectDesignRuntime(html: string): string {
       current = current.parentElement;
     }
     return path;
+  };
+
+  const generateDyadId = () => {
+    if (window.crypto?.randomUUID) {
+      return 'dyad-el-' + window.crypto.randomUUID();
+    }
+
+    return 'dyad-el-' + Math.random().toString(36).slice(2, 11);
+  };
+
+  const buildStyleSummary = (styles, rect) => {
+    return [
+      'display=' + styles.display,
+      'position=' + styles.position,
+      'size=' + Math.round(rect.width) + 'x' + Math.round(rect.height),
+      styles.backgroundColor ? 'background=' + styles.backgroundColor : null,
+      styles.color ? 'color=' + styles.color : null,
+      styles.fontSize ? 'font-size=' + styles.fontSize : null,
+      styles.fontWeight ? 'font-weight=' + styles.fontWeight : null,
+      styles.justifyContent ? 'justify=' + styles.justifyContent : null,
+      styles.alignItems ? 'align=' + styles.alignItems : null,
+      styles.padding ? 'padding=' + styles.padding : null,
+      styles.margin ? 'margin=' + styles.margin : null,
+    ]
+      .filter(Boolean)
+      .join(', ');
   };
 
   const getElementLayoutMode = (element) => {
@@ -420,7 +449,7 @@ export function injectDesignRuntime(html: string): string {
   };
 
   const isValidDropTarget = (targetEl, draggedEl) => {
-    if (!targetEl || !targetEl instanceof HTMLElement) return false;
+    if (!targetEl || !(targetEl instanceof HTMLElement)) return false;
     if (targetEl === draggedEl) return false;
     if (draggedEl && draggedEl.contains(targetEl)) return false;
 
@@ -435,7 +464,7 @@ export function injectDesignRuntime(html: string): string {
 
   const findValidDropTarget = (pointerX, pointerY, excludeEl) => {
     const el = document.elementFromPoint(pointerX, pointerY);
-    if (!el || !el instanceof HTMLElement) return null;
+    if (!el || !(el instanceof HTMLElement)) return null;
     if (el === excludeEl || (excludeEl && excludeEl.contains(el))) return null;
 
     let container = el.closest('[data-dyad-id]');
@@ -539,13 +568,21 @@ export function injectDesignRuntime(html: string): string {
     property.replace(/[A-Z]/g, (character) => '-' + character.toLowerCase());
 
   const ensureIds = () => {
-    let index = 0;
+    const usedIds = new Set();
     document.querySelectorAll(ELEMENT_SELECTOR).forEach((element) => {
       if (!shouldTrack(element)) return;
-      if (!element.dataset.dyadId) {
-        element.dataset.dyadId = 'dyad-el-' + index;
+      const existingId = element.dataset.dyadId;
+      if (existingId && !usedIds.has(existingId)) {
+        usedIds.add(existingId);
+        return;
       }
-      index += 1;
+
+      let nextId = generateDyadId();
+      while (usedIds.has(nextId)) {
+        nextId = generateDyadId();
+      }
+      element.dataset.dyadId = nextId;
+      usedIds.add(nextId);
     });
   };
 
@@ -565,11 +602,15 @@ export function injectDesignRuntime(html: string): string {
   const snapshotElement = (element) => {
     const rect = element.getBoundingClientRect();
     const styles = getComputedStyle(element);
+    const path = getElementPath(element);
 
     return {
       dyadId: element.dataset.dyadId || '',
       tagName: element.tagName.toLowerCase(),
       text: (element.innerText || element.textContent || '').trim().slice(0, 120),
+      path,
+      outerHtml: element.outerHTML,
+      styleSummary: buildStyleSummary(styles, rect),
       rect: {
         x: rect.x,
         y: rect.y,
@@ -774,6 +815,14 @@ export function injectDesignRuntime(html: string): string {
 
     if (data.type === 'dyad-design:clear-selection') {
       clearSelection();
+      return;
+    }
+
+    if (data.type === 'dyad-design:select-element' && typeof data.dyadId === 'string') {
+      const target = document.querySelector('[data-dyad-id="' + data.dyadId + '"]');
+      if (target instanceof HTMLElement) {
+        selectElement(target);
+      }
       return;
     }
 

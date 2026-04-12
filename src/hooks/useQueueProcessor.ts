@@ -66,6 +66,8 @@ export function useQueueProcessor() {
         redo: false,
         attachments: messageToSend.attachments,
         selectedComponents: messageToSend.selectedComponents,
+        selectedDesignElements: messageToSend.selectedDesignElements,
+        currentDesignDraftHtml: messageToSend.currentDesignDraftHtml,
       });
 
       // Only process one chatId per effect run

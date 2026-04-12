@@ -3,6 +3,7 @@ import type {
   Message,
   AgentTodo,
   ComponentSelection,
+  DesignElementSelection,
 } from "@/ipc/types";
 import type { ListedApp } from "@/ipc/types/app";
 import type { Getter, Setter } from "jotai";
@@ -248,6 +249,8 @@ export interface QueuedMessageItem {
   prompt: string;
   attachments?: FileAttachment[];
   selectedComponents?: ComponentSelection[];
+  selectedDesignElements?: DesignElementSelection[];
+  currentDesignDraftHtml?: string;
 }
 
 // Map<chatId, QueuedMessageItem[]>

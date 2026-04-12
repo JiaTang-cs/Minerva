@@ -1,4 +1,8 @@
-import { ComponentSelection, VisualEditingChange } from "@/ipc/types";
+import {
+  ComponentSelection,
+  DesignElementSelection,
+  VisualEditingChange,
+} from "@/ipc/types";
 import { atom } from "jotai";
 
 export const selectedComponentsPreviewAtom = atom<ComponentSelection[]>([]);
@@ -14,6 +18,9 @@ export const currentComponentCoordinatesAtom = atom<{
 } | null>(null);
 
 export const previewIframeRefAtom = atom<HTMLIFrameElement | null>(null);
+export const designIframeRefAtom = atom<HTMLIFrameElement | null>(null);
+export const selectedDesignElementsAtom = atom<DesignElementSelection[]>([]);
+export const currentDesignDraftHtmlAtom = atom<string | null>(null);
 
 export const annotatorModeAtom = atom<boolean>(false);
 

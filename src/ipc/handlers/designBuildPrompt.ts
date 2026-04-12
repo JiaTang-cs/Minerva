@@ -1,7 +1,9 @@
 import type { DesignDraft } from "@/ipc/types";
+import { stripDesignEditorArtifactsForHandoff } from "@/shared/designDraftHtml";
 
 export function createBuildFromDesignPrompt(draft: DesignDraft): string {
   const designPath = `.dyad/designs/${draft.id}.json`;
+  const cleanHtml = stripDesignEditorArtifactsForHandoff(draft.html);
 
   return `Build a complete application from the following design draft:
 
@@ -13,7 +15,7 @@ Design draft path: \`${designPath}\`
 
 HTML design draft:
 \`\`\`html
-${draft.html}
+${cleanHtml}
 \`\`\`
 
 Use this design draft as the visual and structural source of truth while implementing the app.

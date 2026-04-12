@@ -17,7 +17,6 @@ export function stripDesignRuntimeArtifacts(html: string): string {
     .forEach((element) => element.remove());
 
   removeAttributeFromAll(document, "data-dyad-selected");
-  removeAttributeFromAll(document, "data-dyad-id");
   removeAttributeFromAll(document, "data-dyad-design-edit-mode");
 
   if (document.body) {

@@ -6,7 +6,7 @@ import {
 } from "./designDraftEditing";
 
 describe("designDraftEditing", () => {
-  it("removes runtime artifacts but keeps the html document intact", () => {
+  it("removes runtime artifacts but keeps persisted dyad ids intact", () => {
     const html = `<!DOCTYPE html>
 <html>
   <head>
@@ -22,10 +22,9 @@ describe("designDraftEditing", () => {
     const cleaned = stripDesignRuntimeArtifacts(html);
 
     expect(cleaned).toContain("<!DOCTYPE html>");
-    expect(cleaned).toContain("<main>Hello</main>");
+    expect(cleaned).toContain('<main data-dyad-id="dyad-el-1">Hello</main>');
     expect(cleaned).not.toContain("data-dyad-design-runtime");
     expect(cleaned).not.toContain("data-dyad-selected");
-    expect(cleaned).not.toContain("data-dyad-id");
     expect(cleaned).not.toContain("data-dyad-design-edit-mode");
     expect(cleaned).not.toContain("console.log");
   });
@@ -37,10 +36,19 @@ describe("designDraftEditing", () => {
   <body><main>Hello</main></body>
 </html>`;
     const pending = `<!DOCTYPE html>
-<html><head><style data-dyad-design-runtime></style></head><body data-dyad-design-edit-mode="true"><main data-dyad-id="one">Hello</main><script data-dyad-design-runtime></script></body></html>`;
+<html><head><style data-dyad-design-runtime></style></head><body data-dyad-design-edit-mode="true"><main data-dyad-id="one" data-dyad-selected="true">Hello</main><script data-dyad-design-runtime></script></body></html>`;
 
-    expect(normalizeDesignDraftHtml(saved)).toBe(
+    expect(normalizeDesignDraftHtml(saved)).not.toBe(
       normalizeDesignDraftHtml(pending),
+    );
+  });
+
+  it("treats stable dyad ids as part of the persisted draft html", () => {
+    const first = `<!DOCTYPE html><html><head></head><body><main data-dyad-id="one">Hello</main></body></html>`;
+    const second = `<!DOCTYPE html><html><head></head><body><main data-dyad-id="two">Hello</main></body></html>`;
+
+    expect(normalizeDesignDraftHtml(first)).not.toBe(
+      normalizeDesignDraftHtml(second),
     );
   });
 

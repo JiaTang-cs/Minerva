@@ -70,6 +70,9 @@ import { QuestionnaireInput } from "./QuestionnaireInput";
 import { AskUserQuestionInput } from "./AskUserQuestionInput";
 import { QueuedMessagesList } from "./QueuedMessagesList";
 import {
+  currentDesignDraftHtmlAtom,
+  designIframeRefAtom,
+  selectedDesignElementsAtom,
   selectedComponentsPreviewAtom,
   previewIframeRefAtom,
   visualEditingSelectedComponentAtom,
@@ -78,6 +81,7 @@ import {
   isRestoringQueuedSelectionAtom,
 } from "@/atoms/previewAtoms";
 import { SelectedComponentsDisplay } from "./SelectedComponentDisplay";
+import { SelectedDesignElementsDisplay } from "./SelectedDesignElementsDisplay";
 import { useCheckProblems } from "@/hooks/useCheckProblems";
 import { LexicalChatInput } from "./LexicalChatInput";
 import { AuxiliaryActionsMenu } from "./AuxiliaryActionsMenu";
@@ -145,7 +149,12 @@ export function ChatInput({ chatId }: { chatId?: number }) {
   const [selectedComponents, setSelectedComponents] = useAtom(
     selectedComponentsPreviewAtom,
   );
+  const [selectedDesignElements, setSelectedDesignElements] = useAtom(
+    selectedDesignElementsAtom,
+  );
+  const currentDesignDraftHtml = useAtomValue(currentDesignDraftHtmlAtom);
   const previewIframeRef = useAtomValue(previewIframeRefAtom);
+  const designIframeRef = useAtomValue(designIframeRefAtom);
   const setVisualEditingSelectedComponent = useSetAtom(
     visualEditingSelectedComponentAtom,
   );
@@ -231,6 +240,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
     !!proposal &&
     proposal.type === "code-proposal" &&
     messageId === lastMessage.id;
+  const isDesignMode = settings?.selectedChatMode === "design";
 
   // Extract user message history for terminal-style navigation
   const userMessageHistory = useMemo(() => {
@@ -299,6 +309,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
     setInputValue("");
     clearAttachments();
     setSelectedComponents([]);
+    setSelectedDesignElements([]);
     setVisualEditingSelectedComponent(null);
     if (previewIframeRef?.contentWindow) {
       previewIframeRef.contentWindow.postMessage(
@@ -306,12 +317,20 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         "*",
       );
     }
+    if (designIframeRef?.contentWindow) {
+      designIframeRef.contentWindow.postMessage(
+        { type: "dyad-design:clear-selection" },
+        "*",
+      );
+    }
   }, [
     setInputValue,
     clearAttachments,
     setSelectedComponents,
+    setSelectedDesignElements,
     setVisualEditingSelectedComponent,
     previewIframeRef,
+    designIframeRef,
   ]);
 
   // Clear editing state if the edited queued message is auto-dequeued
@@ -335,6 +354,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       if (editingQueuedMessageIdRef.current) {
         clearAttachments();
         setSelectedComponents([]);
+        setSelectedDesignElements([]);
         setVisualEditingSelectedComponent(null);
       }
     };
@@ -352,10 +372,16 @@ export function ChatInput({ chatId }: { chatId?: number }) {
           selectedComponents && selectedComponents.length > 0
             ? selectedComponents
             : [];
+        const designElementsToSave =
+          selectedDesignElements && selectedDesignElements.length > 0
+            ? selectedDesignElements
+            : [];
         updateQueuedMessage(editingQueuedMessageId, {
           prompt: inputValue,
           attachments,
           selectedComponents: componentsToSave,
+          selectedDesignElements: designElementsToSave,
+          currentDesignDraftHtml: currentDesignDraftHtml ?? undefined,
         });
       }
       // Load the message content into the input
@@ -364,6 +390,25 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       replaceAttachments(msg.attachments ?? []);
       setIsRestoringQueuedSelection(true);
       setSelectedComponents(msg.selectedComponents ?? []);
+      setSelectedDesignElements(msg.selectedDesignElements ?? []);
+      if (
+        designIframeRef?.contentWindow &&
+        msg.selectedDesignElements &&
+        msg.selectedDesignElements.length > 0
+      ) {
+        designIframeRef.contentWindow.postMessage(
+          {
+            type: "dyad-design:select-element",
+            dyadId: msg.selectedDesignElements[0].dyadId,
+          },
+          "*",
+        );
+      } else if (designIframeRef?.contentWindow) {
+        designIframeRef.contentWindow.postMessage(
+          { type: "dyad-design:clear-selection" },
+          "*",
+        );
+      }
       // Reset visual editing target to avoid stale toolbar state
       setVisualEditingSelectedComponent(null);
       // Set editing mode
@@ -375,12 +420,16 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       inputValue,
       attachments,
       selectedComponents,
+      selectedDesignElements,
+      currentDesignDraftHtml,
       setInputValue,
       replaceAttachments,
       setSelectedComponents,
+      setSelectedDesignElements,
       setVisualEditingSelectedComponent,
       setIsRestoringQueuedSelection,
       updateQueuedMessage,
+      designIframeRef,
     ],
   );
 
@@ -477,6 +526,10 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       selectedComponents && selectedComponents.length > 0
         ? selectedComponents
         : [];
+    const designElementsToSend =
+      selectedDesignElements && selectedDesignElements.length > 0
+        ? selectedDesignElements
+        : [];
 
     // Handle editing a queued message
     if (editingQueuedMessageId) {
@@ -484,6 +537,10 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         prompt: currentInput,
         attachments,
         selectedComponents: componentsToSend,
+        selectedDesignElements: designElementsToSend,
+        currentDesignDraftHtml: isDesignMode
+          ? currentDesignDraftHtml ?? undefined
+          : undefined,
       });
       resetEditingState();
       return;
@@ -495,17 +552,28 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         prompt: currentInput,
         attachments,
         selectedComponents: componentsToSend,
+        selectedDesignElements: designElementsToSend,
+        currentDesignDraftHtml: isDesignMode
+          ? currentDesignDraftHtml ?? undefined
+          : undefined,
       });
       if (queued) {
         // Only clear input, attachments, and components on successful queue
         setInputValue("");
         clearAttachments();
         setSelectedComponents([]);
+        setSelectedDesignElements([]);
         setVisualEditingSelectedComponent(null);
         // Clear overlays in the preview iframe
         if (previewIframeRef?.contentWindow) {
           previewIframeRef.contentWindow.postMessage(
             { type: "clear-dyad-component-overlays" },
+            "*",
+          );
+        }
+        if (designIframeRef?.contentWindow) {
+          designIframeRef.contentWindow.postMessage(
+            { type: "dyad-design:clear-selection" },
             "*",
           );
         }
@@ -518,11 +586,18 @@ export function ChatInput({ chatId }: { chatId?: number }) {
     // Clear input and components before sending
     setInputValue("");
     setSelectedComponents([]);
+    setSelectedDesignElements([]);
     setVisualEditingSelectedComponent(null);
     // Clear overlays in the preview iframe
     if (previewIframeRef?.contentWindow) {
       previewIframeRef.contentWindow.postMessage(
         { type: "clear-dyad-component-overlays" },
+        "*",
+      );
+    }
+    if (designIframeRef?.contentWindow) {
+      designIframeRef.contentWindow.postMessage(
+        { type: "dyad-design:clear-selection" },
         "*",
       );
     }
@@ -534,6 +609,10 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       attachments,
       redo: false,
       selectedComponents: componentsToSend,
+      selectedDesignElements: isDesignMode ? designElementsToSend : [],
+      currentDesignDraftHtml: isDesignMode
+        ? currentDesignDraftHtml ?? undefined
+        : undefined,
     });
     clearAttachments();
     posthog.capture("chat:submit", { chatMode: settings?.selectedChatMode });
@@ -804,6 +883,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
           />
 
           <SelectedComponentsDisplay />
+          {isDesignMode ? <SelectedDesignElementsDisplay /> : null}
 
           {/* Use the AttachmentsList component */}
           <AttachmentsList

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 import { Layers3 } from "lucide-react";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
@@ -10,6 +10,11 @@ import {
 } from "@/atoms/appAtoms";
 import { designHandoffStateAtom } from "@/atoms/designAtoms";
 import { isChatPanelHiddenAtom, isPreviewOpenAtom } from "@/atoms/viewAtoms";
+import {
+  currentDesignDraftHtmlAtom,
+  designIframeRefAtom,
+  selectedDesignElementsAtom,
+} from "@/atoms/previewAtoms";
 import { useDesignDraft } from "@/hooks/useDesignDraft";
 import { useSettings } from "@/hooks/useSettings";
 import { useStreamChat } from "@/hooks/useStreamChat";
@@ -33,6 +38,7 @@ import { DesignCanvas } from "./design/DesignCanvas";
 import { LayoutInspector, StyleInspector } from "./design/DesignInspector";
 import { DesignToolbar } from "./design/DesignToolbar";
 import { useDesignDraftSession } from "./design/useDesignDraftSession";
+import { normalizeDesignDraftHtml } from "./designDraftEditing";
 
 function DesignEmptyState() {
   return (
@@ -64,6 +70,9 @@ export const DesignPanel: React.FC = () => {
   const [designPendingNavigation, setDesignPendingNavigation] = useAtom(
     designPendingNavigationAtom,
   );
+  const setDesignIframeRef = useSetAtom(designIframeRefAtom);
+  const setSelectedDesignElements = useSetAtom(selectedDesignElementsAtom);
+  const setCurrentDesignDraftHtml = useSetAtom(currentDesignDraftHtmlAtom);
   const designHandoffState = useAtomValue(designHandoffStateAtom);
   const queryClient = useQueryClient();
   const { appId, data: draft, isLoading, refetch } = useDesignDraft();
@@ -99,6 +108,56 @@ export const DesignPanel: React.FC = () => {
     if (!draft?.html) return "";
     return injectDesignRuntime(draft.html);
   }, [draft?.html]);
+
+  React.useEffect(() => {
+    setDesignIframeRef(session.iframeRef.current);
+  }, [session.iframeRef, srcDoc, setDesignIframeRef]);
+
+  React.useEffect(() => {
+    if (!draft) {
+      setCurrentDesignDraftHtml(null);
+      return;
+    }
+
+    setCurrentDesignDraftHtml(
+      session.pendingSerializedHtml ?? normalizeDesignDraftHtml(draft.html),
+    );
+  }, [
+    draft,
+    session.pendingSerializedHtml,
+    setCurrentDesignDraftHtml,
+  ]);
+
+  React.useEffect(() => {
+    if (!draft || !session.selectedElement) {
+      setSelectedDesignElements([]);
+      return;
+    }
+
+    setSelectedDesignElements([
+      {
+        draftId: draft.id,
+        dyadId: session.selectedElement.dyadId,
+        tagName: session.selectedElement.tagName,
+        text: session.selectedElement.text,
+        path: session.selectedElement.path,
+        outerHtml: session.selectedElement.outerHtml,
+        styleSummary: session.selectedElement.styleSummary,
+      },
+    ]);
+  }, [draft, session.selectedElement, setSelectedDesignElements]);
+
+  React.useEffect(() => {
+    return () => {
+      setDesignIframeRef(null);
+      setSelectedDesignElements([]);
+      setCurrentDesignDraftHtml(null);
+    };
+  }, [
+    setCurrentDesignDraftHtml,
+    setDesignIframeRef,
+    setSelectedDesignElements,
+  ]);
 
   const activePendingAction =
     session.localPendingAction ?? designPendingNavigation;

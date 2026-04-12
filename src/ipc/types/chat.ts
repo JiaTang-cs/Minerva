@@ -56,6 +56,20 @@ export const ComponentSelectionSchema = z.object({
 
 export type ComponentSelection = z.infer<typeof ComponentSelectionSchema>;
 
+export const DesignElementSelectionSchema = z.object({
+  draftId: z.string(),
+  dyadId: z.string(),
+  tagName: z.string(),
+  text: z.string(),
+  path: z.array(z.string()),
+  outerHtml: z.string(),
+  styleSummary: z.string().optional(),
+});
+
+export type DesignElementSelection = z.infer<
+  typeof DesignElementSelectionSchema
+>;
+
 /**
  * Schema for file attachment in chat (base64 encoded for IPC transfer).
  */
@@ -86,6 +100,8 @@ export const ChatStreamParamsSchema = z.object({
   redo: z.boolean().optional(),
   attachments: z.array(ChatAttachmentSchema).optional(),
   selectedComponents: z.array(ComponentSelectionSchema).optional(),
+  selectedDesignElements: z.array(DesignElementSelectionSchema).optional(),
+  currentDesignDraftHtml: z.string().optional(),
 });
 
 export type ChatStreamParams = z.infer<typeof ChatStreamParamsSchema>;

@@ -39,6 +39,8 @@ When the request is clear enough, create the first draft with \`create_design_dr
 ## Step 3: Iterate on the current draft
 
 When a draft already exists for the current chat, update it with \`update_design_draft\`.
+When the user has selected element(s) from the design canvas, treat them as the primary edit targets.
+Prefer focused edits to those selected elements instead of redesigning the whole page unless the user asks for broader changes.
 
 ## Step 4: Hand off to implementation
 
@@ -60,6 +62,8 @@ The HTML you generate must follow these rules:
 - Do not depend on external CDNs for functionality
 - You may include page-level \`<style>\` and font imports
 - Prefer stable, semantic structure that will be easy to edit later
+- Preserve existing \`data-dyad-id\` attributes on existing elements whenever possible
+- Do not rename or remove an existing \`data-dyad-id\` unless that element is intentionally deleted
 - Use responsive layouts
 - Default to mobile-first if the user says "app" without specifying platform
 - The draft should be visually strong and intentional, not generic

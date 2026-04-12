@@ -14,7 +14,11 @@ import {
 } from "@/atoms/appAtoms";
 import { useSettings } from "@/hooks/useSettings";
 import { DEFAULT_ZOOM_LEVEL } from "@/lib/schemas";
-import { selectedComponentsPreviewAtom } from "@/atoms/previewAtoms";
+import {
+  currentDesignDraftHtmlAtom,
+  selectedComponentsPreviewAtom,
+  selectedDesignElementsAtom,
+} from "@/atoms/previewAtoms";
 import { usePlanEvents } from "@/hooks/usePlanEvents";
 import { useDesignEvents } from "@/hooks/useDesignEvents";
 import { useZoomShortcuts } from "@/hooks/useZoomShortcuts";
@@ -31,6 +35,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   const setSelectedComponentsPreview = useSetAtom(
     selectedComponentsPreviewAtom,
   );
+  const setSelectedDesignElements = useSetAtom(selectedDesignElementsAtom);
+  const setCurrentDesignDraftHtml = useSetAtom(currentDesignDraftHtmlAtom);
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const setConsoleEntries = useSetAtom(appConsoleEntriesAtom);
 
@@ -101,6 +107,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setSelectedComponentsPreview([]);
+    setSelectedDesignElements([]);
+    setCurrentDesignDraftHtml(null);
     setConsoleEntries([]);
   }, [selectedAppId]);
 
