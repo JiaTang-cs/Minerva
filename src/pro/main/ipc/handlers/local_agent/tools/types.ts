@@ -52,6 +52,9 @@ export interface AgentContext {
   appId: number;
   appPath: string;
   chatId: number;
+  readOnly?: boolean;
+  planModeOnly?: boolean;
+  designModeOnly?: boolean;
   supabaseProjectId: string | null;
   supabaseOrganizationSlug: string | null;
   messageId: number;

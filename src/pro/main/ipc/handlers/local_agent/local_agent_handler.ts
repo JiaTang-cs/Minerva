@@ -63,7 +63,7 @@ import {
   type InjectedMessage,
 } from "./prepare_step_utils";
 import { loadTodos } from "./todo_persistence";
-import { ensureDyadGitignored } from "@/ipc/handlers/gitignoreUtils";
+import { ensureInternalAppDirGitignored } from "@/ipc/handlers/gitignoreUtils";
 import { TOOL_DEFINITIONS } from "./tool_definitions";
 import {
   parseAiMessagesJson,
@@ -467,11 +467,11 @@ export async function handleLocalAgentStream(
 
     // Load persisted todos from a previous turn (if any)
     const persistedTodos = await loadTodos(appPath, chat.id);
-    // Ensure .dyad/ is gitignored (idempotent; also done by compaction/plans)
+    // Ensure .minerva/ is gitignored (idempotent; also done by compaction/plans)
     // Skip in read-only/plan-only mode to avoid modifying the workspace
     if (!readOnly && !planModeOnly && !designModeOnly) {
-      await ensureDyadGitignored(appPath).catch((err: unknown) =>
-        logger.warn("Failed to ensure .dyad gitignored:", err),
+      await ensureInternalAppDirGitignored(appPath).catch((err: unknown) =>
+        logger.warn("Failed to ensure .minerva gitignored:", err),
       );
     }
     if (persistedTodos.length > 0) {
@@ -489,6 +489,9 @@ export async function handleLocalAgentStream(
       appId: chat.app.id,
       appPath,
       chatId: chat.id,
+      readOnly,
+      planModeOnly,
+      designModeOnly,
       supabaseProjectId: chat.app.supabaseProjectId,
       supabaseOrganizationSlug: chat.app.supabaseOrganizationSlug,
       messageId: placeholderMessageId,

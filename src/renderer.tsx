@@ -19,12 +19,19 @@ import {
   MutationCache,
   useQueryClient,
 } from "@tanstack/react-query";
-import { showError, showMcpConsentToast } from "./lib/toast";
+import {
+  showError,
+  showInfo,
+  showMcpConsentToast,
+  showSuccess,
+  showWarning,
+} from "./lib/toast";
 import { ipc } from "./ipc/types";
 import { useSetAtom } from "jotai";
 import {
   pendingAgentConsentsAtom,
   agentTodosByChatIdAtom,
+  subagentTasksByChatIdAtom,
 } from "./atoms/chatAtoms";
 import { pendingQuestionnaireAtom } from "./atoms/planAtoms";
 import { pendingAskUserQuestionAtom } from "./atoms/designAtoms";
@@ -177,6 +184,7 @@ function App() {
   const setPendingQuestionnaire = useSetAtom(pendingQuestionnaireAtom);
   const setPendingAskUserQuestion = useSetAtom(pendingAskUserQuestionAtom);
   const setAgentTodosByChatId = useSetAtom(agentTodosByChatIdAtom);
+  const setSubagentTasksByChatId = useSetAtom(subagentTasksByChatIdAtom);
 
   // Agent todos updates
   useEffect(() => {
@@ -273,6 +281,50 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const upsertTask = (task: any) => {
+      setSubagentTasksByChatId((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(task.chatId) ?? [];
+        const filtered = existing.filter((item) => item.taskId !== task.taskId);
+        filtered.push(task);
+        next.set(
+          task.chatId,
+          filtered.sort((a, b) => a.createdAt - b.createdAt),
+        );
+        return next;
+      });
+    };
+
+    const unsubCreated = ipc.events.agent.onSubagentTaskCreated((task) => {
+      upsertTask(task);
+      showInfo(`Launched ${task.subagent}: ${task.description}`);
+    });
+    const unsubProgress = ipc.events.agent.onSubagentTaskProgress((task) => {
+      upsertTask(task);
+    });
+    const unsubCompleted = ipc.events.agent.onSubagentTaskCompleted((task) => {
+      upsertTask(task);
+      showSuccess(`${task.subagent} completed`);
+    });
+    const unsubFailed = ipc.events.agent.onSubagentTaskFailed((task) => {
+      upsertTask(task);
+      showError(task.error || `${task.subagent} failed`);
+    });
+    const unsubKilled = ipc.events.agent.onSubagentTaskKilled((task) => {
+      upsertTask(task);
+      showWarning(`${task.subagent} was stopped`);
+    });
+
+    return () => {
+      unsubCreated();
+      unsubProgress();
+      unsubCompleted();
+      unsubFailed();
+      unsubKilled();
+    };
+  }, [setSubagentTasksByChatId]);
 
   return <RouterProvider router={router} />;
 }

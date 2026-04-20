@@ -10,6 +10,12 @@ import {
   getDefaultConsent,
   type AgentToolName,
 } from "./tool_definitions";
+import {
+  emitSubagentTaskKilled,
+  killSubagentTask,
+  listSubagentTasksForChat,
+  updateSubagentTask,
+} from "./subagents/task_state";
 import { createLoggedHandler } from "@/ipc/handlers/safe_handle";
 import log from "electron-log";
 import type {
@@ -48,4 +54,24 @@ export function registerAgentToolHandlers() {
       resolveAgentToolConsent(params.requestId, params.decision);
     },
   );
+
+  handle("agent-tool:get-subagent-tasks", async (_event, { chatId }) => {
+    return listSubagentTasksForChat(chatId);
+  });
+
+  handle("agent-tool:stop-subagent-task", async (_event, { taskId }) => {
+    const stopped = killSubagentTask(taskId);
+    if (stopped) {
+      const updated = updateSubagentTask(taskId, (current) => ({
+        ...current,
+        status: "killed",
+        activeToolName: null,
+        updatedAt: Date.now(),
+      }));
+      if (updated) {
+        emitSubagentTaskKilled(_event.sender, updated);
+      }
+    }
+    return stopped;
+  });
 }

@@ -24,6 +24,8 @@ import { DyadProblemSummary } from "./DyadProblemSummary";
 import { ipc } from "@/ipc/types";
 import { DyadMcpToolCall } from "./DyadMcpToolCall";
 import { DyadMcpToolResult } from "./DyadMcpToolResult";
+import { DyadSubagentToolCall } from "./DyadSubagentToolCall";
+import { DyadSubagentResult } from "./DyadSubagentResult";
 import { DyadWebSearchResult } from "./DyadWebSearchResult";
 import { DyadWebSearch } from "./DyadWebSearch";
 import { DyadWebCrawl } from "./DyadWebCrawl";
@@ -76,6 +78,8 @@ const DYAD_CUSTOM_TAGS = [
   "dyad-command",
   "dyad-mcp-tool-call",
   "dyad-mcp-tool-result",
+  "dyad-subagent-call",
+  "dyad-subagent-result",
   "dyad-list-files",
   "dyad-database-schema",
   "dyad-supabase-table-schema",
@@ -667,6 +671,37 @@ function renderCustomTag(
         >
           {content}
         </DyadMcpToolResult>
+      );
+
+    case "dyad-subagent-call":
+      return (
+        <DyadSubagentToolCall
+          node={{
+            properties: {
+              subagent: attributes.subagent || "",
+              description: attributes.description || "",
+              state: attributes.state || "",
+              activeTool: attributes["active-tool"] || "",
+            },
+          }}
+        />
+      );
+
+    case "dyad-subagent-result":
+      return (
+        <DyadSubagentResult
+          node={{
+            properties: {
+              subagent: attributes.subagent || "",
+              description: attributes.description || "",
+              status: attributes.status || "",
+              durationMs: attributes["duration-ms"] || "",
+              taskId: attributes["task-id"] || "",
+            },
+          }}
+        >
+          {content}
+        </DyadSubagentResult>
       );
 
     case "dyad-output":

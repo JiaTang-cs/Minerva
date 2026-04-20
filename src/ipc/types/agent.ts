@@ -133,6 +133,46 @@ export type SetAgentToolConsentParams = z.infer<
   typeof SetAgentToolConsentParamsSchema
 >;
 
+export const SubagentTaskStatusSchema = z.enum([
+  "running",
+  "completed",
+  "failed",
+  "killed",
+]);
+
+export const SubagentTaskSchema = z.object({
+  taskId: z.string(),
+  chatId: z.number(),
+  appId: z.number(),
+  subagent: z.string(),
+  description: z.string(),
+  toolUseId: z.string().optional(),
+  status: SubagentTaskStatusSchema,
+  activeToolName: z.string().nullable().optional(),
+  output: z.string().optional(),
+  error: z.string().optional(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+
+export type SubagentTask = z.infer<typeof SubagentTaskSchema>;
+
+export const GetSubagentTasksParamsSchema = z.object({
+  chatId: z.number(),
+});
+
+export type GetSubagentTasksParams = z.infer<
+  typeof GetSubagentTasksParamsSchema
+>;
+
+export const StopSubagentTaskParamsSchema = z.object({
+  taskId: z.string(),
+});
+
+export type StopSubagentTaskParams = z.infer<
+  typeof StopSubagentTaskParamsSchema
+>;
+
 // =============================================================================
 // Agent Contracts (Invoke/Response)
 // =============================================================================
@@ -154,6 +194,18 @@ export const agentContracts = {
     channel: "agent-tool:consent-response",
     input: AgentToolConsentResponseParamsSchema,
     output: z.void(),
+  }),
+
+  getSubagentTasks: defineContract({
+    channel: "agent-tool:get-subagent-tasks",
+    input: GetSubagentTasksParamsSchema,
+    output: z.array(SubagentTaskSchema),
+  }),
+
+  stopSubagentTask: defineContract({
+    channel: "agent-tool:stop-subagent-task",
+    input: StopSubagentTaskParamsSchema,
+    output: z.boolean(),
   }),
 } as const;
 
@@ -184,6 +236,31 @@ export const agentEvents = {
   problemsUpdate: defineEvent({
     channel: "agent-tool:problems-update",
     payload: AgentProblemsUpdateSchema,
+  }),
+
+  subagentTaskCreated: defineEvent({
+    channel: "agent-tool:subagent-task-created",
+    payload: SubagentTaskSchema,
+  }),
+
+  subagentTaskProgress: defineEvent({
+    channel: "agent-tool:subagent-task-progress",
+    payload: SubagentTaskSchema,
+  }),
+
+  subagentTaskCompleted: defineEvent({
+    channel: "agent-tool:subagent-task-completed",
+    payload: SubagentTaskSchema,
+  }),
+
+  subagentTaskFailed: defineEvent({
+    channel: "agent-tool:subagent-task-failed",
+    payload: SubagentTaskSchema,
+  }),
+
+  subagentTaskKilled: defineEvent({
+    channel: "agent-tool:subagent-task-killed",
+    payload: SubagentTaskSchema,
   }),
 } as const;
 

@@ -37,6 +37,7 @@ import { askUserQuestionTool } from "./tools/ask_user_question";
 import { createDesignDraftTool } from "./tools/create_design_draft";
 import { updateDesignDraftTool } from "./tools/update_design_draft";
 import { exitDesignTool } from "./tools/exit_design";
+import { taskTool } from "./tools/task";
 import type { LanguageModelV3ToolResultOutput } from "@ai-sdk/provider";
 import {
   escapeXmlAttr,
@@ -101,6 +102,7 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   createDesignDraftTool,
   updateDesignDraftTool,
   exitDesignTool,
+  taskTool,
 ];
 // ============================================================================
 // Agent Tool Name Type (derived from TOOL_DEFINITIONS)
@@ -387,6 +389,8 @@ export interface BuildAgentToolSetOptions {
    * Design mode can explore files but may only modify design drafts.
    */
   designModeOnly?: boolean;
+  includeOnlyToolNames?: Set<string>;
+  excludeToolNames?: Set<string>;
 }
 
 const FILE_EDIT_TOOLS: Set<FileEditToolName> = new Set(FILE_EDIT_TOOL_NAMES);
@@ -482,6 +486,17 @@ export function buildAgentToolSet(
     }
 
     if (tool.backend === "cloud") {
+      continue;
+    }
+
+    if (
+      options.includeOnlyToolNames &&
+      !options.includeOnlyToolNames.has(tool.name)
+    ) {
+      continue;
+    }
+
+    if (options.excludeToolNames?.has(tool.name)) {
       continue;
     }
 

@@ -150,6 +150,9 @@ export type {
   AgentTodosUpdatePayload,
   AgentProblemsUpdatePayload,
   SetAgentToolConsentParams,
+  SubagentTask,
+  GetSubagentTasksParams,
+  StopSubagentTaskParams,
   Problem,
   ProblemReport,
 } from "./agent";
