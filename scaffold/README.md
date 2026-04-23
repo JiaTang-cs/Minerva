@@ -1,1 +1,2 @@
-# Welcome to your Dyad app
+# Welcome to your Minerva app
+

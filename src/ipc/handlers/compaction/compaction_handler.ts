@@ -152,7 +152,7 @@ export async function performCompaction(
       }),
     );
 
-    // Store readable transcript backup in the app's .dyad/chats/ directory
+    // Store readable transcript backup in the app's .minerva/chats/ directory
     const backupPath = await storePreCompactionMessages(
       appPath,
       chatId,

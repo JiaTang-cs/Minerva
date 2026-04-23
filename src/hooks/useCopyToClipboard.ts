@@ -13,6 +13,8 @@ const CUSTOM_TAG_NAMES = [
   "dyad-chat-summary",
   "dyad-edit",
   "dyad-codebase-context",
+  "dyad-skill-call",
+  "dyad-skill-result",
   "think",
   "dyad-command",
 ];
@@ -181,6 +183,19 @@ export const useCopyToClipboard = () => {
           problemResult += content;
         }
         return problemResult + "\n\n";
+      }
+
+      case "dyad-skill-call":
+      case "dyad-skill-result": {
+        const skill = attributes.skill || "unknown-skill";
+        const source = attributes.source ? ` (${attributes.source})` : "";
+        const title =
+          tag === "dyad-skill-call" ? "### Skill Call" : "### Skill Loaded";
+        let skillResult = `${title}: ${skill}${source}\n\n`;
+        if (content) {
+          skillResult += `${content}\n\n`;
+        }
+        return skillResult;
       }
 
       case "dyad-chat-summary":

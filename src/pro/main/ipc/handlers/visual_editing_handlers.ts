@@ -21,8 +21,8 @@ import {
   ApplyVisualEditingChangesParams,
 } from "@/ipc/types";
 import { VALID_IMAGE_MIME_TYPES } from "@/ipc/types/visual-editing";
-import { DYAD_MEDIA_DIR_NAME } from "@/ipc/utils/media_path_utils";
-import { ensureDyadGitignored } from "@/ipc/handlers/gitignoreUtils";
+import { INTERNAL_MEDIA_DIR_NAME } from "@/ipc/utils/media_path_utils";
+import { ensureInternalAppDirGitignored } from "@/ipc/handlers/gitignoreUtils";
 import {
   transformContent,
   analyzeComponent,
@@ -102,14 +102,14 @@ export function registerVisualEditingHandlers() {
               "base64",
             );
 
-            // Save to .dyad/media as a staging copy
-            const mediaDir = path.join(appPath, DYAD_MEDIA_DIR_NAME);
+            // Save to .minerva/media as a staging copy
+            const mediaDir = path.join(appPath, INTERNAL_MEDIA_DIR_NAME);
             await fsPromises.mkdir(mediaDir, { recursive: true });
             await fsPromises.writeFile(
               path.join(mediaDir, finalFileName),
               buffer,
             );
-            await ensureDyadGitignored(appPath);
+            await ensureInternalAppDirGitignored(appPath);
 
             // Save to public/images for the app to serve
             const publicImagesDir = path.join(appPath, "public", "images");

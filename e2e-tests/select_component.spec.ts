@@ -44,7 +44,7 @@ testSkipIfWindows("select multiple components", async ({ po }) => {
   await po.previewPanel
     .getPreviewIframeElement()
     .contentFrame()
-    .getByText("Made with Dyad")
+    .getByText("Made with Minerva")
     .click();
 
   await po.previewPanel.snapshotPreview();
@@ -104,7 +104,7 @@ testSkipIfWindows(
     await po.previewPanel
       .getPreviewIframeElement()
       .contentFrame()
-      .getByText("Made with Dyad")
+      .getByText("Made with Minerva")
       .click();
 
     await po.previewPanel.snapshotSelectedComponentsDisplay();
@@ -187,3 +187,4 @@ testSkipIfWindows("select component next.js", async ({ po }) => {
 
   await po.snapshotServerDump("all-messages");
 });
+

@@ -12,9 +12,10 @@ import {
   type CreateDesignDraftParams,
   type UpdateDesignDraftParams,
 } from "../types/design";
-import { ensureDyadGitignored } from "./gitignoreUtils";
+import { ensureInternalAppDirGitignored } from "./gitignoreUtils";
 import { resolveAskUserQuestionResponse } from "../../pro/main/ipc/handlers/local_agent/tool_definitions";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { getInternalAppSubdirPath } from "../utils/internal_app_dir";
 
 const DESIGN_DIR_NAME = "designs";
 
@@ -66,9 +67,9 @@ async function getDesignDir(appId: number): Promise<string> {
   }
 
   const appPath = getDyadAppPath(app.path);
-  const designDir = path.join(appPath, ".dyad", DESIGN_DIR_NAME);
+  const designDir = getInternalAppSubdirPath(appPath, DESIGN_DIR_NAME);
   await fs.promises.mkdir(designDir, { recursive: true });
-  await ensureDyadGitignored(appPath);
+  await ensureInternalAppDirGitignored(appPath);
   return designDir;
 }
 

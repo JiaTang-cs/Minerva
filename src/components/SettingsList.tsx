@@ -11,6 +11,7 @@ import {
 import Fuse from "fuse.js";
 import { SearchIcon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { SETTINGS_CONTENT_SCROLL_ID } from "@/lib/sectionNavigation";
 
 export function SettingsList({ show }: { show: boolean }) {
   const { t } = useTranslation("settings");
@@ -65,6 +66,11 @@ export function SettingsList({ show }: { show: boolean }) {
   useEffect(() => {
     if (!show) return;
 
+    const root = document.getElementById(SETTINGS_CONTENT_SCROLL_ID);
+    if (!root) {
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -74,7 +80,7 @@ export function SettingsList({ show }: { show: boolean }) {
           }
         }
       },
-      { rootMargin: "-20% 0px -80% 0px", threshold: 0 },
+      { root, rootMargin: "-20% 0px -80% 0px", threshold: 0 },
     );
 
     for (const section of settingsSections) {

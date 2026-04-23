@@ -112,7 +112,7 @@ export const RightActionSidebar = () => {
         {renderButton(
           "design",
           <Palette size={iconSize} />,
-          "Design",
+          t("preview.design"),
           "design-mode-button",
         )}
         {renderButton(

@@ -39,6 +39,7 @@ import { useSetAtom } from "jotai";
 import { activeSettingsSectionAtom } from "@/atoms/viewAtoms";
 import { SECTION_IDS, SETTING_IDS } from "@/lib/settingsSearchIndex";
 import { useTranslation } from "react-i18next";
+import { SETTINGS_CONTENT_SCROLL_ID } from "@/lib/sectionNavigation";
 
 export default function SettingsPage() {
   const { t } = useTranslation("settings");
@@ -69,8 +70,11 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen px-8 py-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="flex h-full min-h-0 flex-col px-8 py-4">
+      <div
+        id={SETTINGS_CONTENT_SCROLL_ID}
+        className="mx-auto min-h-0 w-full max-w-5xl flex-1 overflow-y-auto pr-2"
+      >
         <Button
           onClick={() => router.history.back()}
           variant="outline"

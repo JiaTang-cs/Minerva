@@ -12,6 +12,10 @@ import {
 } from "@/atoms/appAtoms";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { showInputRequest } from "@/lib/toast";
+import {
+  isPreviewProxyStartedSystemMessage,
+  parsePreviewProxyStartedSystemMessage,
+} from "@/shared/proxyServerSystemMessage";
 
 const useRunAppLoadingAtom = atom(false);
 
@@ -28,25 +32,19 @@ export function useAppOutputSubscription() {
 
   const processProxyServerOutput = useCallback(
     (output: AppOutput) => {
-      const matchesProxyServerStart = output.message.includes(
-        "[dyad-proxy-server]started=[",
-      );
-      if (matchesProxyServerStart) {
-        // Extract both proxy URL and original URL using regex
-        const proxyUrlMatch = output.message.match(
-          /\[dyad-proxy-server\]started=\[(.*?)\]/,
+      if (isPreviewProxyStartedSystemMessage(output.message)) {
+        const parsedMessage = parsePreviewProxyStartedSystemMessage(
+          output.message,
         );
-        const originalUrlMatch = output.message.match(/original=\[(.*?)\]/);
-
-        if (proxyUrlMatch && proxyUrlMatch[1]) {
-          const proxyUrl = proxyUrlMatch[1];
-          const originalUrl = originalUrlMatch && originalUrlMatch[1];
-          setAppUrlObj({
-            appUrl: proxyUrl,
-            appId: output.appId,
-            originalUrl: originalUrl!,
-          });
+        if (!parsedMessage) {
+          return;
         }
+
+        setAppUrlObj({
+          appUrl: parsedMessage.proxyUrl,
+          appId: output.appId,
+          originalUrl: parsedMessage.originalUrl ?? "",
+        });
       }
     },
     [setAppUrlObj],

@@ -10,7 +10,7 @@ import {
   escapeXmlContent,
 } from "./types";
 import { engineFetch } from "./engine_fetch";
-import { DYAD_MEDIA_DIR_NAME } from "@/ipc/utils/media_path_utils";
+import { INTERNAL_MEDIA_DIR_NAME } from "@/ipc/utils/media_path_utils";
 import { ImageGenerationApiResponseSchema } from "@/ipc/types/image_generation";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
 
@@ -24,7 +24,7 @@ const generateImageSchema = z.object({
     ),
 });
 
-const DESCRIPTION = `Generate an image using AI based on a text prompt. The generated image is saved to the project's .dyad/media directory.
+const DESCRIPTION = `Generate an image using AI based on a text prompt. The generated image is saved to the project's .minerva/media directory.
 
 ### When to Use
 - User requests a custom image, illustration, icon, or graphic for their app
@@ -44,7 +44,7 @@ Write detailed, descriptive prompts. Be specific about:
 - "Professional product photography of a sleek smartphone on a marble surface, soft studio lighting, shallow depth of field, warm neutral tones"
 
 ### After Generation
-The tool returns the file path in .dyad/media. Use the copy_file tool to copy it to the appropriate location in the project (e.g., public/assets/) and reference that path in your code.
+The tool returns the file path in .minerva/media. Use the copy_file tool to copy it to the appropriate location in the project (e.g., public/assets/) and reference that path in your code.
 `;
 
 async function callGenerateImage(
@@ -82,14 +82,14 @@ async function saveGeneratedImage(
   imageData: z.infer<typeof ImageGenerationApiResponseSchema>["data"][number],
   appPath: string,
 ): Promise<string> {
-  const mediaDir = path.join(appPath, DYAD_MEDIA_DIR_NAME);
+  const mediaDir = path.join(appPath, INTERNAL_MEDIA_DIR_NAME);
   await fs.mkdir(mediaDir, { recursive: true });
 
   const hash = crypto.randomBytes(8).toString("hex");
   const timestamp = Date.now();
   const fileName = `generated-${timestamp}-${hash}.png`;
   const filePath = path.join(mediaDir, fileName);
-  const relativePath = path.join(DYAD_MEDIA_DIR_NAME, fileName);
+  const relativePath = path.join(INTERNAL_MEDIA_DIR_NAME, fileName);
 
   if (imageData.b64_json) {
     const buffer = Buffer.from(imageData.b64_json, "base64");

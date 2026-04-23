@@ -436,7 +436,7 @@ ${formatLogsSection(debugInfo)}
         {/* Self-service help */}
         <Button
           variant="outline"
-          onClick={() => ipc.system.openExternalUrl("https://www.dyad.sh/docs")}
+          onClick={() => setIsHelpBotOpen(true)}
           className="w-full py-6 bg-(--background-lightest)"
         >
           <BookOpenIcon className="mr-2 h-5 w-5" /> {t("help.openDocs")}
@@ -695,3 +695,4 @@ ${formatLogsSection(debugInfo)}
     </>
   );
 }
+

@@ -16,7 +16,7 @@ export const fixture: LocalAgentFixture = {
       ],
     },
     {
-      text: "I've generated the hero image and saved it to your project. You can find it in the .dyad/media directory.",
+      text: "I've generated the hero image and saved it to your project. You can find it in the .minerva/media directory.",
     },
   ],
 };

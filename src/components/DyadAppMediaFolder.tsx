@@ -353,7 +353,7 @@ export function DyadAppMediaFolder({
           <ImageLightbox
             imageUrl={buildDyadMediaUrl(appPath, previewFile.fileName)}
             alt={previewFile.fileName}
-            filePath={`${appPath}/.dyad/media/${previewFile.fileName}`}
+            filePath={`${appPath}/.minerva/media/${previewFile.fileName}`}
             onClose={() => setPreviewFile(null)}
           />
         )}

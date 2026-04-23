@@ -9,22 +9,23 @@ import path from "node:path";
 import log from "electron-log";
 import { AgentTodoSchema } from "@/ipc/types";
 import type { Todo } from "./tools/types";
+import { getInternalAppSubdirPath } from "@/ipc/utils/internal_app_dir";
 
 const logger = log.scope("todo_persistence");
 
 /**
  * Return the path to the todos JSON file for a given chat.
  *
- * Layout: `<appPath>/.dyad/todos/<chatId>.json`
+ * Layout: `<appPath>/.minerva/todos/<chatId>.json`
  */
 export function getTodosFilePath(appPath: string, chatId: number): string {
-  return path.join(appPath, ".dyad", "todos", `${chatId}.json`);
+  return getInternalAppSubdirPath(appPath, path.join("todos", `${chatId}.json`));
 }
 
 /**
  * Persist the current todos list to disk.
  *
- * Creates the `.dyad/todos/` directory if it does not exist.
+ * Creates the `.minerva/todos/` directory if it does not exist.
  */
 export async function saveTodos(
   appPath: string,

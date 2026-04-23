@@ -7,7 +7,7 @@ test("auto update - disable and enable", async ({ po }) => {
   const beforeSettings = po.settings.recordSettings();
   await po.settings.toggleAutoUpdate();
   await expect(
-    po.page.getByRole("button", { name: "Restart Dyad" }),
+    po.page.getByRole("button", { name: "Restart Minerva" }),
   ).toBeVisible();
   po.settings.snapshotSettingsDelta(beforeSettings);
 
@@ -15,3 +15,4 @@ test("auto update - disable and enable", async ({ po }) => {
   await po.settings.toggleAutoUpdate();
   po.settings.snapshotSettingsDelta(beforeSettings2);
 });
+

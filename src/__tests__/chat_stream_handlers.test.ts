@@ -9,6 +9,7 @@ import {
 
 import { processFullResponseActions } from "../ipc/processors/response_processor";
 import {
+  getPersistedUserMessageContent,
   removeDyadTags,
   hasUnclosedDyadWrite,
 } from "../ipc/handlers/chat_stream_handlers";
@@ -1079,6 +1080,28 @@ const special = "Special chars: @#$%^&*()[]{}|\\";
     const text = `Before <dyad-custom-action param="value">content</dyad-custom-action> After`;
     const result = removeDyadTags(text);
     expect(result).toBe("Before  After");
+  });
+});
+
+describe("getPersistedUserMessageContent", () => {
+  it("prefers the display prompt so slash-skill expansion is not rendered in the user bubble", () => {
+    const result = getPersistedUserMessageContent({
+      userPrompt:
+        'You must follow the skill "kiro-skill". Skill instructions: ...',
+      displayUserPrompt: "/kiro-skill 帮我创建需求文档",
+    });
+
+    expect(result).toBe("/kiro-skill 帮我创建需求文档");
+  });
+
+  it("keeps implement-plan display overrides ahead of the generic display prompt", () => {
+    const result = getPersistedUserMessageContent({
+      userPrompt: "Expanded implementation prompt",
+      displayUserPrompt: "/implement-plan=test-plan",
+      implementPlanDisplayPrompt: "/implement-plan=test-plan",
+    });
+
+    expect(result).toBe("/implement-plan=test-plan");
   });
 });
 

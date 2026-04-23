@@ -248,7 +248,7 @@ export const ActionHeader = () => {
           "design",
           designRef,
           <Palette size={iconSize} />,
-          "Design",
+          t("preview.design"),
           "design-mode-button",
         )}
         {renderButton(

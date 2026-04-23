@@ -5,9 +5,9 @@ import { apps } from "../../db/schema";
 import { getDyadAppPath } from "../../paths/paths";
 import { safeJoin } from "../utils/path_utils";
 import { getMimeType, MIME_TYPE_MAP } from "../utils/mime_utils";
-import { DYAD_MEDIA_DIR_NAME } from "../utils/media_path_utils";
+import { INTERNAL_MEDIA_DIR_NAME } from "../utils/media_path_utils";
 import { INVALID_FILE_NAME_CHARS } from "../../shared/media_validation";
-import { ensureDyadGitignored } from "./gitignoreUtils";
+import { ensureInternalAppDirGitignored } from "./gitignoreUtils";
 import { withLock } from "../utils/lock_utils";
 import fs from "node:fs";
 import path from "node:path";
@@ -24,7 +24,7 @@ async function getMediaFilesForApp(
   appName: string,
   appPath: string,
 ) {
-  const mediaDir = path.join(appPath, DYAD_MEDIA_DIR_NAME);
+  const mediaDir = path.join(appPath, INTERNAL_MEDIA_DIR_NAME);
   try {
     await fs.promises.access(mediaDir);
   } catch {
@@ -136,11 +136,11 @@ function assertSupportedMediaExtension(fileName: string): string {
 function getMediaFilePath(appPath: string, fileName: string): string {
   assertSafeFileName(fileName);
   assertSupportedMediaExtension(fileName);
-  return safeJoin(appPath, DYAD_MEDIA_DIR_NAME, fileName);
+  return safeJoin(appPath, INTERNAL_MEDIA_DIR_NAME, fileName);
 }
 
 function getMediaDirectoryPath(appPath: string): string {
-  return path.join(appPath, DYAD_MEDIA_DIR_NAME);
+  return path.join(appPath, INTERNAL_MEDIA_DIR_NAME);
 }
 
 async function getAppOrThrow(appId: number) {
@@ -198,7 +198,7 @@ export function registerMediaHandlers() {
 
       const destinationPath = safeJoin(
         appPath,
-        DYAD_MEDIA_DIR_NAME,
+        INTERNAL_MEDIA_DIR_NAME,
         destinationFileName,
       );
 
@@ -254,7 +254,7 @@ export function registerMediaHandlers() {
       );
     }
 
-    await withMediaLock([params.sourceAppId, params.targetAppId], async () => {
+      await withMediaLock([params.sourceAppId, params.targetAppId], async () => {
       const sourceApp = await getAppOrThrow(params.sourceAppId);
       const targetApp = await getAppOrThrow(params.targetAppId);
 
@@ -266,13 +266,13 @@ export function registerMediaHandlers() {
         throw new DyadError("Media file not found", DyadErrorKind.NotFound);
       }
 
-      await ensureDyadGitignored(targetAppPath);
+      await ensureInternalAppDirGitignored(targetAppPath);
       const targetMediaDirectoryPath = getMediaDirectoryPath(targetAppPath);
       await fs.promises.mkdir(targetMediaDirectoryPath, { recursive: true });
 
       const destinationPath = safeJoin(
         targetAppPath,
-        DYAD_MEDIA_DIR_NAME,
+        INTERNAL_MEDIA_DIR_NAME,
         params.fileName,
       );
 

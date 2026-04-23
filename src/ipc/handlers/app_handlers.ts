@@ -76,6 +76,7 @@ import {
   RIPGREP_EXCLUDED_GLOBS,
 } from "../utils/ripgrep_utils";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { buildPreviewProxyStartedSystemMessage } from "@/shared/proxyServerSystemMessage";
 
 const logger = log.scope("app_handlers");
 const handle = createLoggedHandler(logger);
@@ -398,7 +399,10 @@ function listenToProcess({
         ) {
           enqueueAppOutput(event.sender, {
             type: "stdout",
-            message: `[dyad-proxy-server]started=[${appInfo.proxyUrl}] original=[${originalUrl}]`,
+            message: buildPreviewProxyStartedSystemMessage(
+              appInfo.proxyUrl,
+              originalUrl,
+            ),
             appId,
           });
           return;
@@ -419,7 +423,10 @@ function listenToProcess({
             }
             enqueueAppOutput(event.sender, {
               type: "stdout",
-              message: `[dyad-proxy-server]started=[${proxyUrl}] original=[${originalUrl}]`,
+              message: buildPreviewProxyStartedSystemMessage(
+                proxyUrl,
+                originalUrl,
+              ),
               appId,
             });
           },
@@ -1121,7 +1128,10 @@ export function registerAppHandlers() {
         if (appInfo?.proxyUrl && appInfo?.originalUrl) {
           safeSend(event.sender, "app:output", {
             type: "stdout",
-            message: `[dyad-proxy-server]started=[${appInfo.proxyUrl}] original=[${appInfo.originalUrl}]`,
+            message: buildPreviewProxyStartedSystemMessage(
+              appInfo.proxyUrl,
+              appInfo.originalUrl,
+            ),
             appId,
           });
         }

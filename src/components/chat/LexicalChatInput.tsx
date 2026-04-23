@@ -23,6 +23,7 @@ import { KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIGH } from "lexical";
 import { useLoadApps } from "@/hooks/useLoadApps";
 import { usePrompts } from "@/hooks/usePrompts";
 import { useAppMediaFiles } from "@/hooks/useAppMediaFiles";
+import { useSkills } from "@/hooks/useSkills";
 import { forwardRef } from "react";
 import { useAtomValue } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
@@ -306,17 +307,18 @@ export function LexicalChatInput({
   onSubmit,
   onPaste,
   excludeCurrentApp,
-  placeholder = "Ask Dyad to build...",
+  placeholder = "Ask Minerva to build...",
   disabled = false,
   disableSendButton,
   messageHistory = [],
 }: LexicalChatInputProps) {
   const { apps } = useLoadApps();
+  const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { prompts } = usePrompts();
+  const { skills } = useSkills(selectedAppId);
   const { mediaApps } = useAppMediaFiles();
   const [shouldClear, setShouldClear] = useState(false);
   const historyTriggerActiveRef = useRef(false);
-  const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { app } = useLoadApp(selectedAppId);
   const appFiles = app?.files;
 
@@ -339,15 +341,27 @@ export function LexicalChatInput({
       }));
     result[HISTORY_TRIGGER] = historyItems;
 
-    // Skills (slash commands): all prompts by slug
-    const skillItems = (prompts || [])
+    // Skills (slash commands): prompts with explicit slugs plus runtime skills
+    const promptSkillItems = (prompts || [])
       .map((p) => ({
         value: slugForPrompt(p),
         type: "skill",
         id: p.id,
       }))
       .filter((item) => item.value != null && item.value !== "");
-    result["/"] = skillItems;
+    const runtimeSkillItems = (skills || []).map((skill) => ({
+      value: skill.name,
+      type: "skill",
+      id: `${skill.sourceType}:${skill.name}`,
+    }));
+    const seenSkillValues = new Set<string>();
+    result["/"] = [...runtimeSkillItems, ...promptSkillItems].filter((item) => {
+      if (!item.value || seenSkillValues.has(item.value)) {
+        return false;
+      }
+      seenSkillValues.add(item.value);
+      return true;
+    });
 
     if (!apps) return result;
 
@@ -407,6 +421,7 @@ export function LexicalChatInput({
     value,
     excludeCurrentApp,
     prompts,
+    skills,
     appFiles,
     messageHistory,
     mediaApps,
@@ -579,3 +594,4 @@ export function LexicalChatInput({
     </LexicalComposer>
   );
 }
+

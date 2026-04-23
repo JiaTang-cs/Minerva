@@ -20,7 +20,7 @@ const listFilesSchema = z.object({
     .boolean()
     .optional()
     .describe(
-      "Whether to include .dyad files which are git-ignored (default: false)",
+      "Whether to include .minerva files which are git-ignored (default: false)",
     ),
 });
 
@@ -98,13 +98,13 @@ export const listFilesTool: ToolDefinition<ListFilesArgs> = {
     // Build the list of file paths
     let allFilePaths = files.map((file) => file.path);
 
-    // If include_hidden is true, also include .dyad files
+    // If include_hidden is true, also include .minerva files
     if (args.include_hidden) {
       const normalizedAppPath = ctx.appPath.replace(/\\/g, "/");
-      // Always search .dyad at the app root, regardless of directory filter
-      const dyadGlobPattern = `${normalizedAppPath}/.dyad${globSuffix}`;
+      // Always search .minerva at the app root, regardless of directory filter
+      const minervaGlobPattern = `${normalizedAppPath}/.minerva${globSuffix}`;
 
-      const dyadFiles = await glob(dyadGlobPattern, {
+      const minervaFiles = await glob(minervaGlobPattern, {
         nodir: true,
         absolute: true,
         ignore: [
@@ -119,13 +119,13 @@ export const listFilesTool: ToolDefinition<ListFilesArgs> = {
       });
 
       // Convert to relative paths and add to the list
-      const dyadRelativePaths = dyadFiles.map((file) =>
+      const minervaRelativePaths = minervaFiles.map((file) =>
         path.relative(ctx.appPath, file).split(path.sep).join("/"),
       );
 
       // Deduplicate and sort
       allFilePaths = [
-        ...new Set([...allFilePaths, ...dyadRelativePaths]),
+        ...new Set([...allFilePaths, ...minervaRelativePaths]),
       ].sort();
     }
 

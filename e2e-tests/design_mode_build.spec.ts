@@ -48,7 +48,7 @@ testSkipIfWindows(
       timeout: Timeout.MEDIUM,
     });
 
-    const designDir = path.join(appPath!, ".dyad", "designs");
+    const designDir = path.join(appPath!, ".minerva", "designs");
     await expect(async () => {
       const files = fs.readdirSync(designDir).filter((file) =>
         file.endsWith(".json"),

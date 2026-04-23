@@ -18,7 +18,7 @@ describe("createBuildFromDesignPrompt", () => {
     expect(prompt).toContain("## Task app design");
     expect(prompt).toContain("A mobile-first task app");
     expect(prompt).toContain("Primary device: mobile");
-    expect(prompt).toContain(".dyad/designs/draft-123.json");
+    expect(prompt).toContain(".minerva/designs/draft-123.json");
     expect(prompt).toContain("<main>Draft</main>");
     expect(prompt).toContain("Build a complete application");
   });

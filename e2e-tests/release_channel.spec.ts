@@ -10,7 +10,7 @@ test("release channel - change from stable to beta and back", async ({
   const beforeSettings1 = po.settings.recordSettings();
   await po.settings.changeReleaseChannel("beta");
   await expect(
-    po.page.getByRole("button", { name: "Restart Dyad" }),
+    po.page.getByRole("button", { name: "Restart Minerva" }),
   ).toBeVisible();
   po.settings.snapshotSettingsDelta(beforeSettings1);
 
@@ -18,7 +18,8 @@ test("release channel - change from stable to beta and back", async ({
   const beforeSettings2 = po.settings.recordSettings();
   await po.settings.changeReleaseChannel("stable");
   await expect(
-    po.page.getByRole("button", { name: "Download Stable" }),
+    po.page.getByText("Using Stable release channel"),
   ).toBeVisible();
   po.settings.snapshotSettingsDelta(beforeSettings2);
 });
+

@@ -277,20 +277,6 @@ function SecurityHeader({
               {tc("experimental")}
             </Badge>
           </h1>
-          <div className="text-sm">
-            <p>
-              <a
-                className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                onClick={() =>
-                  ipc.system.openExternalUrl(
-                    "https://www.dyad.sh/docs/guides/security-review",
-                  )
-                }
-              >
-                {t("preview.security_panel.openDocs")}
-              </a>
-            </p>
-          </div>
           {data && data.findings.length > 0 && <ReviewSummary data={data} />}
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -1060,3 +1046,4 @@ ${issuesList}`;
     </div>
   );
 };
+

@@ -338,9 +338,9 @@ export class PageObject {
           throw new Error("Messages list not found");
         }
         // Scrub compaction backup paths embedded in message text
-        // e.g. .dyad/chats/1/compaction-2026-02-05T21-25-24-285Z.md
+        // e.g. .minerva/chats/1/compaction-2026-02-05T21-25-24-285Z.md
         messagesList.innerHTML = messagesList.innerHTML.replace(
-          /\.dyad\/chats\/\d+\/compaction-[^\s<"]+\.md/g,
+          /\.minerva\/chats\/\d+\/compaction-[^\s<"]+\.md/g,
           "[[compaction-backup-path]]",
         );
 
@@ -403,9 +403,9 @@ export class PageObject {
     const dumpContent: string = (fs.readFileSync(dumpFilePath, "utf-8") as any)
       .replaceAll(/\[\[dyad-dump-path=([^\]]+)\]\]/g, "[[dyad-dump-path=*]]")
       // Stabilize compaction backup file paths embedded in message text
-      // e.g. .dyad/chats/1/compaction-2026-02-05T21-25-24-285Z.md
+      // e.g. .minerva/chats/1/compaction-2026-02-05T21-25-24-285Z.md
       .replaceAll(
-        /\.dyad\/chats\/\d+\/compaction-[^\s"\\]+\.md/g,
+        /\.minerva\/chats\/\d+\/compaction-[^\s"\\]+\.md/g,
         "[[compaction-backup-path]]",
       );
 

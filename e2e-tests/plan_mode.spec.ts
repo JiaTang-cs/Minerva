@@ -26,7 +26,7 @@ testSkipIfWindows(
     const acceptButton = po.page.getByRole("button", { name: "Accept Plan" });
     await expect(acceptButton).toBeVisible({ timeout: Timeout.MEDIUM });
 
-    // Accept the plan (plans are now always saved to .dyad/plans/)
+    // Accept the plan (plans are now always saved to .minerva/plans/)
     await acceptButton.click();
 
     // Wait for navigation to a different chat
@@ -37,8 +37,8 @@ testSkipIfWindows(
       expect(match![1]).not.toEqual(initialChatId);
     }).toPass({ timeout: Timeout.MEDIUM });
 
-    // Verify plan was saved to .dyad/plans/
-    const planDir = path.join(appPath!, ".dyad", "plans");
+    // Verify plan was saved to .minerva/plans/
+    const planDir = path.join(appPath!, ".minerva", "plans");
     let mdFiles: string[] = [];
     await expect(async () => {
       const files = fs.readdirSync(planDir);

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { INTERNAL_APP_DIR_NAME } from "../utils/internal_app_dir";
 
 /**
  * Ensures the given entries are listed in the project's `.gitignore`.
@@ -37,9 +38,11 @@ async function ensureGitignored(
 }
 
 /**
- * Ensures `.dyad/` is listed in the project's `.gitignore`.
+ * Ensures the internal app directory is listed in the project's `.gitignore`.
  * Creates `.gitignore` if it doesn't exist.
  */
-export async function ensureDyadGitignored(appPath: string): Promise<void> {
-  await ensureGitignored(appPath, [".dyad/"]);
+export async function ensureInternalAppDirGitignored(
+  appPath: string,
+): Promise<void> {
+  await ensureGitignored(appPath, [`${INTERNAL_APP_DIR_NAME}/`]);
 }

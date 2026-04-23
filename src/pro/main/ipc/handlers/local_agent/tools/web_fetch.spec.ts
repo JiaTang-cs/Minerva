@@ -60,7 +60,7 @@ describe("webFetchTool", () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization:
-            "Bearer jina_397db2cd10f2463ca98831fe7e81a25dc53VHEvIk7hCIj4PgRmLgo6U4TtY",
+            "Bearer jina_b7d9ac7d2b7b48a4a96d2ea5b81df35e5k6mOUMhPHkM7PJobPaqD0Fyuot9",
           "X-Return-Format": "markdown",
         }),
       }),

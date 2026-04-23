@@ -29,15 +29,12 @@ import { usePostHog } from "posthog-js/react";
 import { useLanguageModelProviders } from "@/hooks/useLanguageModelProviders";
 import { useScrollAndNavigateTo } from "@/hooks/useScrollAndNavigateTo";
 // @ts-ignore
-import logo from "../../assets/logo.svg";
-// @ts-ignore
 import googleIcon from "../../assets/ai-logos/google-g-icon.svg";
 // @ts-ignore
 import openrouterLogo from "../../assets/ai-logos/openrouter-logo.png";
 import { OnboardingBanner } from "./home/OnboardingBanner";
 import { showError } from "@/lib/toast";
 import { useSettings } from "@/hooks/useSettings";
-import { DyadProTrialDialog } from "./DyadProTrialDialog";
 
 type NodeInstallStep =
   | "install"
@@ -71,10 +68,8 @@ export function SetupBanner() {
   }, [setNodeSystemInfo, setNodeCheckError]);
   const [showManualConfig, setShowManualConfig] = useState(false);
   const [isSelectingPath, setIsSelectingPath] = useState(false);
-  const [showDyadProTrialDialog, setShowDyadProTrialDialog] = useState(false);
   const { updateSettings } = useSettings();
 
-  // Add handler for manual path selection
   const handleManualNodeConfig = useCallback(async () => {
     setIsSelectingPath(true);
     try {
@@ -95,7 +90,7 @@ export function SetupBanner() {
     } finally {
       setIsSelectingPath(false);
     }
-  }, [checkNode]);
+  }, [checkNode, updateSettings]);
 
   useEffect(() => {
     checkNode();
@@ -121,10 +116,6 @@ export function SetupBanner() {
       params: { provider: "openrouter" },
     });
   };
-  const handleDyadProSetupClick = () => {
-    posthog.capture("setup-flow:ai-provider-setup:dyad:click");
-    setShowDyadProTrialDialog(true);
-  };
 
   const handleOtherProvidersClick = () => {
     posthog.capture("setup-flow:ai-provider-setup:other:click");
@@ -135,7 +126,7 @@ export function SetupBanner() {
     posthog.capture("setup-flow:start-node-install-click");
     setNodeInstallStep("waiting-for-continue");
     ipc.system.openExternalUrl(nodeSystemInfo!.nodeDownloadUrl);
-  }, [nodeSystemInfo, setNodeInstallStep]);
+  }, [nodeSystemInfo, posthog]);
 
   const finishNodeInstall = useCallback(async () => {
     posthog.capture("setup-flow:continue-node-install-click");
@@ -143,9 +134,8 @@ export function SetupBanner() {
     await ipc.system.reloadEnvPath();
     await checkNode();
     setNodeInstallStep("finished-checking");
-  }, [checkNode, setNodeInstallStep]);
+  }, [checkNode, posthog]);
 
-  // We only check for node version because pnpm is not required for the app to run.
   const isNodeSetupComplete = Boolean(nodeSystemInfo?.nodeVersion);
 
   const itemsNeedAction: string[] = [];
@@ -309,28 +299,14 @@ export function SetupBanner() {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                   {getStatusIcon(isAnyProviderSetup())}
-                  <span className="font-medium text-sm">
-                    2. Setup AI Access
-                  </span>
+                  <span className="font-medium text-sm">2. Setup AI Access</span>
                 </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pt-2 pb-4 bg-white dark:bg-zinc-900 border-t border-inherit">
               <p className="text-[15px] mb-3">
-                Not sure what to do? Watch the Get Started video above ☝️
+                Not sure what to do? Watch the Get Started video above
               </p>
-
-              <SetupProviderCard
-                variant="dyad"
-                onClick={handleDyadProSetupClick}
-                tabIndex={isNodeSetupComplete ? 0 : -1}
-                leadingIcon={
-                  <img src={logo} alt="Dyad Logo" className="w-6 h-6 mr-0.5" />
-                }
-                title="Start with Dyad Pro free trial"
-                subtitle="Unlock the full power of Dyad"
-                chip={<>Recommended</>}
-              />
               <div className="mt-2 flex gap-2">
                 <SetupProviderCard
                   className="flex-1"
@@ -388,11 +364,6 @@ export function SetupBanner() {
           </AccordionItem>
         </Accordion>
       </div>
-
-      <DyadProTrialDialog
-        isOpen={showDyadProTrialDialog}
-        onClose={() => setShowDyadProTrialDialog(false)}
-      />
     </>
   );
 }
@@ -401,16 +372,8 @@ function NodeJsHelpCallout() {
   return (
     <div className="mt-3 p-3 bg-(--background-lighter) border rounded-lg text-sm">
       <p>
-        If you run into issues, read our{" "}
-        <a
-          onClick={() => {
-            ipc.system.openExternalUrl("https://www.dyad.sh/docs/help/nodejs");
-          }}
-          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-        >
-          Node.js troubleshooting guide
-        </a>
-        .{" "}
+        If Node.js still is not detected after installation, try restarting
+        Minerva once.
       </p>
       <p className="mt-2">
         Still stuck? Click the <b>Help</b> button in the bottom-left corner and
@@ -456,11 +419,13 @@ function NodeInstallButton({
     case "finished-checking":
       return (
         <div className="mt-3 text-sm text-red-600 dark:text-red-400">
-          Node.js not detected. Closing and re-opening Dyad usually fixes this.
+          Node.js not detected. Closing and re-opening Minerva usually fixes
+          this.
         </div>
       );
     default:
       const _exhaustiveCheck: never = nodeInstallStep;
+      return _exhaustiveCheck;
   }
 }
 

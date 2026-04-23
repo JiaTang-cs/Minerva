@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { ipc } from "@/ipc/types";
 import React from "react";
 import { Button } from "./ui/button";
 import { atom, useAtom } from "jotai";
@@ -29,17 +28,6 @@ export function PrivacyBanner() {
           </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {t("telemetry.privacyNotice")}
-            <br />
-            <a
-              onClick={() => {
-                ipc.system.openExternalUrl(
-                  "https://dyad.sh/docs/policies/privacy-policy",
-                );
-              }}
-              className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Learn more
-            </a>
           </p>
         </div>
         <div className="flex gap-2 justify-end">

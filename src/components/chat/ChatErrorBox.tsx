@@ -1,9 +1,5 @@
 import { ipc } from "@/ipc/types";
-import {
-  X,
-  ExternalLink as ExternalLinkIcon,
-  MessageSquarePlus,
-} from "lucide-react";
+import { X, MessageSquarePlus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -21,11 +17,6 @@ export function ChatErrorBox({
   error: string;
   onStartNewChat?: () => void;
 }) {
-  // This is a very long list of model fallbacks that clutters the error message.
-  //
-  // We are matching "Fallbacks=[{" and not just "Fallbacks=" because the fallback
-  // model itself can error and we want to include the fallback model error in the error message.
-  // Example: https://github.com/dyad-sh/dyad/issues/1849#issuecomment-3590685911
   const fallbackPrefix = "Fallbacks=[{";
   if (error.includes(fallbackPrefix)) {
     error = error.split(fallbackPrefix)[0];
@@ -60,37 +51,8 @@ export function ChatErrorBox({
             </TooltipContent>
           </Tooltip>
         )}
-        <ExternalLink href="https://www.dyad.sh/docs/faq">
-          Read docs
-        </ExternalLink>
       </div>
     </ChatErrorContainer>
-  );
-}
-
-function ExternalLink({
-  href,
-  children,
-  icon,
-}: {
-  href: string;
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-}) {
-  const baseClasses =
-    "cursor-pointer inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium shadow-sm focus:outline-none focus:ring-2";
-  const secondaryClasses =
-    "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 focus:ring-blue-200";
-  const iconElement = icon ?? <ExternalLinkIcon size={14} />;
-
-  return (
-    <a
-      className={`${baseClasses} ${secondaryClasses}`}
-      onClick={() => ipc.system.openExternalUrl(href)}
-    >
-      <span>{children}</span>
-      {iconElement}
-    </a>
   );
 }
 

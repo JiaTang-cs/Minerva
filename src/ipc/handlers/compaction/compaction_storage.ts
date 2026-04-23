@@ -7,7 +7,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import log from "electron-log";
-import { ensureDyadGitignored } from "@/ipc/handlers/gitignoreUtils";
+import { ensureInternalAppDirGitignored } from "@/ipc/handlers/gitignoreUtils";
+import { getInternalAppSubdirPath } from "@/ipc/utils/internal_app_dir";
 
 const logger = log.scope("compaction_storage");
 
@@ -25,10 +26,10 @@ export interface CompactionMessage {
 }
 
 /**
- * Get the backup directory for a specific chat within the app's .dyad/chats/ directory.
+ * Get the backup directory for a specific chat within the app's .minerva/chats/ directory.
  */
 function getChatBackupDir(appPath: string, chatId: number): string {
-  return path.join(appPath, ".dyad", "chats", String(chatId));
+  return getInternalAppSubdirPath(appPath, path.join("chats", String(chatId)));
 }
 
 /**
@@ -99,11 +100,11 @@ export async function storePreCompactionMessages(
 ): Promise<string> {
   const chatBackupDir = getChatBackupDir(appPath, chatId);
 
-  // Ensure directory exists and .dyad is gitignored
+  // Ensure directory exists and .minerva is gitignored
   if (!fs.existsSync(chatBackupDir)) {
     fs.mkdirSync(chatBackupDir, { recursive: true });
   }
-  await ensureDyadGitignored(appPath);
+  await ensureInternalAppDirGitignored(appPath);
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupFileName = `compaction-${timestamp}.md`;

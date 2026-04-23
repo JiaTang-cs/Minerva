@@ -1,5 +1,5 @@
+import { ipc } from "@/ipc/types";
 import { useSettings } from "@/hooks/useSettings";
-
 import {
   Select,
   SelectContent,
@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ipc } from "@/ipc/types";
 import type { ReleaseChannel } from "@/lib/schemas";
 import { useTranslation } from "react-i18next";
 
@@ -27,27 +26,23 @@ export function ReleaseChannelSelector() {
 
   const handleReleaseChannelChange = (value: ReleaseChannel) => {
     updateSettings({ releaseChannel: value });
+
     if (value === "stable") {
       toast(t("general.stableChannelToastTitle"), {
         description: t("general.stableChannelToastDescription"),
-        action: {
-          label: t("general.downloadStable"),
-          onClick: () => {
-            ipc.system.openExternalUrl("https://dyad.sh/download");
-          },
-        },
       });
-    } else {
-      toast(t("general.betaChannelToastTitle"), {
-        description: t("general.restartRequiredDescription"),
-        action: {
-          label: t("general.restartDyad"),
-          onClick: () => {
-            ipc.system.restartDyad();
-          },
-        },
-      });
+      return;
     }
+
+    toast(t("general.betaChannelToastTitle"), {
+      description: t("general.restartRequiredDescription"),
+      action: {
+        label: t("general.restartDyad"),
+        onClick: () => {
+          ipc.system.restartDyad();
+        },
+      },
+    });
   };
 
   return (

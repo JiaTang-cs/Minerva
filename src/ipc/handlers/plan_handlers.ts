@@ -14,8 +14,9 @@ import {
   validatePlanId,
   parsePlanFile,
 } from "./planUtils";
-import { ensureDyadGitignored } from "./gitignoreUtils";
+import { ensureInternalAppDirGitignored } from "./gitignoreUtils";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { getInternalAppSubdirPath } from "../utils/internal_app_dir";
 
 const logger = log.scope("plan_handlers");
 
@@ -23,9 +24,9 @@ async function getPlanDir(appId: number): Promise<string> {
   const app = await db.query.apps.findFirst({ where: eq(apps.id, appId) });
   if (!app) throw new Error("App not found");
   const appPath = getDyadAppPath(app.path);
-  const planDir = path.join(appPath, ".dyad", "plans");
+  const planDir = getInternalAppSubdirPath(appPath, "plans");
   await fs.promises.mkdir(planDir, { recursive: true });
-  await ensureDyadGitignored(appPath);
+  await ensureInternalAppDirGitignored(appPath);
   return planDir;
 }
 

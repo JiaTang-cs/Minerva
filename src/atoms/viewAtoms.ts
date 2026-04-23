@@ -10,3 +10,4 @@ export const selectedFileAtom = atom<{
 export const activeSettingsSectionAtom = atom<string | null>(
   SECTION_IDS.general,
 );
+export const activeSkillsSectionAtom = atom<string | null>("overview");

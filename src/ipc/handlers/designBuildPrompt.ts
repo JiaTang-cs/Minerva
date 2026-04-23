@@ -1,8 +1,9 @@
 import type { DesignDraft } from "@/ipc/types";
 import { stripDesignEditorArtifactsForHandoff } from "@/shared/designDraftHtml";
+import { getInternalRelativeSubdirPath } from "../utils/internal_app_dir";
 
 export function createBuildFromDesignPrompt(draft: DesignDraft): string {
-  const designPath = `.dyad/designs/${draft.id}.json`;
+  const designPath = `${getInternalRelativeSubdirPath("designs")}/${draft.id}.json`;
   const cleanHtml = stripDesignEditorArtifactsForHandoff(draft.html);
 
   return `Build a complete application from the following design draft:

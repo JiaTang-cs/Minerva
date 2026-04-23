@@ -7,7 +7,7 @@ import type { LocalAgentFixture } from "../../../../testing/fake-llm-server/loca
  *   - todo-2: "Add error handling" (pending)
  *   - todo-3: "Write tests" (pending)
  *
- * The handler loads these from .dyad/todos/<chatId>.json and injects a
+ * The handler loads these from .minerva/todos/<chatId>.json and injects a
  * synthetic "[System] You have unfinished todos..." user message before
  * this prompt. The agent then picks up the remaining work and completes
  * all todos.
