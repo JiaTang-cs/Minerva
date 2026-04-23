@@ -5,17 +5,26 @@ import React, {
   useState,
   type RefObject,
 } from "react";
+import { ArrowDownRight, Boxes, Component, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showError } from "@/lib/toast";
 import {
+  buildEdgePath,
   buildMinimapViewModel,
+  computeViewportForBounds,
+  computeWorldBounds,
   DEFAULT_VIEWPORT,
   DEVICE_DIMENSIONS,
+  getPagePreviewNodeSize,
   MINIMAP_SIZE,
+  type CanvasEdge,
+  type CanvasNodeComponentData,
   type CanvasTool,
   type CanvasViewportState,
+  type CanvasNodeDraftData,
   type DesignViewMode,
   type DeviceMode,
+  type FlowCanvasNode,
   type SelectedElementSnapshot,
 } from "./designCanvasUtils";
 
@@ -28,6 +37,9 @@ export function DesignCanvas({
   canvasTool,
   iframeRef,
   selectedElement,
+  selectedComponentId,
+  nodes,
+  edges,
   zoomPresetRequest,
   requestSerializedHtml,
   onZoomPercentChange,
@@ -35,6 +47,8 @@ export function DesignCanvas({
   onSelectedElementChange,
   onInspectorReset,
   onSerializedHtml,
+  onPageNodeSelect,
+  onComponentNodeSelect,
 }: {
   draftId: string;
   draftTitle: string;
@@ -44,6 +58,9 @@ export function DesignCanvas({
   canvasTool: CanvasTool;
   iframeRef: RefObject<HTMLIFrameElement | null>;
   selectedElement: SelectedElementSnapshot | null;
+  selectedComponentId: string | null;
+  nodes: FlowCanvasNode[];
+  edges: CanvasEdge[];
   zoomPresetRequest: { id: number; value: number };
   requestSerializedHtml: () => Promise<string | null>;
   onZoomPercentChange: (zoomPercent: number) => void;
@@ -51,6 +68,8 @@ export function DesignCanvas({
   onSelectedElementChange: (element: SelectedElementSnapshot | null) => void;
   onInspectorReset: () => void;
   onSerializedHtml: (payload: { html: string; requestId?: string }) => void;
+  onPageNodeSelect: (draftId: string) => void;
+  onComponentNodeSelect: (componentId: string) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const initializedViewportKeyRef = useRef<string | null>(null);
@@ -61,42 +80,54 @@ export function DesignCanvas({
     startPanX: number;
     startPanY: number;
   } | null>(null);
-  const [viewport, setViewport] = useState<CanvasViewportState>(DEFAULT_VIEWPORT);
+  const [viewport, setViewport] =
+    useState<CanvasViewportState>(DEFAULT_VIEWPORT);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [, setIsDraggingElement] = useState(false);
   const [contentHeight, setContentHeight] = useState(900);
-  const frameDimensions = DEVICE_DIMENSIONS[deviceMode];
-  const nodeHeight = Math.max(contentHeight, frameDimensions.height);
+  const activeFrameDimensions = DEVICE_DIMENSIONS[deviceMode];
+  const activeNodeHeight = Math.max(
+    contentHeight,
+    activeFrameDimensions.height,
+  );
   const isCanvasEditingEnabled =
-    viewMode === "edit" &&
-    canvasTool === "select" &&
-    !isPanning;
+    viewMode === "edit" && canvasTool === "select" && !isPanning;
 
-  const canvasNodes = useMemo(
-    () => [
-      {
-        id: draftId,
-        type: "design-draft" as const,
-        x: 0,
-        y: 0,
-        width: frameDimensions.width,
-        height: nodeHeight,
-        selected: true,
-      },
-    ],
-    [draftId, frameDimensions.width, nodeHeight],
+  const graphNodes = useMemo(
+    () =>
+      nodes.map((node) => {
+        if (
+          "draftId" in node.data &&
+          node.data.draftId === draftId &&
+          node.data.isActive
+        ) {
+          return {
+            ...node,
+            width: activeFrameDimensions.width,
+            height: activeNodeHeight,
+          };
+        }
+
+        return node;
+      }),
+    [activeFrameDimensions.width, activeNodeHeight, draftId, nodes],
+  );
+
+  const nodeById = useMemo(
+    () => new Map(graphNodes.map((node) => [node.id, node])),
+    [graphNodes],
   );
 
   const minimapViewModel = useMemo(
     () =>
       buildMinimapViewModel({
-        nodes: canvasNodes,
+        nodes: graphNodes,
         viewport,
         viewportWidth: viewportSize.width,
         viewportHeight: viewportSize.height,
       }),
-    [canvasNodes, viewport, viewportSize.height, viewportSize.width],
+    [graphNodes, viewport, viewportSize.height, viewportSize.width],
   );
 
   useEffect(() => {
@@ -122,22 +153,54 @@ export function DesignCanvas({
   }, []);
 
   useEffect(() => {
-    if (viewportSize.width === 0 || viewportSize.height === 0) return;
+    if (
+      viewportSize.width === 0 ||
+      viewportSize.height === 0 ||
+      graphNodes.length === 0
+    ) {
+      return;
+    }
 
-    const viewportKey = `${draftId}:${deviceMode}`;
+    const viewportKey = `${draftId}:${deviceMode}:${graphNodes
+      .map(
+        (node) =>
+          `${node.id}:${Math.round(node.width)}:${Math.round(node.height)}`,
+      )
+      .join("|")}`;
     if (initializedViewportKeyRef.current === viewportKey) return;
 
     initializedViewportKeyRef.current = viewportKey;
-    setViewport((current) => ({
-      ...current,
-      panX: (viewportSize.width - frameDimensions.width * current.zoom) / 2,
-      panY: Math.max(96, (viewportSize.height - nodeHeight * current.zoom) / 2),
-    }));
+    const bounds = computeWorldBounds(
+      graphNodes,
+      graphNodes.length > 1 ? 280 : 160,
+    );
+    setViewport(
+      graphNodes.length > 1
+        ? computeViewportForBounds({
+            bounds,
+            viewportWidth: viewportSize.width,
+            viewportHeight: viewportSize.height,
+            preferredZoom: 0.34,
+          })
+        : {
+            ...DEFAULT_VIEWPORT,
+            panX:
+              (viewportSize.width -
+                activeFrameDimensions.width * DEFAULT_VIEWPORT.zoom) /
+              2,
+            panY: Math.max(
+              96,
+              (viewportSize.height - activeNodeHeight * DEFAULT_VIEWPORT.zoom) /
+                2,
+            ),
+          },
+    );
   }, [
+    activeFrameDimensions.width,
+    activeNodeHeight,
     deviceMode,
     draftId,
-    frameDimensions.width,
-    nodeHeight,
+    graphNodes,
     viewportSize.height,
     viewportSize.width,
   ]);
@@ -376,6 +439,16 @@ export function DesignCanvas({
     focusWorldPoint(worldX, worldY);
   };
 
+  const activeComponent = useMemo(() => {
+    if (!selectedComponentId) return null;
+    const node = nodes.find((candidate) => {
+      if (!("componentId" in candidate.data)) return false;
+      return candidate.data.componentId === selectedComponentId;
+    });
+
+    return node && "componentId" in node.data ? node : null;
+  }, [nodes, selectedComponentId]);
+
   return (
     <div className="relative h-full overflow-hidden bg-[#f6f2eb]">
       <div
@@ -439,7 +512,8 @@ export function DesignCanvas({
         ref={viewportRef}
         className={cn(
           "absolute inset-0 overflow-hidden touch-none",
-          canvasTool === "hand" && (isPanning ? "cursor-grabbing" : "cursor-grab"),
+          canvasTool === "hand" &&
+            (isPanning ? "cursor-grabbing" : "cursor-grab"),
         )}
         onWheel={handleViewportWheel}
         onPointerDown={(event) => {
@@ -458,28 +532,299 @@ export function DesignCanvas({
             transformOrigin: "0 0",
           }}
         >
-          <div
-            className="relative"
-            style={{
-              width: `${frameDimensions.width}px`,
-              height: `${nodeHeight}px`,
-            }}
+          <svg
+            className="pointer-events-none absolute left-0 top-0 overflow-visible"
+            width={1}
+            height={1}
           >
-            <div className="absolute inset-0 rounded-[18px] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.12)] ring-1 ring-[#e7dfd4]" />
-            <iframe
-              ref={iframeRef}
-              title={`Design draft ${draftTitle}`}
-              sandbox="allow-same-origin allow-scripts"
-              className={cn(
-                "relative h-full w-full rounded-[18px] border-0 bg-white",
-                canvasTool === "hand" && "pointer-events-none",
-              )}
-              srcDoc={srcDoc}
-            />
-            {canvasTool === "hand" ? (
-              <div className="absolute inset-0 rounded-[18px] bg-transparent" />
-            ) : null}
-          </div>
+            {edges.map((edge) => {
+              const fromNode = nodeById.get(edge.from);
+              const toNode = nodeById.get(edge.to);
+              if (!fromNode || !toNode) return null;
+
+              const path = buildEdgePath({ fromNode, toNode });
+              const endX = toNode.x + toNode.width / 2;
+              const endY = toNode.y;
+              const labelX = (fromNode.x + fromNode.width / 2 + endX) / 2;
+              const labelY = (fromNode.y + fromNode.height + endY) / 2 - 16;
+
+              return (
+                <g key={edge.id}>
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={
+                      edge.type === "component-link"
+                        ? "rgba(86, 138, 111, 0.58)"
+                        : "rgba(122, 97, 69, 0.35)"
+                    }
+                    strokeDasharray={
+                      edge.type === "component-link" ? "10 8" : "14 10"
+                    }
+                    strokeWidth={2}
+                  />
+                  <circle
+                    cx={endX}
+                    cy={endY}
+                    r={5}
+                    fill="#f5efe6"
+                    stroke="#d6ccbe"
+                  />
+                  {edge.label ? (
+                    <g transform={`translate(${labelX}, ${labelY})`}>
+                      <rect
+                        x={-28}
+                        y={-12}
+                        width={56}
+                        height={24}
+                        rx={12}
+                        fill="rgba(255,255,255,0.92)"
+                        stroke="rgba(214,204,190,0.9)"
+                      />
+                      <text
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="11"
+                        fontWeight="600"
+                        fill="#7a6145"
+                      >
+                        {edge.label}
+                      </text>
+                    </g>
+                  ) : null}
+                </g>
+              );
+            })}
+          </svg>
+
+          {graphNodes.map((node) => {
+            if ("componentId" in node.data) {
+              const componentData = node.data as CanvasNodeComponentData;
+              const isSelected =
+                componentData.componentId === selectedComponentId;
+              const previewHtml = componentData.previewHtml
+                ? `<!DOCTYPE html><html><head><style>body{margin:0;padding:16px;background:#fffdf8;font-family:ui-sans-serif,system-ui,sans-serif;overflow:hidden;}</style></head><body>${componentData.previewHtml}</body></html>`
+                : null;
+
+              return (
+                <button
+                  key={node.id}
+                  type="button"
+                  onClick={() =>
+                    onComponentNodeSelect(componentData.componentId)
+                  }
+                  className={cn(
+                    "absolute overflow-hidden rounded-[24px] border bg-white text-left shadow-[0_18px_44px_rgba(15,23,42,0.08)] transition-transform hover:-translate-y-1",
+                    isSelected
+                      ? "border-[#7ba88e] ring-2 ring-[#d4e8d9]"
+                      : "border-[#d8e3dc]",
+                  )}
+                  style={{
+                    left: node.x,
+                    top: node.y,
+                    width: node.width,
+                    height: node.height,
+                  }}
+                >
+                  <div className="flex items-center justify-between border-b border-[#edf2ee] bg-[#f4faf5] px-4 py-3">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#59806a]">
+                        Shared Component
+                      </div>
+                      <div className="mt-1 text-sm font-semibold text-[#244132]">
+                        {componentData.name}
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-[#5d7f69] shadow-sm">
+                      Reusable
+                    </div>
+                  </div>
+                  <div className="px-4 py-3">
+                    {componentData.description ? (
+                      <p className="mb-3 line-clamp-2 text-xs leading-5 text-[#567060]">
+                        {componentData.description}
+                      </p>
+                    ) : null}
+                    <div className="relative h-[108px] overflow-hidden rounded-[18px] border border-[#e1ebe4] bg-[#fffdf8]">
+                      {previewHtml ? (
+                        <iframe
+                          title={componentData.name}
+                          sandbox="allow-same-origin allow-scripts"
+                          className="h-full w-full border-0 bg-white"
+                          srcDoc={previewHtml}
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-[#7b8d83]">
+                          Preview pending
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            }
+
+            const pageData = node.data as CanvasNodeDraftData;
+            const isActive = pageData.isActive;
+            const pageStatusTone =
+              pageData.status === "failed"
+                ? "bg-[#fff0ec] text-[#a3512f]"
+                : pageData.status === "generating"
+                  ? "bg-[#fff6e9] text-[#a06e20]"
+                  : "bg-[#f4efe7] text-[#7d6447]";
+
+            if (isActive) {
+              return (
+                <div
+                  key={node.id}
+                  className="absolute"
+                  style={{
+                    left: node.x,
+                    top: node.y,
+                    width: node.width,
+                    height: node.height,
+                  }}
+                >
+                  <div className="absolute inset-0 rounded-[18px] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.12)] ring-1 ring-[#e7dfd4]" />
+                  <div className="absolute left-5 top-5 z-10 flex items-center gap-2">
+                    <div className="rounded-full bg-[#111827] px-3 py-1.5 text-[11px] font-semibold text-white">
+                      {pageData.role === "root" ? "Root Page" : "Active Page"}
+                    </div>
+                    <div
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-[11px] font-semibold",
+                        pageStatusTone,
+                      )}
+                    >
+                      {pageData.status}
+                    </div>
+                  </div>
+                  <iframe
+                    ref={iframeRef}
+                    title={`Design draft ${draftTitle}`}
+                    sandbox="allow-same-origin allow-scripts"
+                    className={cn(
+                      "relative h-full w-full rounded-[18px] border-0 bg-white",
+                      canvasTool === "hand" && "pointer-events-none",
+                    )}
+                    srcDoc={srcDoc}
+                  />
+                  {canvasTool === "hand" ? (
+                    <div className="absolute inset-0 rounded-[18px] bg-transparent" />
+                  ) : null}
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={node.id}
+                type="button"
+                onClick={() => onPageNodeSelect(pageData.draftId)}
+                className={cn(
+                  "absolute overflow-hidden rounded-[24px] border bg-white text-left shadow-[0_16px_40px_rgba(15,23,42,0.07)] transition-transform hover:-translate-y-1",
+                  node.selected
+                    ? "border-[#c9ab7b] ring-2 ring-[#efd9b2]"
+                    : "border-[#e7dfd4]",
+                )}
+                style={{
+                  left: node.x,
+                  top: node.y,
+                  width: node.width,
+                  height: node.height,
+                }}
+              >
+                {(() => {
+                  const previewSizing = getPagePreviewNodeSize(pageData.deviceMode);
+                  const previewScale = Math.min(
+                    previewSizing.previewWidth /
+                      DEVICE_DIMENSIONS[pageData.deviceMode].width,
+                    previewSizing.previewHeight /
+                      DEVICE_DIMENSIONS[pageData.deviceMode].height,
+                  );
+                  const chromeHeight = node.height - previewSizing.previewHeight;
+
+                  return (
+                    <>
+                      <div
+                        className="flex items-center justify-between border-b border-[#f0e8de] bg-[#fffaf4] px-4 py-3"
+                        style={{ height: `${chromeHeight - 40}px` }}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-[#332317]">
+                            {pageData.title}
+                          </div>
+                          <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a6b49]">
+                            <span>
+                              {pageData.role === "root" ? "Root" : "Generated"}
+                            </span>
+                            <span className="h-1 w-1 rounded-full bg-[#d5c4b0]" />
+                            <span>
+                              {DEVICE_DIMENSIONS[pageData.deviceMode].label}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-[10px] font-semibold",
+                            pageStatusTone,
+                          )}
+                        >
+                          {pageData.status}
+                        </div>
+                      </div>
+                      <div
+                        className="relative overflow-hidden bg-[#f7f4ef]"
+                        style={{ height: `${previewSizing.previewHeight}px` }}
+                      >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,239,232,0.9),rgba(247,244,239,0.65))]" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          {pageData.srcDoc ? (
+                            <div
+                              className="relative overflow-hidden rounded-[18px] border border-[#eadfce] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
+                              style={{
+                                width: `${previewSizing.previewWidth}px`,
+                                height: `${previewSizing.previewHeight}px`,
+                              }}
+                            >
+                              <iframe
+                                title={pageData.title}
+                                sandbox="allow-same-origin allow-scripts"
+                                className="pointer-events-none border-0 bg-white"
+                                srcDoc={pageData.srcDoc}
+                                style={{
+                                  width: `${DEVICE_DIMENSIONS[pageData.deviceMode].width}px`,
+                                  height: `${DEVICE_DIMENSIONS[pageData.deviceMode].height}px`,
+                                  transform: `scale(${previewScale})`,
+                                  transformOrigin: "top left",
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-xs text-[#8c7c68]">
+                              Page preview pending
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <div className="flex items-center gap-2 text-xs text-[#7a6145]">
+                          <Link2 className="h-3.5 w-3.5" />
+                          {pageData.role === "root"
+                            ? "Source anchor"
+                            : "Derived from root"}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-medium text-[#9a6b2f]">
+                          Open
+                          <ArrowDownRight className="h-3.5 w-3.5" />
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -490,6 +835,31 @@ export function DesignCanvas({
           </div>
           <div className="max-w-[220px] truncate text-[11px] text-slate-500">
             {selectedElement.text || "Selected element"}
+          </div>
+        </div>
+      ) : activeComponent ? (
+        <div className="absolute bottom-8 right-8 z-20 w-[280px] rounded-[24px] border border-white/70 bg-white/96 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#eff6f0] text-[#4b7a61]">
+              <Component className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#62816d]">
+                Shared Component
+              </div>
+              <div className="mt-1 text-sm font-semibold text-[#243a2c]">
+                {(activeComponent.data as CanvasNodeComponentData).name}
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[#5a7260]">
+                {(activeComponent.data as CanvasNodeComponentData)
+                  .description ??
+                  "This reusable block is shared across the flow and rendered on the canvas for quick inspection."}
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-[#6e8175]">
+                <Boxes className="h-3.5 w-3.5" />
+                Click another component node to inspect it
+              </div>
+            </div>
           </div>
         </div>
       ) : null}

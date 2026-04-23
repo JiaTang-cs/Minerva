@@ -5,18 +5,18 @@ import { selectedChatIdAtom } from "@/atoms/chatAtoms";
 import { designClient } from "@/ipc/types";
 import { queryKeys } from "@/lib/queryKeys";
 
-export function useDesignDraft({ enabled = true }: { enabled?: boolean } = {}) {
+export function useDesignFlow({ enabled = true }: { enabled?: boolean } = {}) {
   const appId = useAtomValue(selectedAppIdAtom);
   const chatId = useAtomValue(selectedChatIdAtom);
 
   const query = useQuery({
-    queryKey: queryKeys.design.draftForChat({
+    queryKey: queryKeys.design.flowForChat({
       appId: appId ?? null,
       chatId: chatId ?? null,
     }),
     queryFn: async () => {
       if (!appId || !chatId) return null;
-      return designClient.getDraftForChat({ appId, chatId });
+      return designClient.getFlowForChat({ appId, chatId });
     },
     enabled: !!appId && !!chatId && enabled,
     staleTime: 1000 * 30,

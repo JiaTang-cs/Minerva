@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { previewModeAtom, selectedAppIdAtom } from "@/atoms/appAtoms";
 import { isPreviewOpenAtom } from "@/atoms/viewAtoms";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface DyadDesignDraftProps {
   node?: {
@@ -30,7 +31,7 @@ export function DyadDesignDraft({ node }: DyadDesignDraftProps) {
   useEffect(() => {
     if (!selectedAppId || !selectedChatId) return;
     queryClient.invalidateQueries({
-      queryKey: ["design-draft", "forChat", selectedAppId, selectedChatId],
+      queryKey: queryKeys.design.all,
     });
     setPreviewMode("design");
     setIsPreviewOpen(true);

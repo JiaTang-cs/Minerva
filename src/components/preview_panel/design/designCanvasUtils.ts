@@ -1,4 +1,9 @@
 import { rgbToHex } from "@/utils/style-utils";
+import type {
+  DesignDraft,
+  DesignFlowPage,
+  DraftComponent,
+} from "@/ipc/types/design";
 
 export type DesignViewMode = "view" | "edit";
 export type InspectorPanel = "layout" | "styles" | null;
@@ -17,9 +22,19 @@ export type PendingAction =
   | { type: "close-preview" }
   | { type: "set-view-mode"; mode: DesignViewMode }
   | { type: "set-canvas-tool"; tool: CanvasTool }
-  | { type: "set-device-mode"; deviceMode: DeviceMode };
+  | { type: "set-device-mode"; deviceMode: DeviceMode }
+  | { type: "set-active-draft"; draftId: string };
 
-export type CanvasNodeType = "design-draft";
+export type CanvasNodeType = "root-page" | "generated-page" | "draft-component";
+export type CanvasEdgeType = "flow-link" | "component-link";
+
+export interface CanvasEdge {
+  id: string;
+  type: CanvasEdgeType;
+  from: string;
+  to: string;
+  label?: string;
+}
 
 export interface CanvasNode {
   id: string;
@@ -73,6 +88,32 @@ export interface CanvasMinimapViewModel {
   viewportRect: MinimapViewportRect;
 }
 
+export interface CanvasNodeDraftData {
+  draftId: string;
+  title: string;
+  role: "root" | "generated";
+  status: "ready" | "generating" | "failed";
+  deviceMode: DeviceMode;
+  srcDoc: string | null;
+  isActive: boolean;
+}
+
+export interface CanvasNodeComponentData {
+  componentId: string;
+  name: string;
+  description: string | null;
+  previewHtml: string | null;
+}
+
+export interface FlowCanvasNode extends CanvasNode {
+  data: CanvasNodeDraftData | CanvasNodeComponentData;
+}
+
+export interface DesignCanvasGraph {
+  nodes: FlowCanvasNode[];
+  edges: CanvasEdge[];
+}
+
 export interface SelectedElementStyles {
   color: string;
   backgroundColor: string;
@@ -123,6 +164,21 @@ export const MINIMAP_SIZE = {
   height: 132,
   padding: 12,
 } as const;
+export const CANVAS_LAYOUT = {
+  rootX: 0,
+  rootY: 0,
+  componentWidth: 312,
+  componentHeight: 208,
+  pagePreviewMaxWidth: 220,
+  pagePreviewMaxHeight: 220,
+  pagePreviewMinWidth: 132,
+  pagePreviewMinHeight: 180,
+  pagePreviewChromeHeight: 96,
+  pagePreviewPaddingX: 18,
+  horizontalGap: 68,
+  verticalGap: 112,
+  pageRows: 3,
+} as const;
 export const DEFAULT_VIEWPORT: CanvasViewportState = {
   panX: 0,
   panY: 0,
@@ -135,10 +191,48 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function toEditableColor(
-  value: string,
-  fallback = "#000000",
-): string {
+export function getCanvasNodeColor(type: CanvasNodeType): string {
+  switch (type) {
+    case "root-page":
+      return "#c7a8f1";
+    case "generated-page":
+      return "#dcc5a4";
+    case "draft-component":
+      return "#9ec5b1";
+  }
+}
+
+export function getPagePreviewNodeSize(deviceMode: DeviceMode): {
+  previewWidth: number;
+  previewHeight: number;
+  nodeWidth: number;
+  nodeHeight: number;
+  scale: number;
+} {
+  const dimensions = DEVICE_DIMENSIONS[deviceMode];
+  const scale = Math.min(
+    CANVAS_LAYOUT.pagePreviewMaxWidth / dimensions.width,
+    CANVAS_LAYOUT.pagePreviewMaxHeight / dimensions.height,
+  );
+  const previewWidth = Math.max(
+    CANVAS_LAYOUT.pagePreviewMinWidth,
+    Math.round(dimensions.width * scale),
+  );
+  const previewHeight = Math.max(
+    CANVAS_LAYOUT.pagePreviewMinHeight,
+    Math.round(dimensions.height * scale),
+  );
+
+  return {
+    previewWidth,
+    previewHeight,
+    nodeWidth: previewWidth + CANVAS_LAYOUT.pagePreviewPaddingX * 2,
+    nodeHeight: previewHeight + CANVAS_LAYOUT.pagePreviewChromeHeight,
+    scale,
+  };
+}
+
+export function toEditableColor(value: string, fallback = "#000000"): string {
   if (!value || value === "transparent" || value === "rgba(0, 0, 0, 0)") {
     return fallback;
   }
@@ -193,6 +287,286 @@ export function computeWorldBounds(
   };
 }
 
+export function computeViewportForBounds({
+  bounds,
+  viewportWidth,
+  viewportHeight,
+  minZoom = DEFAULT_VIEWPORT.minZoom,
+  maxZoom = DEFAULT_VIEWPORT.maxZoom,
+  preferredZoom,
+}: {
+  bounds: CanvasWorldBounds;
+  viewportWidth: number;
+  viewportHeight: number;
+  minZoom?: number;
+  maxZoom?: number;
+  preferredZoom?: number;
+}): CanvasViewportState {
+  const usableWidth = Math.max(1, viewportWidth - 96);
+  const usableHeight = Math.max(1, viewportHeight - 120);
+  const fitZoom = Math.min(
+    usableWidth / Math.max(1, bounds.width),
+    usableHeight / Math.max(1, bounds.height),
+  );
+  const zoom = clamp(preferredZoom ?? fitZoom, minZoom, maxZoom);
+  const worldCenterX = bounds.minX + bounds.width / 2;
+  const worldCenterY = bounds.minY + bounds.height / 2;
+
+  return {
+    panX: viewportWidth / 2 - worldCenterX * zoom,
+    panY: viewportHeight / 2 - worldCenterY * zoom,
+    zoom,
+    minZoom,
+    maxZoom,
+  };
+}
+
+function layoutRow(
+  items: { id: string; width: number; height: number }[],
+  {
+    startY,
+    maxColumns,
+    horizontalGap,
+    verticalGap,
+  }: {
+    startY: number;
+    maxColumns: number;
+    horizontalGap: number;
+    verticalGap: number;
+  },
+): Map<string, { x: number; y: number }> {
+  const positions = new Map<string, { x: number; y: number }>();
+  if (items.length === 0) return positions;
+
+  const rows = Math.ceil(items.length / maxColumns);
+  for (let rowIndex = 0; rowIndex < rows; rowIndex += 1) {
+    const rowItems = items.slice(
+      rowIndex * maxColumns,
+      rowIndex * maxColumns + maxColumns,
+    );
+    const rowWidth =
+      rowItems.reduce((total, item) => total + item.width, 0) +
+      Math.max(0, rowItems.length - 1) * horizontalGap;
+    let cursorX = -rowWidth / 2;
+    const rowY =
+      startY +
+      rowIndex *
+        (Math.max(...rowItems.map((item) => item.height)) + verticalGap);
+
+    rowItems.forEach((item) => {
+      positions.set(item.id, { x: cursorX, y: rowY });
+      cursorX += item.width + horizontalGap;
+    });
+  }
+
+  return positions;
+}
+
+export function buildDesignCanvasGraph({
+  rootDraft,
+  flowPages,
+  draftComponents,
+  draftsById,
+  activeDraftId,
+  activeNodeHeight,
+}: {
+  rootDraft: DesignDraft | null;
+  flowPages: DesignFlowPage[];
+  draftComponents: DraftComponent[];
+  draftsById: Record<string, DesignDraft | null | undefined>;
+  activeDraftId: string | null;
+  activeNodeHeight?: number;
+}): DesignCanvasGraph {
+  if (!rootDraft) {
+    return { nodes: [], edges: [] };
+  }
+
+  const pageByDraftId = new Map(flowPages.map((page) => [page.draftId, page]));
+  const orderedPages =
+    flowPages.length > 0
+      ? [...flowPages].sort((left, right) => left.order - right.order)
+      : [
+          {
+            id: `page-${rootDraft.id}`,
+            flowId: rootDraft.flowId ?? "root-flow",
+            draftId: rootDraft.id,
+            title: rootDraft.title,
+            prompt: rootDraft.brief,
+            role: "root" as const,
+            order: 0,
+            sourceDraftId: null,
+            status: "ready" as const,
+            createdAt: rootDraft.createdAt,
+            updatedAt: rootDraft.updatedAt,
+          },
+        ];
+
+  const rootPage =
+    orderedPages.find((page) => page.role === "root") ?? orderedPages[0];
+  const activePageId = activeDraftId ?? rootPage.draftId;
+  const rootPageDraft = draftsById[rootPage.draftId] ?? rootDraft;
+  const rootDeviceMode = rootPageDraft?.deviceMode ?? "desktop";
+  const rootDimensions = DEVICE_DIMENSIONS[rootDeviceMode];
+  const rootIsActive = activePageId === rootPage.draftId;
+  const rootPreviewSize = getPagePreviewNodeSize(rootDeviceMode);
+  const rootNodeHeight = rootIsActive
+    ? Math.max(activeNodeHeight ?? rootDimensions.height, rootDimensions.height)
+    : rootPreviewSize.nodeHeight;
+  const nodes: FlowCanvasNode[] = [];
+  const edges: CanvasEdge[] = [];
+
+  const rootNodeId = `draft:${rootPage.draftId}`;
+  nodes.push({
+    id: rootNodeId,
+    type: "root-page",
+    x:
+      CANVAS_LAYOUT.rootX -
+      (rootIsActive ? rootDimensions.width : rootPreviewSize.nodeWidth) / 2,
+    y: CANVAS_LAYOUT.rootY,
+    width: rootIsActive ? rootDimensions.width : rootPreviewSize.nodeWidth,
+    height: rootNodeHeight,
+    selected: rootIsActive,
+    data: {
+      draftId: rootPage.draftId,
+      title: rootPage.title,
+      role: "root",
+      status: rootPage.status,
+      deviceMode: rootDeviceMode,
+      srcDoc: rootPageDraft?.html ?? null,
+      isActive: rootIsActive,
+    },
+  });
+
+  const componentItems = draftComponents.map((component) => ({
+    id: `component:${component.id}`,
+    width: CANVAS_LAYOUT.componentWidth,
+    height: CANVAS_LAYOUT.componentHeight,
+  }));
+  const componentPositions = layoutRow(componentItems, {
+    startY:
+      CANVAS_LAYOUT.rootY -
+      CANVAS_LAYOUT.verticalGap -
+      CANVAS_LAYOUT.componentHeight,
+    maxColumns: Math.min(3, Math.max(1, componentItems.length)),
+    horizontalGap: CANVAS_LAYOUT.horizontalGap,
+    verticalGap: 40,
+  });
+
+  draftComponents.forEach((component) => {
+    const id = `component:${component.id}`;
+    const position = componentPositions.get(id);
+    if (!position) return;
+
+    nodes.push({
+      id,
+      type: "draft-component",
+      x: position.x,
+      y: position.y,
+      width: CANVAS_LAYOUT.componentWidth,
+      height: CANVAS_LAYOUT.componentHeight,
+      data: {
+        componentId: component.id,
+        name: component.name,
+        description: component.description,
+        previewHtml: component.previewHtml,
+      },
+    });
+    edges.push({
+      id: `edge:${id}:${rootNodeId}`,
+      type: "component-link",
+      from: id,
+      to: rootNodeId,
+      label: "Shared",
+    });
+  });
+
+  const generatedPages = orderedPages.filter(
+    (page) => page.draftId !== rootPage.draftId,
+  );
+  const generatedItems = generatedPages.map((page) => ({
+    id: `draft:${page.draftId}`,
+    width: (() => {
+      const deviceMode = draftsById[page.draftId]?.deviceMode ?? "desktop";
+      if (page.draftId === activePageId) {
+        return DEVICE_DIMENSIONS[deviceMode].width;
+      }
+      return getPagePreviewNodeSize(deviceMode).nodeWidth;
+    })(),
+    height: (() => {
+      const deviceMode = draftsById[page.draftId]?.deviceMode ?? "desktop";
+      if (page.draftId === activePageId) {
+        return Math.max(
+          activeNodeHeight ?? DEVICE_DIMENSIONS[deviceMode].height,
+          DEVICE_DIMENSIONS[deviceMode].height,
+        );
+      }
+      return getPagePreviewNodeSize(deviceMode).nodeHeight;
+    })(),
+  }));
+  const generatedPositions = layoutRow(generatedItems, {
+    startY: CANVAS_LAYOUT.rootY + rootNodeHeight + CANVAS_LAYOUT.verticalGap,
+    maxColumns: CANVAS_LAYOUT.pageRows,
+    horizontalGap: CANVAS_LAYOUT.horizontalGap,
+    verticalGap: 52,
+  });
+
+  generatedPages.forEach((page) => {
+    const draft = draftsById[page.draftId] ?? null;
+    const dimensions = DEVICE_DIMENSIONS[draft?.deviceMode ?? "desktop"];
+    const previewSize = getPagePreviewNodeSize(draft?.deviceMode ?? "desktop");
+    const isActive = activePageId === page.draftId;
+    const nodeId = `draft:${page.draftId}`;
+    const position = generatedPositions.get(nodeId);
+    if (!position) return;
+
+    nodes.push({
+      id: nodeId,
+      type: "generated-page",
+      x: position.x,
+      y: position.y,
+      width: isActive ? dimensions.width : previewSize.nodeWidth,
+      height: isActive
+        ? Math.max(activeNodeHeight ?? dimensions.height, dimensions.height)
+        : previewSize.nodeHeight,
+      selected: isActive,
+      data: {
+        draftId: page.draftId,
+        title: page.title,
+        role: "generated",
+        status: page.status,
+        deviceMode: draft?.deviceMode ?? "desktop",
+        srcDoc: draft?.html ?? null,
+        isActive,
+      },
+    });
+    edges.push({
+      id: `edge:${rootNodeId}:${nodeId}`,
+      type: "flow-link",
+      from: rootNodeId,
+      to: nodeId,
+      label: page.sourceDraftId ? "Source" : undefined,
+    });
+  });
+
+  return { nodes, edges };
+}
+
+export function buildEdgePath({
+  fromNode,
+  toNode,
+}: {
+  fromNode: CanvasNode;
+  toNode: CanvasNode;
+}): string {
+  const startX = fromNode.x + fromNode.width / 2;
+  const startY = fromNode.y + fromNode.height;
+  const endX = toNode.x + toNode.width / 2;
+  const endY = toNode.y;
+  const midY = startY + (endY - startY) / 2;
+
+  return `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+}
+
 export function buildMinimapViewModel({
   nodes,
   viewport,
@@ -233,7 +607,10 @@ export function buildMinimapViewModel({
     1,
     MINIMAP_SIZE.height - MINIMAP_SIZE.padding * 2,
   );
-  const scale = Math.min(innerWidth / bounds.width, innerHeight / bounds.height);
+  const scale = Math.min(
+    innerWidth / bounds.width,
+    innerHeight / bounds.height,
+  );
 
   const items = nodes.map((node) => ({
     id: node.id,
@@ -242,7 +619,7 @@ export function buildMinimapViewModel({
     y: (node.y - bounds.minY) * scale + MINIMAP_SIZE.padding,
     width: Math.max(8, node.width * scale),
     height: Math.max(8, node.height * scale),
-    color: node.type === "design-draft" ? "#c7a8f1" : "#e5d9c8",
+    color: getCanvasNodeColor(node.type),
     selected: node.selected,
   }));
 

@@ -134,12 +134,18 @@ export type {
 } from "./chat";
 export type {
   DesignDraft,
+  DesignFlow,
+  DesignFlowPage,
+  DraftComponent,
+  DraftComponentProp,
   DesignExitPayload,
   AskUserQuestion,
   AskUserQuestionPayload,
   AskUserQuestionResponse,
   CreateDesignDraftParams,
   UpdateDesignDraftParams,
+  CreateDraftComponentParams,
+  UpdateDraftComponentParams,
 } from "./design";
 
 // Agent types

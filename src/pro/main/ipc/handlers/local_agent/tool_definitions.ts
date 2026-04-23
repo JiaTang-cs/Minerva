@@ -35,7 +35,13 @@ import { writePlanTool } from "./tools/write_plan";
 import { exitPlanTool } from "./tools/exit_plan";
 import { askUserQuestionTool } from "./tools/ask_user_question";
 import { createDesignDraftTool } from "./tools/create_design_draft";
+import { createDraftComponentTool } from "./tools/create_draft_component";
+import { executeFlowPagesTool } from "./tools/execute_flow_pages";
 import { updateDesignDraftTool } from "./tools/update_design_draft";
+import { planFlowPagesTool } from "./tools/plan_flow_pages";
+import { readDesignDraftTool } from "./tools/read_design_draft";
+import { readDraftComponentTool } from "./tools/read_draft_component";
+import { updateDraftComponentTool } from "./tools/update_draft_component";
 import { exitDesignTool } from "./tools/exit_design";
 import { taskTool } from "./tools/task";
 import { skillTool } from "./tools/skill";
@@ -101,6 +107,12 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   exitPlanTool,
   askUserQuestionTool,
   createDesignDraftTool,
+  planFlowPagesTool,
+  readDesignDraftTool,
+  createDraftComponentTool,
+  readDraftComponentTool,
+  updateDraftComponentTool,
+  executeFlowPagesTool,
   updateDesignDraftTool,
   exitDesignTool,
   taskTool,
@@ -441,6 +453,12 @@ const PLANNING_SPECIFIC_TOOLS = new Set([
 const DESIGN_SPECIFIC_TOOLS = new Set([
   "ask_user_question",
   "create_design_draft",
+  "plan_flow_pages",
+  "read_design_draft",
+  "create_draft_component",
+  "read_draft_component",
+  "update_draft_component",
+  "execute_flow_pages",
   "update_design_draft",
   "exit_design",
   "set_chat_summary",

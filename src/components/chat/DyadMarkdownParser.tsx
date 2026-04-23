@@ -45,7 +45,9 @@ import { DyadExitPlan } from "./DyadExitPlan";
 import { DyadExitDesign } from "./DyadExitDesign";
 import { DyadQuestionnaire } from "./DyadQuestionnaire";
 import { DyadAskUserQuestion } from "./DyadAskUserQuestion";
+import { DyadDesignComponent } from "./DyadDesignComponent";
 import { DyadDesignDraft } from "./DyadDesignDraft";
+import { DyadDesignFlowPages } from "./DyadDesignFlowPages";
 import { DyadStepLimit } from "./DyadStepLimit";
 import { DyadSkillTag } from "./DyadSkillTag";
 import { mapActionToButton } from "./ChatInput";
@@ -98,6 +100,8 @@ const DYAD_CUSTOM_TAGS = [
   "dyad-questionnaire",
   "dyad-ask-user-question",
   "dyad-design-draft",
+  "dyad-design-component",
+  "dyad-design-flow-pages",
   // Step limit notification
   "dyad-step-limit",
 ];
@@ -925,6 +929,33 @@ function renderCustomTag(
             },
           }}
         />
+      );
+
+    case "dyad-design-component":
+      return (
+        <DyadDesignComponent
+          node={{
+            properties: {
+              action: attributes.action || "",
+              name: attributes.name || "",
+            },
+          }}
+        />
+      );
+
+    case "dyad-design-flow-pages":
+      return (
+        <DyadDesignFlowPages
+          node={{
+            properties: {
+              action: attributes.action || "",
+              count: attributes.count || "",
+              failures: attributes.failures || "",
+            },
+          }}
+        >
+          {content}
+        </DyadDesignFlowPages>
       );
 
     case "dyad-step-limit":

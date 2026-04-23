@@ -68,6 +68,52 @@ export const queryKeys = {
     }) => ["plans", "forChat", appId, chatId] as const,
   },
 
+  design: {
+    all: ["design"] as const,
+    draftForChat: ({
+      appId,
+      chatId,
+    }: {
+      appId: number | null;
+      chatId: number | null;
+    }) => ["design", "draftForChat", appId, chatId] as const,
+    draftById: ({
+      appId,
+      draftId,
+    }: {
+      appId: number | null;
+      draftId: string | null;
+    }) => ["design", "draftById", appId, draftId] as const,
+    flowForChat: ({
+      appId,
+      chatId,
+    }: {
+      appId: number | null;
+      chatId: number | null;
+    }) => ["design", "flowForChat", appId, chatId] as const,
+    flowPages: ({
+      appId,
+      flowId,
+    }: {
+      appId: number | null;
+      flowId: string | null;
+    }) => ["design", "flowPages", appId, flowId] as const,
+    components: ({
+      appId,
+      flowId,
+    }: {
+      appId: number | null;
+      flowId: string | null;
+    }) => ["design", "components", appId, flowId] as const,
+    componentById: ({
+      appId,
+      componentId,
+    }: {
+      appId: number | null;
+      componentId: string | null;
+    }) => ["design", "componentById", appId, componentId] as const,
+  },
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Proposals
   // ─────────────────────────────────────────────────────────────────────────────
@@ -346,6 +392,7 @@ export type AppQueryKey =
   | QueryKeyOf<(typeof queryKeys.apps)[keyof typeof queryKeys.apps]>
   | QueryKeyOf<(typeof queryKeys.chats)[keyof typeof queryKeys.chats]>
   | QueryKeyOf<(typeof queryKeys.plans)[keyof typeof queryKeys.plans]>
+  | QueryKeyOf<(typeof queryKeys.design)[keyof typeof queryKeys.design]>
   | QueryKeyOf<(typeof queryKeys.proposals)[keyof typeof queryKeys.proposals]>
   | QueryKeyOf<(typeof queryKeys.versions)[keyof typeof queryKeys.versions]>
   | QueryKeyOf<(typeof queryKeys.branches)[keyof typeof queryKeys.branches]>

@@ -103,7 +103,12 @@ import {
 } from "../utils/skills/registry";
 import { resolveMediaMentions } from "../utils/resolve_media_mentions";
 import { parsePlanFile, validatePlanId } from "./planUtils";
-import { getDesignDraftFile } from "./design_handlers";
+import {
+  getDesignDraftFile,
+  getDesignFlowForChatFile,
+  listDraftComponentsFile,
+  listFlowPagesFile,
+} from "./design_handlers";
 import { createBuildFromDesignPrompt } from "./designBuildPrompt";
 import { ensureInternalAppDirGitignored } from "./gitignoreUtils";
 import { INTERNAL_MEDIA_DIR_NAME } from "../utils/media_path_utils";
@@ -542,7 +547,22 @@ You may update the plan at \`${planPath}\` to mark your progress.`;
           buildFromDesignDisplayPrompt = "/build";
           const draftId = buildFromDesignMatch[1];
           const draft = await getDesignDraftFile(chat.app.id, draftId);
-          userPrompt = createBuildFromDesignPrompt(draft);
+          const flow = draft.flowId
+            ? await getDesignFlowForChatFile(chat.app.id, draft.chatId)
+            : null;
+          const [flowPages, components] =
+            flow && draft.flowId
+              ? await Promise.all([
+                  listFlowPagesFile(chat.app.id, draft.flowId),
+                  listDraftComponentsFile(chat.app.id, draft.flowId),
+                ])
+              : [[], []];
+          userPrompt = createBuildFromDesignPrompt({
+            draft,
+            flow,
+            flowPages,
+            components,
+          });
         } catch (e) {
           buildFromDesignDisplayPrompt = undefined;
           logger.error("Failed to expand /build-from-design= prompt:", e);

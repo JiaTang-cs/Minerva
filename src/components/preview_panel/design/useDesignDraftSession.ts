@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QueryClient } from "@tanstack/react-query";
 import { designClient } from "@/ipc/types";
+import { queryKeys } from "@/lib/queryKeys";
 import { showError } from "@/lib/toast";
 import {
   hasUnsavedDesignChanges,
@@ -164,9 +165,13 @@ export function useDesignDraftSession({
         draftId: draft.id,
         deviceMode: nextDeviceMode,
       });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.design.all,
+        refetchType: "active",
+      });
       await refetchDraft();
     },
-    [appId, draft, refetchDraft],
+    [appId, draft, queryClient, refetchDraft],
   );
 
   const resetDraftToSaved = useCallback(() => {
@@ -205,7 +210,7 @@ export function useDesignDraftSession({
       });
 
       await queryClient.invalidateQueries({
-        queryKey: ["design-draft", "forChat", appId, chatId],
+        queryKey: queryKeys.design.all,
         refetchType: "none",
       });
       setSavedHtml(htmlToSave);
