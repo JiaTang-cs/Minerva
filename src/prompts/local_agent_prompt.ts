@@ -62,6 +62,8 @@ const AGENT_TOOL_CALLING_BEST_PRACTICES_BLOCK = `<tool_calling_best_practices>
 - **Use \`edit_file\` for edits**: For modifying existing files, prefer \`edit_file\` over \`write_file\`.
 - **Be surgical**: Only change what's necessary to accomplish the task.
 - **Handle errors gracefully**: If a tool fails, explain the issue and suggest alternatives.
+- **Use reusable skills intentionally**: If the task clearly matches a reusable workflow that already exists as a skill, use the \`skill\` tool before inventing a new checklist or process.
+- **Never guess skill names**: Available skills, descriptions, and usage metadata may be listed elsewhere in this system prompt. Only call \`skill\` with a name from that list. If no listed skill fits, do not call \`skill\`.
 </tool_calling_best_practices>`;
 
 const AGENT_FILE_EDITING_TOOL_SELECTION_BLOCK = `<file_editing_tool_selection>

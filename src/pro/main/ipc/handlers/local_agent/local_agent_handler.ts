@@ -70,6 +70,10 @@ import {
   type DbMessageForParsing,
 } from "@/ipc/utils/ai_messages_utils";
 import { parseMcpToolKey, sanitizeMcpName } from "@/ipc/utils/mcp_tool_utils";
+import {
+  buildSkillRegistryPrompt,
+  loadSkillsSnapshot,
+} from "@/ipc/utils/skills/registry";
 import { addIntegrationTool } from "./tools/add_integration";
 import { writePlanTool } from "./tools/write_plan";
 import { exitPlanTool } from "./tools/exit_plan";
@@ -346,6 +350,14 @@ export async function handleLocalAgentStream(
   }
 
   const appPath = getDyadAppPath(chat.app.path);
+  let effectiveSystemPrompt = systemPrompt;
+
+  try {
+    const skillsSnapshot = await loadSkillsSnapshot({ appPath });
+    effectiveSystemPrompt = `${systemPrompt}\n\n${buildSkillRegistryPrompt(skillsSnapshot.skills)}`;
+  } catch (error) {
+    logger.warn("Failed to load skills for local-agent prompt injection:", error);
+  }
 
   const maybePerformPendingCompaction = async (options?: {
     showOnTopOfCurrentResponse?: boolean;
@@ -689,7 +701,7 @@ export async function handleLocalAgentStream(
             maxOutputTokens,
             temperature,
             maxRetries: 2,
-            system: systemPrompt,
+            system: effectiveSystemPrompt,
             messages: attemptMessages,
             tools: allTools,
             stopWhen: [

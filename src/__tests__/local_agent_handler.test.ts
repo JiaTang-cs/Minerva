@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { IpcMainInvokeEvent, WebContents } from "electron";
 import { streamText } from "ai";
+import type { SkillsSnapshot } from "@/ipc/utils/skills/registry";
 
 // ============================================================================
 // Test Fakes & Builders
@@ -152,6 +153,17 @@ type FakeStreamResult = {
   steps?: Promise<any[]>;
 };
 
+function buildMockSkillsSnapshot(
+  overrides: Partial<SkillsSnapshot> = {},
+): SkillsSnapshot {
+  return {
+    skills: [],
+    loadErrors: [],
+    roots: { bundled: "", user: "", project: "" },
+    ...overrides,
+  };
+}
+
 // ============================================================================
 // Mocks
 // ============================================================================
@@ -257,6 +269,22 @@ vi.mock("@/ipc/utils/provider_options", () => ({
   DYAD_INTERNAL_REQUEST_ID_HEADER: "x-dyad-internal-request-id",
 }));
 
+const { mockLoadSkillsSnapshot } = vi.hoisted(() => ({
+  mockLoadSkillsSnapshot: vi.fn<() => Promise<SkillsSnapshot>>(
+    async () => buildMockSkillsSnapshot(),
+  ),
+}));
+
+vi.mock("@/ipc/utils/skills/registry", async () => {
+  const actual = await vi.importActual<typeof import("@/ipc/utils/skills/registry")>(
+    "@/ipc/utils/skills/registry",
+  );
+  return {
+    ...actual,
+    loadSkillsSnapshot: mockLoadSkillsSnapshot,
+  };
+});
+
 vi.mock("@/ipc/utils/mcp_manager", () => ({
   mcpManager: {
     getClient: vi.fn(async () => ({
@@ -319,6 +347,7 @@ describe("handleLocalAgentStream", () => {
     mockSettings = buildTestSettings();
     mockStreamResult = null;
     mockStreamTextImpl = null;
+    mockLoadSkillsSnapshot.mockResolvedValue(buildMockSkillsSnapshot());
     mockIsChatPendingCompaction.mockResolvedValue(false);
     mockPerformCompaction.mockResolvedValue({ success: true });
     mockCheckAndMarkForCompaction.mockResolvedValue(false);
@@ -467,6 +496,56 @@ describe("handleLocalAgentStream", () => {
         error: expect.stringContaining("Simulated tool failure"),
         warningMessages: [warningMessage],
       });
+    });
+  });
+
+  describe("Skills prompt injection", () => {
+    it("injects available skill registry metadata into the system prompt", async () => {
+      const { event } = createFakeEvent();
+      mockSettings = buildTestSettings({ enableDyadPro: true });
+      mockChatData = buildTestChat();
+      mockLoadSkillsSnapshot.mockResolvedValue(buildMockSkillsSnapshot({
+        skills: [
+          {
+            name: "verify",
+            displayName: "verify",
+            description: "Verify the current app flow before shipping.",
+            whenToUse: "Before reporting completion to the user",
+            allowedTools: ["read_file", "run_command"],
+            model: null,
+            userInvocable: true,
+            disableModelInvocation: false,
+            rawContent: "",
+            body: "Check the app flow.",
+            sourceType: "user",
+            sourcePath: "/mock/skills/verify",
+            skillFilePath: "/mock/skills/verify/SKILL.md",
+            baseDir: "/mock/skills/verify",
+            overriddenBy: [],
+            overrides: [],
+          },
+        ],
+      }));
+      mockStreamResult = createFakeStream([{ type: "text-delta", text: "Done" }]);
+
+      await handleLocalAgentStream(
+        event,
+        { chatId: 1, prompt: "test" },
+        new AbortController(),
+        {
+          placeholderMessageId: 10,
+          systemPrompt: "You are helpful",
+          dyadRequestId,
+        },
+      );
+
+      expect(streamText).toHaveBeenCalled();
+      const firstCallArgs = vi.mocked(streamText).mock.calls[0]?.[0];
+      expect(firstCallArgs?.system).toContain("The following are the only valid skills");
+      expect(firstCallArgs?.system).toContain("Never guess a skill name");
+      expect(firstCallArgs?.system).toContain("- skill: verify");
+      expect(firstCallArgs?.system).toContain("description: Verify the current app flow before shipping.");
+      expect(firstCallArgs?.system).toContain("slash_command: /verify");
     });
   });
 

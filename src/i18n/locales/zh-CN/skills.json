@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "技能",
+    "description": "为 Minerva 提供类似 Claude Code 的技能系统。支持搜索、安装、查看来源优先级，并清晰展示项目覆盖关系。",
+    "refreshing": "刷新中...",
+    "refresh": "刷新",
+    "searchPlaceholder": "搜索技能...",
+    "searchLabel": "搜索社区技能",
+    "typeToSearch": "至少输入 2 个字符后开始搜索。",
+    "searching": "正在搜索 Skills 市场...",
+    "searchError": "无法加载搜索结果。",
+    "resultCount_one": "找到 {{count}} 个结果。",
+    "resultCount_other": "找到 {{count}} 个结果。",
+    "noResults": "没有找到技能。",
+    "loadErrors": "加载错误",
+    "loadingSkills": "正在加载技能...",
+    "installSuccess": "已将 {{name}} 安装到 {{path}}"
+  },
+  "overview": {
+    "title": "从 Skills 市场安装",
+    "description": "默认会安装到用户级 skills 目录。"
+  },
+  "sections": {
+    "bundled": {
+      "title": "内置技能",
+      "description": "随 Minerva 一起提供，所有应用都可用。",
+      "empty": "未找到内置技能。"
+    },
+    "user": {
+      "title": "用户技能",
+      "description": "存储在你的用户级 .minerva skills 目录中。",
+      "empty": "未找到用户技能。"
+    },
+    "project": {
+      "title": "项目技能",
+      "description": "存储在当前应用内部，可覆盖用户或内置技能。",
+      "empty": "未找到项目技能。"
+    }
+  },
+  "roots": {
+    "bundled": "内置目录",
+    "user": "用户目录",
+    "project": "项目目录"
+  },
+  "card": {
+    "path": "路径：",
+    "invocation": "调用方式：",
+    "whenToUse": "适用场景：",
+    "allowedTools": "允许工具：",
+    "overriddenBy": "被 {{sources}} 覆盖",
+    "overrides": "覆盖 {{sources}}"
+  },
+  "detail": {
+    "back": "返回技能列表",
+    "loading": "正在加载技能预览...",
+    "openSource": "打开源码",
+    "whenToUse": "适用场景",
+    "skillFile": "SKILL.md",
+    "installs": "安装量",
+    "repository": "仓库",
+    "loadError": "无法加载该技能预览。"
+  },
+  "sidebar": {
+    "title": "技能",
+    "description": "在一个地方查看内置、用户和项目技能。",
+    "overview": "概览",
+    "bundled": "内置",
+    "user": "用户",
+    "project": "项目"
+  },
+  "navigation": {
+    "title": "技能"
+  },
+  "actions": {
+    "install": "安装"
+  }
+}

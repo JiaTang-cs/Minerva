@@ -5,6 +5,7 @@ import {
   HelpCircle,
   Store,
   BookOpen,
+  Sparkles,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useSidebar } from "@/components/ui/sidebar"; // import useSidebar hook
@@ -29,6 +30,7 @@ import { AppList } from "./AppList";
 import { HelpDialog } from "./HelpDialog"; // Import the new dialog
 import { SettingsList } from "./SettingsList";
 import { LibraryList } from "./LibraryList";
+import { SkillsList } from "./SkillsList";
 import { useTranslation } from "react-i18next";
 
 // Menu items.
@@ -58,6 +60,12 @@ const items = [
     icon: BookOpen,
   },
   {
+    id: "skills",
+    title: "Skills",
+    to: "/skills",
+    icon: Sparkles,
+  },
+  {
     id: "hub",
     title: "Hub",
     to: "/hub",
@@ -70,6 +78,7 @@ const selectedItemByHoverState = {
   "start-hover:chat": "Chat",
   "start-hover:settings": "Settings",
   "start-hover:library": "Library",
+  "start-hover:skills": "Skills",
 } as const;
 
 const hoverStateByItemId = {
@@ -77,6 +86,7 @@ const hoverStateByItemId = {
   chat: "start-hover:chat",
   settings: "start-hover:settings",
   library: "start-hover:library",
+  skills: "start-hover:skills",
   hub: undefined,
 } as const;
 
@@ -86,6 +96,7 @@ type HoverState =
   | "start-hover:chat"
   | "start-hover:settings"
   | "start-hover:library"
+  | "start-hover:skills"
   | "clear-hover"
   | "no-hover";
 
@@ -121,6 +132,7 @@ export function AppSidebar() {
   const isChatRoute = routerState.location.pathname === "/chat";
   const isSettingsRoute = routerState.location.pathname.startsWith("/settings");
   const isLibraryRoute = routerState.location.pathname.startsWith("/library");
+  const isSkillsRoute = routerState.location.pathname.startsWith("/skills");
 
   let selectedItem: string | null = null;
   if (hoverState in selectedItemByHoverState) {
@@ -137,6 +149,8 @@ export function AppSidebar() {
       selectedItem = "Settings";
     } else if (isLibraryRoute) {
       selectedItem = "Library";
+    } else if (isSkillsRoute) {
+      selectedItem = "Skills";
     }
   }
 
@@ -166,6 +180,7 @@ export function AppSidebar() {
             <ChatList show={selectedItem === "Chat"} />
             <SettingsList show={selectedItem === "Settings"} />
             <LibraryList show={selectedItem === "Library"} />
+            <SkillsList show={selectedItem === "Skills"} />
           </div>
         </div>
       </SidebarContent>
@@ -201,6 +216,7 @@ function AppIcons({
   onHoverChange: (state: HoverState) => void;
 }) {
   const { t } = useTranslation("common");
+  const { t: tSkills } = useTranslation("skills");
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const navigationLabels = {
@@ -208,6 +224,7 @@ function AppIcons({
     chat: t("navigation.chat"),
     settings: t("navigation.settings"),
     library: t("navigation.library"),
+    skills: tSkills("navigation.title"),
     hub: t("navigation.hub"),
   } as const;
 

@@ -201,6 +201,21 @@ export const queryKeys = {
     all: ["prompts"] as const,
   },
 
+  skills: {
+    all: ["skills"] as const,
+    list: ({ appId }: { appId: number | null }) =>
+      ["skills", "list", appId] as const,
+    search: ({ query }: { query: string }) =>
+      ["skills", "search", query] as const,
+    detailCatalog: ({
+      source,
+      skillId,
+    }: {
+      source: string;
+      skillId: string;
+    }) => ["skills", "detail-catalog", source, skillId] as const,
+  },
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Agent Tools
   // ─────────────────────────────────────────────────────────────────────────────
@@ -355,6 +370,7 @@ export type AppQueryKey =
     >
   | QueryKeyOf<(typeof queryKeys.templates)[keyof typeof queryKeys.templates]>
   | QueryKeyOf<(typeof queryKeys.prompts)[keyof typeof queryKeys.prompts]>
+  | QueryKeyOf<(typeof queryKeys.skills)[keyof typeof queryKeys.skills]>
   | QueryKeyOf<(typeof queryKeys.agentTools)[keyof typeof queryKeys.agentTools]>
   | QueryKeyOf<
       (typeof queryKeys.languageModels)[keyof typeof queryKeys.languageModels]

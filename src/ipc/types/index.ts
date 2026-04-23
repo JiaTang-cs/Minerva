@@ -39,6 +39,7 @@ export { systemContracts, systemEvents } from "./system";
 export { versionContracts } from "./version";
 export { languageModelContracts } from "./language-model";
 export { promptContracts } from "./prompts";
+export { skillsContracts } from "./skills";
 export { templateContracts } from "./templates";
 export { proposalContracts } from "./proposals";
 export { importContracts } from "./import";
@@ -72,6 +73,7 @@ export { systemClient, systemEventClient } from "./system";
 export { versionClient } from "./version";
 export { languageModelClient } from "./language-model";
 export { promptClient } from "./prompts";
+export { skillsClient } from "./skills";
 export { templateClient } from "./templates";
 export { proposalClient } from "./proposals";
 export { importClient } from "./import";
@@ -252,6 +254,15 @@ export type {
   CreatePromptParamsDto,
   UpdatePromptParamsDto,
 } from "./prompts";
+export type {
+  Skill,
+  SkillSourceType,
+  SkillLoadError,
+  SkillsSnapshot,
+  SkillCatalogSearchResult,
+  InstalledSkillResult,
+  CatalogSkillDetail,
+} from "./skills";
 
 // Template types
 export type {
@@ -375,6 +386,7 @@ import { systemClient, systemEventClient } from "./system";
 import { versionClient } from "./version";
 import { languageModelClient } from "./language-model";
 import { promptClient } from "./prompts";
+import { skillsClient } from "./skills";
 import { templateClient } from "./templates";
 import { proposalClient } from "./proposals";
 import { importClient } from "./import";
@@ -434,6 +446,7 @@ export const ipc = {
   version: versionClient,
   languageModel: languageModelClient,
   prompt: promptClient,
+  skills: skillsClient,
   template: templateClient,
   proposal: proposalClient,
   import: importClient,

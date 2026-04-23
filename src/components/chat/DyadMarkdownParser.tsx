@@ -47,6 +47,7 @@ import { DyadQuestionnaire } from "./DyadQuestionnaire";
 import { DyadAskUserQuestion } from "./DyadAskUserQuestion";
 import { DyadDesignDraft } from "./DyadDesignDraft";
 import { DyadStepLimit } from "./DyadStepLimit";
+import { DyadSkillTag } from "./DyadSkillTag";
 import { mapActionToButton } from "./ChatInput";
 import { SuggestedAction } from "@/lib/schemas";
 import { FixAllErrorsButton } from "./FixAllErrorsButton";
@@ -88,6 +89,8 @@ const DYAD_CUSTOM_TAGS = [
   "dyad-compaction",
   "dyad-copy",
   "dyad-image-generation",
+  "dyad-skill-call",
+  "dyad-skill-result",
   // Plan mode tags
   "dyad-write-plan",
   "dyad-exit-plan",
@@ -817,6 +820,38 @@ function renderCustomTag(
         >
           {content}
         </DyadStatus>
+      );
+
+    case "dyad-skill-call":
+      return (
+        <DyadSkillTag
+          node={{
+            properties: {
+              skill: attributes.skill || "",
+              source: attributes.source || "",
+              state: getState({ isStreaming, inProgress }),
+              mode: "call",
+            },
+          }}
+        >
+          {content}
+        </DyadSkillTag>
+      );
+
+    case "dyad-skill-result":
+      return (
+        <DyadSkillTag
+          node={{
+            properties: {
+              skill: attributes.skill || "",
+              source: attributes.source || "",
+              state: "finished",
+              mode: "result",
+            },
+          }}
+        >
+          {content}
+        </DyadSkillTag>
       );
 
     case "dyad-compaction":

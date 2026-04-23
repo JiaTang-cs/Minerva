@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "Skills",
+    "description": "Claude-Code-style skills for Minerva. Search, install, inspect source precedence, and keep project overrides visible.",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search Skills...",
+    "searchLabel": "Search community skills",
+    "typeToSearch": "Type at least 2 characters to search.",
+    "searching": "Searching Skills Marketplace...",
+    "searchError": "Could not load search results.",
+    "resultCount_one": "{{count}} result found.",
+    "resultCount_other": "{{count}} results found.",
+    "noResults": "No skills found.",
+    "loadErrors": "Load errors",
+    "loadingSkills": "Loading skills...",
+    "installSuccess": "Installed {{name}} to {{path}}"
+  },
+  "overview": {
+    "title": "Install from Skills Marketplace",
+    "description": "Installs land in the user-specific skills directory by default."
+  },
+  "sections": {
+    "bundled": {
+      "title": "Bundled skills",
+      "description": "Shipped with Minerva and available across every app.",
+      "empty": "No bundled skills found."
+    },
+    "user": {
+      "title": "User skills",
+      "description": "Stored in your user-specific .minerva skills directory.",
+      "empty": "No user skills found."
+    },
+    "project": {
+      "title": "Project skills",
+      "description": "Stored inside the current app and override user or bundled skills.",
+      "empty": "No project skills found."
+    }
+  },
+  "roots": {
+    "bundled": "Bundled root",
+    "user": "User root",
+    "project": "Project root"
+  },
+  "card": {
+    "path": "Path:",
+    "invocation": "Invocation:",
+    "whenToUse": "When to use:",
+    "allowedTools": "Allowed tools:",
+    "overriddenBy": "overridden by {{sources}}",
+    "overrides": "overrides {{sources}}"
+  },
+  "detail": {
+    "back": "Back to Skills",
+    "loading": "Loading skill preview...",
+    "openSource": "Open Source",
+    "whenToUse": "When to Use",
+    "skillFile": "SKILL.md",
+    "installs": "Installs",
+    "repository": "Repository",
+    "loadError": "Could not load this skill preview."
+  },
+  "sidebar": {
+    "title": "Skills",
+    "description": "Bundled, user, and project skills in one place.",
+    "overview": "Overview",
+    "bundled": "Bundled",
+    "user": "User",
+    "project": "Project"
+  },
+  "navigation": {
+    "title": "Skills"
+  },
+  "actions": {
+    "install": "Install"
+  }
+}

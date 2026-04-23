@@ -38,6 +38,7 @@ import { createDesignDraftTool } from "./tools/create_design_draft";
 import { updateDesignDraftTool } from "./tools/update_design_draft";
 import { exitDesignTool } from "./tools/exit_design";
 import { taskTool } from "./tools/task";
+import { skillTool } from "./tools/skill";
 import type { LanguageModelV3ToolResultOutput } from "@ai-sdk/provider";
 import {
   escapeXmlAttr,
@@ -103,6 +104,7 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   updateDesignDraftTool,
   exitDesignTool,
   taskTool,
+  skillTool,
 ];
 // ============================================================================
 // Agent Tool Name Type (derived from TOOL_DEFINITIONS)

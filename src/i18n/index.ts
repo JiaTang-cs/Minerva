@@ -7,6 +7,7 @@ import enSettings from "./locales/en/settings.json";
 import enChat from "./locales/en/chat.json";
 import enHome from "./locales/en/home.json";
 import enErrors from "./locales/en/errors.json";
+import enSkills from "./locales/en/skills.json";
 
 // Chinese Simplified
 import zhCNCommon from "./locales/zh-CN/common.json";
@@ -14,6 +15,7 @@ import zhCNSettings from "./locales/zh-CN/settings.json";
 import zhCNChat from "./locales/zh-CN/chat.json";
 import zhCNHome from "./locales/zh-CN/home.json";
 import zhCNErrors from "./locales/zh-CN/errors.json";
+import zhCNSkills from "./locales/zh-CN/skills.json";
 
 // Brazilian Portuguese
 import ptBRCommon from "./locales/pt-BR/common.json";
@@ -21,6 +23,7 @@ import ptBRSettings from "./locales/pt-BR/settings.json";
 import ptBRChat from "./locales/pt-BR/chat.json";
 import ptBRHome from "./locales/pt-BR/home.json";
 import ptBRErrors from "./locales/pt-BR/errors.json";
+import ptBRSkills from "./locales/pt-BR/skills.json";
 
 const resources = {
   en: {
@@ -29,6 +32,7 @@ const resources = {
     chat: enChat,
     home: enHome,
     errors: enErrors,
+    skills: enSkills,
   },
   "zh-CN": {
     common: zhCNCommon,
@@ -36,6 +40,7 @@ const resources = {
     chat: zhCNChat,
     home: zhCNHome,
     errors: zhCNErrors,
+    skills: zhCNSkills,
   },
   "pt-BR": {
     common: ptBRCommon,
@@ -43,6 +48,7 @@ const resources = {
     chat: ptBRChat,
     home: ptBRHome,
     errors: ptBRErrors,
+    skills: ptBRSkills,
   },
 };
 
@@ -51,7 +57,7 @@ i18n.use(initReactI18next).init({
   lng: "en", // Default; overridden by user setting on startup
   fallbackLng: "en",
   defaultNS: "common",
-  ns: ["common", "settings", "chat", "home", "errors"],
+  ns: ["common", "settings", "chat", "home", "errors", "skills"],
   interpolation: {
     escapeValue: false, // React already escapes rendered output
   },

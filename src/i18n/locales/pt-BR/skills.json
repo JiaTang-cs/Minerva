@@ -1,0 +1,77 @@
+{
+  "page": {
+    "title": "Skills",
+    "description": "Skills no estilo Claude Code para o Minerva. Pesquise, instale, inspecione a precedência de origem e mantenha as substituições de projeto visíveis.",
+    "refreshing": "Atualizando...",
+    "refresh": "Atualizar",
+    "searchPlaceholder": "Buscar skills...",
+    "searchLabel": "Buscar skills da comunidade",
+    "typeToSearch": "Digite pelo menos 2 caracteres para buscar.",
+    "searching": "Buscando em skills.sh...",
+    "searchError": "Não foi possível carregar os resultados da busca.",
+    "resultCount_one": "{{count}} resultado encontrado.",
+    "resultCount_other": "{{count}} resultados encontrados.",
+    "noResults": "Nenhuma skill encontrada.",
+    "loadErrors": "Erros de carregamento",
+    "loadingSkills": "Carregando skills...",
+    "installSuccess": "{{name}} foi instalada em {{path}}"
+  },
+  "overview": {
+    "title": "Instalar de skills.sh",
+    "description": "As instalações são salvas por padrão no diretório de skills do usuário."
+  },
+  "sections": {
+    "bundled": {
+      "title": "Skills embutidas",
+      "description": "Incluídas no Minerva e disponíveis em todos os apps.",
+      "empty": "Nenhuma skill embutida encontrada."
+    },
+    "user": {
+      "title": "Skills do usuário",
+      "description": "Armazenadas no diretório .minerva de skills do usuário.",
+      "empty": "Nenhuma skill de usuário encontrada."
+    },
+    "project": {
+      "title": "Skills do projeto",
+      "description": "Armazenadas dentro do app atual e substituem skills do usuário ou embutidas.",
+      "empty": "Nenhuma skill de projeto encontrada."
+    }
+  },
+  "roots": {
+    "bundled": "Raiz embutida",
+    "user": "Raiz do usuário",
+    "project": "Raiz do projeto"
+  },
+  "card": {
+    "path": "Caminho:",
+    "invocation": "Invocação:",
+    "whenToUse": "Quando usar:",
+    "allowedTools": "Ferramentas permitidas:",
+    "overriddenBy": "substituída por {{sources}}",
+    "overrides": "substitui {{sources}}"
+  },
+  "detail": {
+    "back": "Voltar para Skills",
+    "loading": "Carregando prévia da skill...",
+    "openSource": "Abrir código-fonte",
+    "whenToUse": "Quando usar",
+    "skillFile": "SKILL.md",
+    "installs": "Instalações",
+    "repository": "Repositório",
+    "loadError": "Não foi possível carregar a prévia desta skill."
+  },
+  "sidebar": {
+    "title": "Skills",
+    "description": "Skills embutidas, do usuário e do projeto em um só lugar.",
+    "overview": "Visão geral",
+    "bundled": "Embutidas",
+    "user": "Usuário",
+    "project": "Projeto"
+  },
+  "navigation": {
+    "title": "Skills"
+  },
+  "actions": {
+    "install": "Instalar"
+  }
+}
