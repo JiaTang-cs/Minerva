@@ -19,6 +19,10 @@ import {
   getRemoteDesktopConfig,
   type RemoteDesktopConfig,
 } from "@/ipc/shared/remote_desktop_config";
+import {
+  DEFAULT_IMAGE_GENERATION_MODEL_BY_PROVIDER,
+  DEFAULT_IMAGE_GENERATION_PROVIDER,
+} from "@/lib/imageGeneration";
 
 const logger = log.scope("settings");
 
@@ -36,6 +40,11 @@ const DEFAULT_SETTINGS: UserSettings = {
   experiments: {},
   enableProLazyEditsMode: true,
   enableProSmartFilesContextMode: true,
+  imageGenerationProvider: DEFAULT_IMAGE_GENERATION_PROVIDER,
+  imageGenerationModel:
+    DEFAULT_IMAGE_GENERATION_MODEL_BY_PROVIDER[
+      DEFAULT_IMAGE_GENERATION_PROVIDER
+    ],
   selectedChatMode: "build",
   enableAutoFixProblems: false,
   enableAutoUpdate: true,

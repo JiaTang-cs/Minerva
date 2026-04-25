@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  IMAGE_GENERATION_PROVIDER_VALUES,
+  type ImageGenerationProvider as SharedImageGenerationProvider,
+} from "./imageGeneration";
 export const SecretSchema = z.object({
   value: z.string(),
   encryptionType: z.enum(["electron-safe-storage", "plaintext"]).optional(),
@@ -284,6 +288,11 @@ export type SmartContextMode = z.infer<typeof SmartContextModeSchema>;
 export const AgentToolConsentSchema = z.enum(["ask", "always", "never"]);
 export type AgentToolConsent = z.infer<typeof AgentToolConsentSchema>;
 
+export const ImageGenerationProviderSchema = z.enum(
+  IMAGE_GENERATION_PROVIDER_VALUES,
+);
+export type ImageGenerationProvider = SharedImageGenerationProvider;
+
 /**
  * Base fields shared between StoredUserSettings and UserSettings
  */
@@ -321,6 +330,8 @@ const BaseUserSettingsFields = {
   maxChatTurnsInContext: z.number().optional(),
   maxToolCallSteps: z.number().optional(),
   thinkingBudget: z.enum(["low", "medium", "high"]).optional(),
+  imageGenerationProvider: ImageGenerationProviderSchema.optional(),
+  imageGenerationModel: z.string().optional(),
   enableProLazyEditsMode: z.boolean().optional(),
   proLazyEditsMode: z.enum(["off", "v1", "v2"]).optional(),
   enableProSmartFilesContextMode: z.boolean().optional(),

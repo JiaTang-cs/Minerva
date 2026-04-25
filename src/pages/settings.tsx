@@ -35,6 +35,8 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { DefaultChatModeSelector } from "@/components/DefaultChatModeSelector";
 import { ContextCompactionSwitch } from "@/components/ContextCompactionSwitch";
 import { BlockUnsafeNpmPackagesSwitch } from "@/components/BlockUnsafeNpmPackagesSwitch";
+import { ImageGenerationProviderSelector } from "@/components/ImageGenerationProviderSelector";
+import { ImageGenerationModelSelector } from "@/components/ImageGenerationModelSelector";
 import { useSetAtom } from "jotai";
 import { activeSettingsSectionAtom } from "@/atoms/viewAtoms";
 import { SECTION_IDS, SETTING_IDS } from "@/lib/settingsSearchIndex";
@@ -458,6 +460,14 @@ export function AISettings() {
 
       <div id={SETTING_IDS.thinkingBudget} className="mt-4">
         <ThinkingBudgetSelector />
+      </div>
+
+      <div id={SETTING_IDS.imageGenerationProvider} className="mt-4">
+        <ImageGenerationProviderSelector />
+      </div>
+
+      <div id={SETTING_IDS.imageGenerationModel} className="mt-4">
+        <ImageGenerationModelSelector />
       </div>
 
       <div id={SETTING_IDS.maxChatTurns} className="mt-4">
