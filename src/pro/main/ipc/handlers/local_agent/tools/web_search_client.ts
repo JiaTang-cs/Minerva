@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { getEnvVar } from "@/ipc/utils/read_env";
 
 const SERPER_API_URL = "https://google.serper.dev/search";
-const SERPER_API_KEY = "234b575dd63c3188f3477aecfb8f09fe7d04edaf";
 const MAX_RESULTS = 5;
 
 const serperOrganicResultSchema = z.object({
@@ -46,11 +46,19 @@ function cleanText(value: string | undefined): string | undefined {
 }
 
 export async function searchWeb(query: string): Promise<WebSearchResult> {
+  const apiKey = getEnvVar("SERPER_API_KEY")?.trim();
+  if (!apiKey) {
+    throw new DyadError(
+      "Web search API key is not configured. Set SERPER_API_KEY in your environment.",
+      DyadErrorKind.Precondition,
+    );
+  }
+
   const response = await fetch(SERPER_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-KEY": SERPER_API_KEY,
+      "X-API-KEY": apiKey,
     },
     body: JSON.stringify({ q: query, num: MAX_RESULTS }),
   });

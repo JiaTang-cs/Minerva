@@ -3,6 +3,13 @@ import { webFetchTool } from "./web_fetch";
 import type { AgentContext } from "./types";
 import { DyadError } from "@/errors/dyad_error";
 
+vi.mock("@/ipc/utils/read_env", () => ({
+  getEnvVar: vi.fn((key: string) => {
+    if (key === "JINA_API_KEY") return "test-jina-api-key";
+    return undefined;
+  }),
+}));
+
 vi.mock("electron-log", () => ({
   default: {
     scope: () => ({
@@ -59,8 +66,7 @@ describe("webFetchTool", () => {
       "https://r.jina.ai/https://example.com/docs",
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization:
-            "Bearer jina_b7d9ac7d2b7b48a4a96d2ea5b81df35e5k6mOUMhPHkM7PJobPaqD0Fyuot9",
+          Authorization: "Bearer test-jina-api-key",
           "X-Return-Format": "markdown",
         }),
       }),

@@ -1,8 +1,7 @@
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { getEnvVar } from "@/ipc/utils/read_env";
 
 const JINA_READER_BASE_URL = "https://r.jina.ai/";
-const JINA_API_KEY =
-  "jina_b7d9ac7d2b7b48a4a96d2ea5b81df35e5k6mOUMhPHkM7PJobPaqD0Fyuot9";
 
 function normalizeUrl(url: string): string {
   const parsed = new URL(url);
@@ -10,10 +9,18 @@ function normalizeUrl(url: string): string {
 }
 
 export async function fetchWebPageMarkdown(url: string): Promise<string> {
+  const apiKey = getEnvVar("JINA_API_KEY")?.trim();
+  if (!apiKey) {
+    throw new DyadError(
+      "Web fetch API key is not configured. Set JINA_API_KEY in your environment.",
+      DyadErrorKind.Precondition,
+    );
+  }
+
   const normalizedUrl = normalizeUrl(url);
   const response = await fetch(`${JINA_READER_BASE_URL}${normalizedUrl}`, {
     headers: {
-      Authorization: `Bearer ${JINA_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       Accept: "text/plain",
       "X-Return-Format": "markdown",
     },

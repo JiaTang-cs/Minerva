@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { webSearchTool } from "./web_search";
 import type { AgentContext } from "./types";
 
+vi.mock("@/ipc/utils/read_env", () => ({
+  getEnvVar: vi.fn((key: string) => {
+    if (key === "SERPER_API_KEY") return "test-serper-api-key";
+    return undefined;
+  }),
+}));
+
 vi.mock("electron-log", () => ({
   default: {
     scope: () => ({
@@ -75,7 +82,7 @@ describe("webSearchTool", () => {
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
-          "X-API-KEY": "234b575dd63c3188f3477aecfb8f09fe7d04edaf",
+          "X-API-KEY": "test-serper-api-key",
         }),
       }),
     );
