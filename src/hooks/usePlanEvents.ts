@@ -189,7 +189,7 @@ export function usePlanEvents() {
           const app = queryClient.getQueryData<App | null>(
             queryKeys.apps.detail({ appId: selectedAppIdRef.current! }),
           );
-          new Notification(app?.name ?? "minerva", {
+          new Notification(app?.name ?? "Minerva", {
             body: "A questionnaire needs your input",
           });
         }

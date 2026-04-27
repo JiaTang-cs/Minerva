@@ -45,20 +45,22 @@ import { LayoutInspector, StyleInspector } from "./design/DesignInspector";
 import { DesignToolbar } from "./design/DesignToolbar";
 import { useDesignDraftSession } from "./design/useDesignDraftSession";
 import { normalizeDesignDraftHtml } from "./designDraftEditing";
+import { useTranslation } from "react-i18next";
 
 function DesignEmptyState() {
+  const { t } = useTranslation("home");
+
   return (
-    <div className="flex h-full items-center justify-center bg-[#f7f4ef] px-8 text-center">
-      <div className="max-w-md space-y-3 rounded-[28px] border border-[#e7dfd4] bg-white/90 px-8 py-10 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f4efe7] text-[#9a6b2f]">
+    <div className="flex h-full items-center justify-center bg-background px-8 text-center">
+      <div className="w-full max-w-3xl rounded-lg border bg-card px-8 py-14 text-card-foreground shadow-sm">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800">
           <Layers3 className="h-6 w-6" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900">
-          No design draft yet
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          {t("preview.design_panel.noDraftTitle")}
         </h3>
-        <p className="text-sm leading-6 text-slate-500">
-          Ask the design agent to create a page draft. Once the HTML draft is
-          generated, it will appear here as a live design canvas.
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-gray-400">
+          {t("preview.design_panel.noDraftDescription")}
         </p>
       </div>
     </div>
@@ -66,6 +68,7 @@ function DesignEmptyState() {
 }
 
 export const DesignPanel: React.FC = () => {
+  const { t } = useTranslation("home");
   const chatId = useAtomValue(selectedChatIdAtom);
   const [, setPreviewMode] = useAtom(previewModeAtom);
   const [, setIsPreviewOpen] = useAtom(isPreviewOpenAtom);
@@ -397,9 +400,9 @@ export const DesignPanel: React.FC = () => {
     flowDraftQueries.some((query) => query.isLoading)
   ) {
     return (
-      <div className="flex h-full items-center justify-center bg-[#f7f4ef]">
-        <div className="rounded-[28px] border border-[#e7dfd4] bg-white px-6 py-4 text-sm text-slate-500 shadow-sm">
-          Loading design canvas...
+      <div className="flex h-full items-center justify-center bg-background">
+        <div className="rounded-lg border bg-card px-6 py-4 text-sm text-muted-foreground shadow-sm">
+          {t("preview.design_panel.loadingCanvas")}
         </div>
       </div>
     );
@@ -411,8 +414,8 @@ export const DesignPanel: React.FC = () => {
 
   return (
     <>
-      <div className="flex h-full overflow-hidden bg-[#f6f2eb]">
-        <div className="relative h-full min-w-0 flex-1 overflow-hidden bg-[#f6f2eb]">
+      <div className="flex h-full overflow-hidden bg-background">
+        <div className="relative h-full min-w-0 flex-1 overflow-hidden bg-background">
           <DesignCanvas
             draftId={activeDraft.id}
             draftTitle={activeDraft.title}
@@ -498,28 +501,31 @@ export const DesignPanel: React.FC = () => {
       >
         <DialogContent showCloseButton={false} className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Unsaved design changes</DialogTitle>
+            <DialogTitle>
+              {t("preview.design_panel.unsavedChangesTitle")}
+            </DialogTitle>
             <DialogDescription>
-              Save your changes before leaving this editing flow, or discard
-              them and continue with the new action.
+              {t("preview.design_panel.unsavedChangesDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-between">
             <Button variant="ghost" onClick={clearPendingAction}>
-              Continue editing
+              {t("preview.design_panel.continueEditing")}
             </Button>
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
               <Button
                 variant="outline"
                 onClick={() => void handleDiscardAndContinue()}
               >
-                Discard changes
+                {t("preview.design_panel.discardChanges")}
               </Button>
               <Button
                 onClick={() => void handleSaveAndContinue()}
                 disabled={session.isSaving}
               >
-                {session.isSaving ? "Saving..." : "Save and continue"}
+                {session.isSaving
+                  ? t("preview.design_panel.saving")
+                  : t("preview.design_panel.saveAndContinue")}
               </Button>
             </div>
           </DialogFooter>

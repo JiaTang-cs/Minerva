@@ -269,7 +269,7 @@ export function useStreamChat({
                   queryKeys.chats.list({ appId: selectedAppId }),
                 );
                 const chat = chats?.find((c) => c.id === chatId);
-                const appName = app?.name ?? "minerva";
+                const appName = app?.name ?? "Minerva";
                 const rawTitle = response.chatSummary ?? chat?.title;
                 const body = rawTitle
                   ? rawTitle.length > 80

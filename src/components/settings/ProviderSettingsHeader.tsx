@@ -14,7 +14,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {} from "react";
+import type { MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ProviderSettingsHeaderProps {
   providerDisplayName: string;
@@ -26,19 +27,6 @@ interface ProviderSettingsHeaderProps {
   onBackClick: () => void;
 }
 
-function getKeyButtonText({
-  isConfigured,
-  isDyad,
-}: {
-  isConfigured: boolean;
-  isDyad: boolean;
-}) {
-  if (isDyad) {
-    return isConfigured ? "Manage API Key" : "Setup API Key";
-  }
-  return isConfigured ? "Manage API Keys" : "Setup API Key";
-}
-
 export function ProviderSettingsHeader({
   providerDisplayName,
   isConfigured,
@@ -48,12 +36,21 @@ export function ProviderSettingsHeader({
   isDyad,
   onBackClick,
 }: ProviderSettingsHeaderProps) {
-  const handleGetApiKeyClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
+
+  const handleGetApiKeyClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (providerWebsiteUrl) {
       ipc.system.openExternalUrl(providerWebsiteUrl);
     }
   };
+
+  const keyButtonText = isConfigured
+    ? isDyad
+      ? t("ai.manageApiKey")
+      : t("ai.manageApiKeys")
+    : t("ai.setupApiKey");
 
   const ConfigureButton = (
     <Button
@@ -61,7 +58,7 @@ export function ProviderSettingsHeader({
       className="mb-4 cursor-pointer py-5 w-full ring-4 ring-primary/60 shadow-lg shadow-primary/30 border-primary/60"
     >
       <KeyRound className="mr-2 h-4 w-4" />
-      {getKeyButtonText({ isConfigured, isDyad })}
+      {keyButtonText}
       <ExternalLink className="ml-2 h-4 w-4" />
     </Button>
   );
@@ -75,13 +72,13 @@ export function ProviderSettingsHeader({
         className="flex items-center gap-2 mb-4 bg-(--background-lightest) py-5"
       >
         <ArrowLeft className="h-4 w-4" />
-        Go Back
+        {tc("goBack")}
       </Button>
 
       <div className="mb-6">
         <div className="flex items-center mb-1">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mr-3">
-            Configure {providerDisplayName}
+            {t("ai.configureProvider", { name: providerDisplayName })}
           </h1>
           {isLoading ? (
             <Skeleton className="h-6 w-6 rounded-full" />
@@ -96,16 +93,16 @@ export function ProviderSettingsHeader({
           )}
           <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
             {isLoading
-              ? "Loading..."
+              ? tc("loading")
               : isConfigured
-                ? "Setup Complete"
-                : "Not Setup"}
+                ? t("ai.setupComplete")
+                : t("ai.notSetup")}
           </span>
         </div>
         {!isLoading && hasFreeTier && (
           <span className="text-blue-600 mt-2 dark:text-blue-400 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full inline-flex items-center">
             <GiftIcon className="w-4 h-4 mr-1" />
-            Free tier available
+            {t("ai.freeTierAvailable")}
           </span>
         )}
       </div>
@@ -121,7 +118,8 @@ export function ProviderSettingsHeader({
               className="w-fit py-2 px-3 bg-background text-primary shadow-lg ring-1 ring-primary/40"
             >
               <div className="text-sm font-semibold flex items-center gap-1">
-                <ArrowUp /> Create your API key with {providerDisplayName}
+                <ArrowUp />{" "}
+                {t("ai.createApiKey", { name: providerDisplayName })}
               </div>
             </PopoverContent>
           </Popover>

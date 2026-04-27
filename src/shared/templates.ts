@@ -4,6 +4,7 @@ export interface Template {
   description: string;
   imageUrl: string;
   githubUrl?: string;
+  hideGithubLink?: boolean;
   isOfficial: boolean;
   isExperimental?: boolean;
   requiresNeon?: boolean;
@@ -40,6 +41,7 @@ export const localTemplatesData: Template[] = [
     imageUrl:
       "https://github.com/user-attachments/assets/96258e4f-abce-4910-a62a-a9dff77965f2",
     githubUrl: "https://github.com/dyad-sh/nextjs-template",
+    hideGithubLink: true,
     isOfficial: true,
   },
   {
@@ -49,6 +51,7 @@ export const localTemplatesData: Template[] = [
     imageUrl:
       "https://github.com/user-attachments/assets/ed86f322-40bf-4fd5-81dc-3b1d8a16e12b",
     githubUrl: "https://github.com/dyad-sh/portal-mini-store-template",
+    hideGithubLink: true,
     isOfficial: true,
     isExperimental: true,
     requiresNeon: true,

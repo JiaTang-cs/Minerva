@@ -18,7 +18,7 @@ export function getDefaultDyadAppsDirectory(): string {
     const electron = getElectron();
     return path.join(electron!.app.getPath("userData"), "dyad-apps");
   }
-  return path.join(os.homedir(), "dyad-apps");
+  return path.join(os.homedir(), "minerva-apps");
 }
 
 /**

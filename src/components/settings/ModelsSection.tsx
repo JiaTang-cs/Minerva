@@ -19,12 +19,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
+import { useTranslation } from "react-i18next";
 
 interface ModelsSectionProps {
   providerId: string;
 }
 
 export function ModelsSection({ providerId }: ModelsSectionProps) {
+  const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const [isCustomModelDialogOpen, setIsCustomModelDialogOpen] = useState(false);
   const [isEditModelDialogOpen, setIsEditModelDialogOpen] = useState(false);
   const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] =
@@ -91,10 +94,8 @@ export function ModelsSection({ providerId }: ModelsSectionProps) {
 
   return (
     <div className="mt-8 border-t pt-6">
-      <h2 className="text-2xl font-semibold mb-4">Models</h2>
-      <p className="text-muted-foreground mb-4">
-        Manage specific models available through this provider.
-      </p>
+      <h2 className="text-2xl font-semibold mb-4">{t("models.title")}</h2>
+      <p className="text-muted-foreground mb-4">{t("models.description")}</p>
 
       {/* Custom Models List Area */}
       {modelsLoading && (
@@ -106,7 +107,7 @@ export function ModelsSection({ providerId }: ModelsSectionProps) {
       {modelsError && (
         <Alert variant="destructive" className="mt-4">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error Loading Models</AlertTitle>
+          <AlertTitle>{t("models.errorLoading")}</AlertTitle>
           <AlertDescription>{modelsError.message}</AlertDescription>
         </Alert>
       )}
@@ -178,18 +179,22 @@ export function ModelsSection({ providerId }: ModelsSectionProps) {
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
                 {model.contextWindow && (
                   <span>
-                    Context: {model.contextWindow.toLocaleString()} tokens
+                    {t("models.contextTokens", {
+                      count: model.contextWindow,
+                    })}
                   </span>
                 )}
                 {model.maxOutputTokens && (
                   <span>
-                    Max Output: {model.maxOutputTokens.toLocaleString()} tokens
+                    {t("models.maxOutputTokens", {
+                      count: model.maxOutputTokens,
+                    })}
                   </span>
                 )}
               </div>
               <div className="flex flex-wrap gap-x-2">
                 <span className="mt-2 inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
-                  {model.type === "cloud" ? "Built-in" : "Custom"}
+                  {model.type === "cloud" ? tc("builtIn") : tc("custom")}
                 </span>
 
                 {model.tag && (
@@ -204,7 +209,7 @@ export function ModelsSection({ providerId }: ModelsSectionProps) {
       )}
       {!modelsLoading && !modelsError && (!models || models.length === 0) && (
         <p className="text-muted-foreground mt-4">
-          No custom models have been added for this provider yet.
+          {t("models.noCustomModels")}
         </p>
       )}
       {/* End Custom Models List Area */}
@@ -215,7 +220,7 @@ export function ModelsSection({ providerId }: ModelsSectionProps) {
           variant="outline"
           className="mt-6"
         >
-          <PlusIcon className="mr-2 h-4 w-4" /> Add Custom Model
+          <PlusIcon className="mr-2 h-4 w-4" /> {t("models.addCustomModel")}
         </Button>
       )}
 
@@ -248,27 +253,27 @@ export function ModelsSection({ providerId }: ModelsSectionProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Are you sure you want to delete this model?
+              {t("models.deleteConfirmTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              custom model "
-              {modelToDelete
-                ? models?.find((m) => m.apiName === modelToDelete)
-                    ?.displayName || modelToDelete
-                : ""}
-              " (API Name: {modelToDelete}).
+              {t("models.deleteConfirmDescription", {
+                name: modelToDelete
+                  ? models?.find((m) => m.apiName === modelToDelete)
+                      ?.displayName || modelToDelete
+                  : "",
+                apiName: modelToDelete,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setModelToDelete(null)}>
-              Cancel
+              {tc("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? "Deleting..." : "Yes, delete it"}
+              {isDeleting ? tc("deleting") : t("models.yesDeleteIt")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

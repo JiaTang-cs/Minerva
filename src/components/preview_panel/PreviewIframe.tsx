@@ -174,6 +174,11 @@ const ErrorBanner = ({ error, onDismiss, onAIFix }: ErrorBannerProps) => {
 
 // Preview iframe component
 export const PreviewIframe = ({ loading }: { loading: boolean }) => {
+  const previewToolActiveClass =
+    "bg-primary text-primary-foreground hover:bg-[#4f73f5] dark:bg-primary dark:hover:bg-[#6f8eff]";
+  const previewToolIdleClass =
+    "text-primary hover:bg-primary/12 dark:text-[#9fb3ff] dark:hover:bg-primary/20";
+
   const { t } = useTranslation("home");
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { appUrl, originalUrl } = useAtomValue(appUrlAtom);
@@ -1156,8 +1161,8 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                     onClick={handleActivateComponentSelector}
                     className={`p-1 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                       isPicking
-                        ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-                        : " text-purple-700 hover:bg-purple-200  dark:text-purple-300 dark:hover:bg-purple-900"
+                        ? previewToolActiveClass
+                        : previewToolIdleClass
                     }`}
                     disabled={
                       loading ||
@@ -1183,8 +1188,8 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                     onClick={handleAnnotatorClick}
                     className={`p-1 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                       annotatorMode
-                        ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-                        : " text-purple-700 hover:bg-purple-200  dark:text-purple-300 dark:hover:bg-purple-900"
+                        ? previewToolActiveClass
+                        : previewToolIdleClass
                     }`}
                     disabled={
                       loading ||

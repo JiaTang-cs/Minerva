@@ -14,13 +14,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft,
   ArrowRight,
+  ClipboardList,
   ChevronDown,
   ChevronUp,
   Circle,
-  MessageSquareMore,
   Send,
   X,
 } from "lucide-react";
+
+const MAX_DISPLAYED_OPTIONS = 3;
+const CUSTOM_OPTION = "__other__";
 
 export function AskUserQuestionInput() {
   const [askUserQuestionMap, setAskUserQuestionMap] = useAtom(
@@ -40,7 +43,17 @@ export function AskUserQuestionInput() {
 
   useEffect(() => {
     setCurrentIndex(0);
-    setResponses({});
+    setResponses(() => {
+      const initial: Record<string, string | string[]> = {};
+      if (askUserQuestion) {
+        for (const question of askUserQuestion.questions) {
+          if (!question.multiSelect && question.options.length > 0) {
+            initial[question.id] = question.options[0].label;
+          }
+        }
+      }
+      return initial;
+    });
     setOtherTexts({});
     setIsExpanded(true);
   }, [
@@ -87,7 +100,6 @@ export function AskUserQuestionInput() {
   if (!currentQuestion) return null;
 
   const isLastQuestion = currentIndex === askUserQuestion.questions.length - 1;
-  const CUSTOM_OPTION = "__other__";
 
   const getFinalResponse = (questionId: string): string => {
     const response = responses[questionId];
@@ -163,33 +175,40 @@ export function AskUserQuestionInput() {
     setCurrentIndex((prev) => prev + 1);
   };
 
+  const isNextDisabled = () => !hasValidAnswer();
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (hasValidAnswer()) {
+      if (!isNextDisabled()) {
         handleNext();
       }
     }
   };
 
   return (
-    <div className="border-b border-border bg-amber-50/60 dark:bg-amber-500/8">
+    <div className="border-b border-border bg-muted/30">
       <div className="flex items-center">
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex-1 flex items-center justify-between px-3 py-2 hover:bg-amber-100/60 dark:hover:bg-amber-500/12 transition-colors"
+          className="flex-1 flex items-center justify-between px-3 py-2 hover:bg-muted/50 transition-colors"
           aria-expanded={isExpanded}
+          aria-label={
+            isExpanded
+              ? "Collapse questionnaire"
+              : `Expand questionnaire: ${currentQuestion.question}`
+          }
         >
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {isExpanded ? (
               <>
-                <MessageSquareMore className="w-4 h-4 text-amber-700 dark:text-amber-300 flex-shrink-0" />
-                <span className="text-sm font-medium">Ask user question</span>
+                <ClipboardList className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm">Questions</span>
               </>
             ) : (
               <>
-                <Circle className="w-4 h-4 text-amber-500 flex-shrink-0 fill-current" />
+                <Circle className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <span className="text-sm truncate">{currentQuestion.question}</span>
                 <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
                   ({currentIndex + 1}/{askUserQuestion.questions.length})
@@ -199,7 +218,7 @@ export function AskUserQuestionInput() {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-3">
             <span className="text-xs text-muted-foreground tabular-nums">
-              {currentQuestion.header}
+              {currentIndex + 1} of {askUserQuestion.questions.length}
             </span>
             {isExpanded ? (
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -223,72 +242,80 @@ export function AskUserQuestionInput() {
         <div className="px-3 pb-3">
           <div className="space-y-3">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-6 items-center rounded-full bg-amber-100 px-2.5 text-xs font-medium text-amber-900 dark:bg-amber-500/20 dark:text-amber-200">
-                  {currentQuestion.header}
-                </span>
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {currentIndex + 1} / {askUserQuestion.questions.length}
-                </span>
-              </div>
               <Label className="text-sm font-medium text-foreground">
                 {currentQuestion.question}
               </Label>
+              {currentQuestion.header && (
+                <p className="text-xs text-muted-foreground">
+                  {currentQuestion.header}
+                </p>
+              )}
 
               {currentQuestion.multiSelect ? (
-                <div className="space-y-2">
-                  {currentQuestion.options.map((option) => {
-                    const selected =
-                      ((responses[currentQuestion.id] as string[] | undefined) ??
-                        []
-                      ).includes(option.label);
+                <div className="space-y-0.5">
+                  {currentQuestion.options
+                    .slice(0, MAX_DISPLAYED_OPTIONS)
+                    .map((option) => {
+                      const selected =
+                        ((responses[currentQuestion.id] as
+                          | string[]
+                          | undefined) ?? []
+                        ).includes(option.label);
 
-                    return (
-                      <label
-                        key={option.label}
-                        htmlFor={`${currentQuestion.id}-${option.label}`}
-                        className="flex items-start gap-3 rounded-xl border border-border/70 bg-background/90 px-3 py-3 hover:bg-muted/40 transition-colors cursor-pointer"
-                      >
-                        <Checkbox
-                          id={`${currentQuestion.id}-${option.label}`}
-                          checked={selected}
-                          onCheckedChange={(checked) => {
-                            setResponses((prev) => {
-                              const current =
-                                (prev[currentQuestion.id] as string[] | undefined) ??
-                                [];
-                              return {
-                                ...prev,
-                                [currentQuestion.id]: checked
-                                  ? [...current, option.label]
-                                  : current.filter((item) => item !== option.label),
-                              };
-                            });
-                          }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium">{option.label}</div>
-                          {option.description && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {option.description}
-                            </div>
-                          )}
+                      return (
+                        <div
+                          key={option.label}
+                          className="flex items-start space-x-2 py-1 px-2 rounded hover:bg-muted/50 transition-colors"
+                        >
+                          <Checkbox
+                            id={`${currentQuestion.id}-${option.label}`}
+                            checked={selected}
+                            onCheckedChange={(checked) => {
+                              setResponses((prev) => {
+                                const current =
+                                  (prev[currentQuestion.id] as
+                                    | string[]
+                                    | undefined) ?? [];
+                                return {
+                                  ...prev,
+                                  [currentQuestion.id]: checked
+                                    ? [...current, option.label]
+                                    : current.filter(
+                                        (item) => item !== option.label,
+                                      ),
+                                };
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`${currentQuestion.id}-${option.label}`}
+                            className="text-sm font-normal cursor-pointer flex-1"
+                          >
+                            {option.label}
+                            {option.description && (
+                              <span className="block text-xs text-muted-foreground mt-0.5">
+                                {option.description}
+                              </span>
+                            )}
+                          </Label>
                         </div>
-                      </label>
-                    );
-                  })}
+                      );
+                    })}
 
-                  <Input
-                    placeholder={currentQuestion.placeholder || "Other..."}
-                    value={otherTexts[currentQuestion.id] || ""}
-                    onChange={(e) =>
-                      setOtherTexts((prev) => ({
-                        ...prev,
-                        [currentQuestion.id]: e.target.value,
-                      }))
-                    }
-                    onKeyDown={handleKeyDown}
-                  />
+                  <div className="flex items-center py-1 px-2 rounded hover:bg-muted/50 transition-colors">
+                    <Input
+                      placeholder={currentQuestion.placeholder || "Other..."}
+                      className="flex-1 h-7 text-sm"
+                      value={otherTexts[currentQuestion.id] || ""}
+                      onChange={(e) =>
+                        setOtherTexts((prev) => ({
+                          ...prev,
+                          [currentQuestion.id]: e.target.value,
+                        }))
+                      }
+                      onKeyDown={handleKeyDown}
+                    />
+                  </div>
                 </div>
               ) : (
                 <RadioGroup
@@ -306,36 +333,41 @@ export function AskUserQuestionInput() {
                       }));
                     }
                   }}
-                  className="space-y-2"
+                  className="space-y-0.5"
                 >
-                  {currentQuestion.options.map((option) => (
-                    <label
-                      key={option.label}
-                      htmlFor={`${currentQuestion.id}-${option.label}`}
-                      className="flex items-start gap-3 rounded-xl border border-border/70 bg-background/90 px-3 py-3 hover:bg-muted/40 transition-colors cursor-pointer"
-                    >
-                      <RadioGroupItem
-                        value={option.label}
-                        id={`${currentQuestion.id}-${option.label}`}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium">{option.label}</div>
-                        {option.description && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {option.description}
-                          </div>
-                        )}
+                  {currentQuestion.options
+                    .slice(0, MAX_DISPLAYED_OPTIONS)
+                    .map((option) => (
+                      <div
+                        key={option.label}
+                        className="flex items-start space-x-2 py-1 px-2 rounded hover:bg-muted/50 transition-colors"
+                      >
+                        <RadioGroupItem
+                          value={option.label}
+                          id={`${currentQuestion.id}-${option.label}`}
+                        />
+                        <Label
+                          htmlFor={`${currentQuestion.id}-${option.label}`}
+                          className="text-sm font-normal cursor-pointer flex-1"
+                        >
+                          {option.label}
+                          {option.description && (
+                            <span className="block text-xs text-muted-foreground mt-0.5">
+                              {option.description}
+                            </span>
+                          )}
+                        </Label>
                       </div>
-                    </label>
-                  ))}
+                    ))}
 
-                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-background/90 px-3 py-3">
+                  <div className="flex items-center space-x-2 py-1 px-2 rounded hover:bg-muted/50 transition-colors">
                     <RadioGroupItem
                       value={CUSTOM_OPTION}
                       id={`${currentQuestion.id}-other`}
                     />
                     <Input
                       placeholder={currentQuestion.placeholder || "Other..."}
+                      className="flex-1 h-7 text-sm"
                       value={otherTexts[currentQuestion.id] || ""}
                       onFocus={() =>
                         setResponses((prev) => ({
@@ -370,7 +402,7 @@ export function AskUserQuestionInput() {
                 <ArrowLeft size={14} className="mr-1.5" />
                 Back
               </Button>
-              <Button onClick={handleNext} disabled={!hasValidAnswer()} size="sm">
+              <Button onClick={handleNext} disabled={isNextDisabled()} size="sm">
                 {isLastQuestion ? (
                   <>
                     <Send size={14} className="mr-1.5" />

@@ -100,13 +100,13 @@ function getVariantStyles(variant: SetupProviderVariant) {
     case "dyad":
       return {
         container:
-          "bg-primary/10 border-primary/50 dark:bg-violet-800/50 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/70",
-        iconWrapper: "bg-primary/5 dark:bg-violet-800",
-        titleColor: "text-violet-800 dark:text-violet-300",
-        subtitleColor: "text-violet-600 dark:text-violet-400",
+          "bg-primary/10 border-primary/35 dark:bg-primary/18 dark:border-primary/30 hover:bg-primary/14 dark:hover:bg-primary/24",
+        iconWrapper: "bg-primary/10 dark:bg-primary/18",
+        titleColor: "text-[#3650c8] dark:text-[#a9bbff]",
+        subtitleColor: "text-[#5872e8] dark:text-[#8ea4ff]",
         chipColor:
-          "text-violet-700 dark:text-violet-200 bg-violet-100 dark:bg-violet-900 border border-violet-200 dark:border-violet-700",
-        chevronColor: "text-violet-600 dark:text-violet-400",
+          "text-[#4b65da] dark:text-[#c0cdff] bg-[#eef2ff] dark:bg-[#1a2450] border border-[#d2dbff] dark:border-[#32428e]",
+        chevronColor: "text-[#5872e8] dark:text-[#8ea4ff]",
       } as const;
   }
 }

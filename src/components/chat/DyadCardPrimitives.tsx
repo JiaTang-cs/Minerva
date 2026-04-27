@@ -29,7 +29,7 @@ const ACCENT_BORDER: Record<DyadAccentColor, string> = {
   emerald: "border-l-emerald-500",
   teal: "border-l-teal-500",
   sky: "border-l-sky-500",
-  indigo: "border-l-indigo-500",
+  indigo: "border-l-[#5c7ffd]",
   slate: "border-l-slate-400",
 };
 
@@ -47,7 +47,7 @@ const ACCENT_ICON_BG: Record<DyadAccentColor, string> = {
   teal: "bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400",
   sky: "bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400",
   indigo:
-    "bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400",
+    "bg-[#e8edff] dark:bg-[#1b2450] text-[#4b68ea] dark:text-[#9ab0ff]",
   slate: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
 };
 
@@ -67,7 +67,7 @@ const ACCENT_BADGE: Record<DyadAccentColor, string> = {
   teal: "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 ring-teal-200 dark:ring-teal-800",
   sky: "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 ring-sky-200 dark:ring-sky-800",
   indigo:
-    "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 ring-indigo-200 dark:ring-indigo-800",
+    "bg-[#eef2ff] dark:bg-[#1b2450]/80 text-[#4965e6] dark:text-[#a9bbff] ring-[#cad5ff] dark:ring-[#31438f]",
   slate:
     "bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 ring-slate-200 dark:ring-slate-700",
 };

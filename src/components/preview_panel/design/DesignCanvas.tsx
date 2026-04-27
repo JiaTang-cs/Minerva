@@ -450,12 +450,12 @@ export function DesignCanvas({
   }, [nodes, selectedComponentId]);
 
   return (
-    <div className="relative h-full overflow-hidden bg-[#f6f2eb]">
+    <div className="relative h-full overflow-hidden bg-background">
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "radial-gradient(circle, rgba(194,170,136,0.45) 1.2px, transparent 1.2px)",
+            "radial-gradient(circle, rgba(148,163,184,0.35) 1.2px, transparent 1.2px)",
           backgroundPosition: `${viewport.panX}px ${viewport.panY}px`,
           backgroundSize: `${Math.max(14, 22 * viewport.zoom)}px ${Math.max(
             14,
@@ -467,14 +467,14 @@ export function DesignCanvas({
       <button
         type="button"
         onPointerDown={handleMinimapPointerDown}
-        className="absolute right-6 top-[108px] z-20 h-[132px] w-[184px] rounded-[16px] border border-[#e8e1d6] bg-white/96 p-3 text-left shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-transform hover:scale-[1.01]"
+        className="absolute right-6 top-[108px] z-20 h-[132px] w-[184px] rounded-[16px] border border-border bg-card/95 p-3 text-left shadow-[0_14px_32px_rgba(15,23,42,0.08)] transition-transform hover:scale-[1.01]"
       >
-        <div className="relative h-full overflow-hidden rounded-[12px] border border-[#ebe5dc] bg-[#faf8f4]">
+        <div className="relative h-full overflow-hidden rounded-[12px] border border-border bg-muted/30">
           <div
             className="absolute inset-0 opacity-70"
             style={{
               backgroundImage:
-                "radial-gradient(circle, rgba(216,206,192,0.85) 1px, transparent 1px)",
+                "radial-gradient(circle, rgba(203,213,225,0.85) 1px, transparent 1px)",
               backgroundSize: "18px 18px",
             }}
           />
@@ -497,7 +497,7 @@ export function DesignCanvas({
           ))}
 
           <div
-            className="absolute rounded-[10px] border border-[#d6ccbe] bg-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.65)]"
+            className="absolute rounded-[10px] border border-slate-300 bg-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.65)]"
             style={{
               left: minimapViewModel.viewportRect.x,
               top: minimapViewModel.viewportRect.y,
@@ -556,7 +556,7 @@ export function DesignCanvas({
                     stroke={
                       edge.type === "component-link"
                         ? "rgba(86, 138, 111, 0.58)"
-                        : "rgba(122, 97, 69, 0.35)"
+                        : "rgba(100, 116, 139, 0.38)"
                     }
                     strokeDasharray={
                       edge.type === "component-link" ? "10 8" : "14 10"
@@ -567,8 +567,8 @@ export function DesignCanvas({
                     cx={endX}
                     cy={endY}
                     r={5}
-                    fill="#f5efe6"
-                    stroke="#d6ccbe"
+                    fill="#f8fafc"
+                    stroke="#cbd5e1"
                   />
                   {edge.label ? (
                     <g transform={`translate(${labelX}, ${labelY})`}>
@@ -579,14 +579,14 @@ export function DesignCanvas({
                         height={24}
                         rx={12}
                         fill="rgba(255,255,255,0.92)"
-                        stroke="rgba(214,204,190,0.9)"
+                        stroke="rgba(203,213,225,0.9)"
                       />
                       <text
                         textAnchor="middle"
                         dominantBaseline="middle"
                         fontSize="11"
                         fontWeight="600"
-                        fill="#7a6145"
+                        fill="#475569"
                       >
                         {edge.label}
                       </text>
@@ -603,7 +603,7 @@ export function DesignCanvas({
               const isSelected =
                 componentData.componentId === selectedComponentId;
               const previewHtml = componentData.previewHtml
-                ? `<!DOCTYPE html><html><head><style>body{margin:0;padding:16px;background:#fffdf8;font-family:ui-sans-serif,system-ui,sans-serif;overflow:hidden;}</style></head><body>${componentData.previewHtml}</body></html>`
+                ? `<!DOCTYPE html><html><head><style>body{margin:0;padding:16px;background:#f8fafc;font-family:ui-sans-serif,system-ui,sans-serif;overflow:hidden;}</style></head><body>${componentData.previewHtml}</body></html>`
                 : null;
 
               return (
@@ -668,10 +668,10 @@ export function DesignCanvas({
             const isActive = pageData.isActive;
             const pageStatusTone =
               pageData.status === "failed"
-                ? "bg-[#fff0ec] text-[#a3512f]"
+                ? "bg-red-50 text-red-700"
                 : pageData.status === "generating"
-                  ? "bg-[#fff6e9] text-[#a06e20]"
-                  : "bg-[#f4efe7] text-[#7d6447]";
+                  ? "bg-blue-50 text-blue-700"
+                  : "bg-muted text-muted-foreground";
 
             if (isActive) {
               return (
@@ -685,7 +685,7 @@ export function DesignCanvas({
                     height: node.height,
                   }}
                 >
-                  <div className="absolute inset-0 rounded-[18px] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.12)] ring-1 ring-[#e7dfd4]" />
+                  <div className="absolute inset-0 rounded-[18px] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.12)] ring-1 ring-border" />
                   <div className="absolute left-5 top-5 z-10 flex items-center gap-2">
                     <div className="rounded-full bg-[#111827] px-3 py-1.5 text-[11px] font-semibold text-white">
                       {pageData.role === "root" ? "Root Page" : "Active Page"}
@@ -724,8 +724,8 @@ export function DesignCanvas({
                 className={cn(
                   "absolute overflow-hidden rounded-[24px] border bg-white text-left shadow-[0_16px_40px_rgba(15,23,42,0.07)] transition-transform hover:-translate-y-1",
                   node.selected
-                    ? "border-[#c9ab7b] ring-2 ring-[#efd9b2]"
-                    : "border-[#e7dfd4]",
+                    ? "border-primary/60 ring-2 ring-primary/20"
+                    : "border-border",
                 )}
                 style={{
                   left: node.x,
@@ -747,18 +747,18 @@ export function DesignCanvas({
                   return (
                     <>
                       <div
-                        className="flex items-center justify-between border-b border-[#f0e8de] bg-[#fffaf4] px-4 py-3"
+                        className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-3"
                         style={{ height: `${chromeHeight - 40}px` }}
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-[#332317]">
+                          <div className="truncate text-sm font-semibold text-foreground">
                             {pageData.title}
                           </div>
-                          <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a6b49]">
+                          <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             <span>
                               {pageData.role === "root" ? "Root" : "Generated"}
                             </span>
-                            <span className="h-1 w-1 rounded-full bg-[#d5c4b0]" />
+                            <span className="h-1 w-1 rounded-full bg-border" />
                             <span>
                               {DEVICE_DIMENSIONS[pageData.deviceMode].label}
                             </span>
@@ -774,14 +774,14 @@ export function DesignCanvas({
                         </div>
                       </div>
                       <div
-                        className="relative overflow-hidden bg-[#f7f4ef]"
+                        className="relative overflow-hidden bg-muted/30"
                         style={{ height: `${previewSizing.previewHeight}px` }}
                       >
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,239,232,0.9),rgba(247,244,239,0.65))]" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(248,250,252,0.9),rgba(241,245,249,0.65))]" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           {pageData.srcDoc ? (
                             <div
-                              className="relative overflow-hidden rounded-[18px] border border-[#eadfce] bg-white shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
+                              className="relative overflow-hidden rounded-[18px] border border-border bg-white shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
                               style={{
                                 width: `${previewSizing.previewWidth}px`,
                                 height: `${previewSizing.previewHeight}px`,
@@ -801,20 +801,20 @@ export function DesignCanvas({
                               />
                             </div>
                           ) : (
-                            <div className="flex h-full items-center justify-center text-xs text-[#8c7c68]">
+                            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
                               Page preview pending
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center justify-between px-4 py-3">
-                        <div className="flex items-center gap-2 text-xs text-[#7a6145]">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Link2 className="h-3.5 w-3.5" />
                           {pageData.role === "root"
                             ? "Source anchor"
                             : "Derived from root"}
                         </div>
-                        <div className="flex items-center gap-1 text-xs font-medium text-[#9a6b2f]">
+                        <div className="flex items-center gap-1 text-xs font-medium text-primary">
                           Open
                           <ArrowDownRight className="h-3.5 w-3.5" />
                         </div>

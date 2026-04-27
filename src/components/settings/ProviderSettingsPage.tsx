@@ -3,10 +3,10 @@ import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useLanguageModelProviders } from "@/hooks/useLanguageModelProviders";
+import { SETTINGS_CONTENT_SCROLL_ID } from "@/lib/sectionNavigation";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import {} from "@/components/ui/accordion";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,11 +43,11 @@ export function ProviderSettingsPage({ provider }: ProviderSettingsPageProps) {
   // Find the specific provider data from the fetched list
   const providerData = allProviders?.find((p) => p.id === provider);
   useEffect(() => {
-    const layoutMainContentContainer = document.getElementById(
-      "layout-main-content-container",
+    const settingsContentContainer = document.getElementById(
+      SETTINGS_CONTENT_SCROLL_ID,
     );
-    if (layoutMainContentContainer) {
-      layoutMainContentContainer.scrollTo(0, 0);
+    if (settingsContentContainer) {
+      settingsContentContainer.scrollTo(0, 0);
     }
   }, [providerData?.id]);
 
@@ -255,8 +255,11 @@ export function ProviderSettingsPage({ provider }: ProviderSettingsPageProps) {
   }
 
   return (
-    <div className="min-h-screen px-8 py-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="flex h-full min-h-0 flex-col px-8 py-4">
+      <div
+        id={SETTINGS_CONTENT_SCROLL_ID}
+        className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto pr-2"
+      >
         <ProviderSettingsHeader
           providerDisplayName={providerDisplayName}
           isConfigured={isConfigured}

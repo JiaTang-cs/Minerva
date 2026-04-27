@@ -1,16 +1,15 @@
 {
-  "name": "dyad",
-  "version": "0.43.0",
-  "description": "Free, local, open-source AI app builder",
+  "name": "Minerva",
+  "version": "0.43.2",
+  "description": "local AI app builder",
   "keywords": [],
   "license": "MIT",
   "author": {
-    "name": "Will Chen",
-    "email": "willchen90@gmail.com"
+    "name": "dylan shaw"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dyad-sh/dyad.git"
+    "url": "https://github.com/Amanrry/minerva.git"
   },
   "main": ".vite/build/main.js",
   "scripts": {
@@ -187,5 +186,5 @@
   "engines": {
     "node": ">=24"
   },
-  "productName": "dyad"
+  "productName": "minerva"
 }

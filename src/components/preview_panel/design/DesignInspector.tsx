@@ -32,11 +32,11 @@ function InspectorSegmentedRow({
   options: LayoutOption[];
 }) {
   return (
-    <div className="flex items-center rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+    <div className="flex items-center rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
       <div className="w-[64px] shrink-0 text-[13px] font-medium text-slate-600">
         {label}
       </div>
-      <div className="ml-2 flex h-8 flex-1 items-center justify-center gap-1 rounded-[12px] bg-[#f7f4ef] p-1">
+      <div className="ml-2 flex h-8 flex-1 items-center justify-center gap-1 rounded-[12px] bg-muted p-1">
         {options.map((option) => {
           const isActive = value === option.value;
           return (
@@ -74,7 +74,7 @@ function InspectorValueRow({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+    <div className="flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
       <Label htmlFor={id} className="text-[13px] font-medium text-slate-600">
         {label}
       </Label>
@@ -127,7 +127,7 @@ function InspectorQuadrantValueCard({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-2 shadow-xs">
+    <div className="flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-2 shadow-xs">
       <Label htmlFor={id} className="flex items-center">
         <SpacingSideIcon side={side} />
       </Label>
@@ -347,7 +347,7 @@ export function LayoutInspector({
   );
 
   return (
-    <div className="w-[280px] rounded-[26px] border border-[#ece5da] bg-white/98 p-3 shadow-[0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur">
+    <div className="w-[280px] rounded-[26px] border border-border bg-white/98 p-3 shadow-[0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur">
       <div className="max-h-[270px] overflow-y-auto pr-1 [scrollbar-color:#d9d4cc_transparent] [scrollbar-width:thin]">
         <div className="grid grid-cols-1 gap-2">
           <InspectorSegmentedRow
@@ -376,10 +376,10 @@ export function LayoutInspector({
             onChange={(value) => onApplyStyles({ alignItems: value })}
             options={alignOptions}
           />
-          <div className="rounded-[18px] border border-[#efe6d9] bg-[#fbfaf7] p-2">
-            <div className="mb-2 flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+          <div className="rounded-[18px] border border-border bg-muted/30 p-2">
+            <div className="mb-2 flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
               <div className="text-[13px] font-medium text-slate-600">Padding</div>
-              <div className="flex items-center gap-1 rounded-[12px] bg-[#f7f4ef] p-1">
+              <div className="flex items-center gap-1 rounded-[12px] bg-muted p-1">
                 <button
                   type="button"
                   onClick={() => setPaddingMode("all")}
@@ -510,10 +510,10 @@ export function LayoutInspector({
               ) : null}
             </div>
           </div>
-          <div className="rounded-[18px] border border-[#efe6d9] bg-[#fbfaf7] p-2">
-            <div className="mb-2 flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+          <div className="rounded-[18px] border border-border bg-muted/30 p-2">
+            <div className="mb-2 flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
               <div className="text-[13px] font-medium text-slate-600">Margin</div>
-              <div className="flex items-center gap-1 rounded-[12px] bg-[#f7f4ef] p-1">
+              <div className="flex items-center gap-1 rounded-[12px] bg-muted p-1">
                 <button
                   type="button"
                   onClick={() => setMarginMode("all")}
@@ -662,9 +662,9 @@ export function StyleInspector({
   const borderRadiusValue = toEditableLengthValue(styles?.borderRadius ?? "");
 
   return (
-    <div className="w-[280px] rounded-[26px] border border-[#ece5da] bg-white/98 p-4 shadow-[0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur">
+    <div className="w-[280px] rounded-[26px] border border-border bg-white/98 p-4 shadow-[0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur">
       <div className="grid grid-cols-1 gap-2">
-        <div className="flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+        <div className="flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
           <Label
             htmlFor="design-text-color"
             className="text-[13px] font-medium text-slate-600"
@@ -680,7 +680,7 @@ export function StyleInspector({
             />
             <label
               htmlFor="design-text-color"
-              className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-[#ece5da] shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
+              className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-border shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
               style={{
                 backgroundColor: toEditableColor(styles?.color ?? "", "#111827"),
               }}
@@ -695,7 +695,7 @@ export function StyleInspector({
             </label>
           </div>
         </div>
-        <div className="flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+        <div className="flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
           <Label
             htmlFor="design-background-color"
             className="text-[13px] font-medium text-slate-600"
@@ -713,7 +713,7 @@ export function StyleInspector({
             />
             <label
               htmlFor="design-background-color"
-              className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-[#ece5da] shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
+              className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-border shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
               style={{
                 backgroundColor: toEditableColor(
                   styles?.backgroundColor ?? "",
@@ -733,7 +733,7 @@ export function StyleInspector({
             </label>
           </div>
         </div>
-        <div className="flex items-center justify-between rounded-[14px] border border-[#ece5da] bg-white px-3 py-1.5 shadow-xs">
+        <div className="flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
           <Label
             htmlFor="design-border-color"
             className="text-[13px] font-medium text-slate-600"
@@ -751,7 +751,7 @@ export function StyleInspector({
             />
             <label
               htmlFor="design-border-color"
-              className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-[#ece5da] shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
+              className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-border shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
               style={{
                 backgroundColor: toEditableColor(
                   styles?.borderColor ?? "",
@@ -771,7 +771,7 @@ export function StyleInspector({
             </label>
           </div>
         </div>
-        <div className="flex items-center justify-between rounded-[16px] border border-[#ece5da] bg-white px-4 py-2 shadow-xs">
+        <div className="flex items-center justify-between rounded-[16px] border border-border bg-white px-4 py-2 shadow-xs">
           <Label
             htmlFor="design-radius"
             className="text-[13px] font-medium text-slate-600"
@@ -795,7 +795,7 @@ export function StyleInspector({
             <span className="text-[11px] text-slate-400">px</span>
           </div>
         </div>
-        <div className="flex items-center justify-between rounded-[16px] border border-[#ece5da] bg-white px-4 py-2 shadow-xs">
+        <div className="flex items-center justify-between rounded-[16px] border border-border bg-white px-4 py-2 shadow-xs">
           <Label
             htmlFor="design-border-width"
             className="text-[13px] font-medium text-slate-600"

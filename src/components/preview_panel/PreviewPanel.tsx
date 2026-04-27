@@ -22,6 +22,7 @@ import { DesignPanel } from "./DesignPanel";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useTranslation } from "react-i18next";
 import { ipc } from "@/ipc/types";
+import { useSettings } from "@/hooks/useSettings";
 
 interface ConsoleHeaderProps {
   isOpen: boolean;
@@ -64,9 +65,12 @@ export function PreviewPanel() {
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const { runApp, loading, app } = useRunApp();
+  const { settings } = useSettings();
   const { loadEdgeLogs } = useSupabase();
   const key = useAtomValue(previewPanelKeyAtom);
   const consoleEntries = useAtomValue(appConsoleEntriesAtom);
+  const shouldShowConsole =
+    process.env.NODE_ENV === "development" || settings?.isTestMode === true;
 
   const latestMessage =
     consoleEntries.length > 0
@@ -168,7 +172,7 @@ export function PreviewPanel() {
               )}
             </div>
           </Panel>
-          {isConsoleOpen && (
+          {shouldShowConsole && isConsoleOpen && (
             <>
               <PanelResizeHandle className="h-1 bg-border hover:bg-gray-400 transition-colors cursor-row-resize" />
               <Panel id="console" minSize={10} defaultSize={30}>
@@ -185,7 +189,7 @@ export function PreviewPanel() {
           )}
         </PanelGroup>
       </div>
-      {!isConsoleOpen && (
+      {shouldShowConsole && !isConsoleOpen && (
         <ConsoleHeader
           isOpen={false}
           onToggle={() => setIsConsoleOpen(true)}

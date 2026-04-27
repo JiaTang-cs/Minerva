@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import {
-  Check,
-  ChevronDown,
-  ChevronUp,
-  MessageSquareMore,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  MessageSquareText,
 } from "lucide-react";
 import { unescapeXmlAttr, unescapeXmlContent } from "../../../shared/xmlEscape";
 
@@ -24,8 +25,7 @@ interface DyadAskUserQuestionProps {
 
 function parseQAEntries(content: string): QAEntry[] {
   const entries: QAEntry[] = [];
-  const pattern =
-    /<qa\s+([^>]*)>([\s\S]*?)<\/qa>/g;
+  const pattern = /<qa\s+([^>]*)>([\s\S]*?)<\/qa>/g;
   let match;
 
   while ((match = pattern.exec(content)) !== null) {
@@ -48,18 +48,11 @@ function parseQAEntries(content: string): QAEntry[] {
   return entries;
 }
 
-function splitAnswerIntoChips(answer: string): string[] {
-  return answer
-    .split(/,|，/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
 export function DyadAskUserQuestion({
   children,
   node,
 }: DyadAskUserQuestionProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const entries = useMemo(
     () => parseQAEntries(typeof children === "string" ? children : ""),
@@ -75,66 +68,97 @@ export function DyadAskUserQuestion({
     return null;
   }
 
+  const current = entries[currentIndex];
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < entries.length - 1;
+
   return (
-    <div className="my-3 overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm">
-      <button
-        type="button"
-        onClick={() => setIsExpanded((prev) => !prev)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/15"
-        aria-expanded={isExpanded}
-      >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground/90">
-            {count} questions answered
+    <div className="my-4 border rounded-lg overflow-hidden border-primary/20 bg-primary/5">
+      <div className="px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ClipboardList className="text-primary" size={20} />
+          <span className="font-semibold text-foreground">
+            Questionnaire Responses
+          </span>
+          <span className="flex items-center text-xs text-primary px-2 py-0.5 bg-primary/10 rounded-md font-medium">
+            {count} answered
           </span>
         </div>
-        {isExpanded ? (
-          <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        )}
-      </button>
+        <CheckCircle2 className="size-4 text-green-600 dark:text-green-500 shrink-0" />
+      </div>
 
-      {isExpanded && (
-        <>
-          <div className="h-px bg-border" />
-          <div className="space-y-4 px-4 py-4">
-            {entries.map((entry, index) => {
-              const chips = splitAnswerIntoChips(entry.answer);
-              const title = entry.header || entry.question;
-
-              return (
-                <div key={`${entry.question}-${index}`} className="space-y-2.5">
-                  <div className="flex items-center gap-2">
-                    <MessageSquareMore className="h-3.5 w-3.5 shrink-0 text-muted-foreground/65" />
-                    <p className="text-[13px] font-medium leading-5 text-muted-foreground">
-                      {title}
-                    </p>
-                  </div>
-
-                  {chips.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {chips.map((chip, chipIndex) => (
-                        <span
-                          key={`${chip}-${chipIndex}`}
-                          className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1.5 text-[13px] font-medium leading-5 text-foreground"
-                        >
-                          {chip}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[13px] leading-5 text-foreground">
-                      {entry.answer}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+      <div className="px-4 pb-4">
+        <div className="rounded-lg bg-(--background-lightest) dark:bg-zinc-900/60 border border-border/40 overflow-hidden">
+          <div className="px-3.5 pt-3 pb-2.5 bg-muted/40">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <MessageSquareText size={12} />
+                Guided question
+              </span>
+              {current.header && (
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary">
+                  {current.header}
+                </span>
+              )}
+            </div>
+            <p className="text-sm font-medium text-foreground leading-relaxed">
+              {current.question}
+            </p>
           </div>
-        </>
-      )}
+
+          <div className="h-px bg-border" />
+
+          <div className="px-3.5 pt-2.5 pb-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
+              Answer
+            </p>
+            <p className="text-sm text-foreground/90 leading-relaxed">
+              {current.answer}
+            </p>
+          </div>
+        </div>
+
+        {entries.length > 1 && (
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-1.5">
+              {entries.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`rounded-full transition-all duration-200 ${
+                    i === currentIndex
+                      ? "w-5 h-1.5 bg-primary"
+                      : "w-1.5 h-1.5 bg-primary/25 hover:bg-primary/40"
+                  }`}
+                  aria-label={`Go to question ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentIndex((i) => i - 1)}
+                disabled={!hasPrev}
+                className="p-1 rounded-md hover:bg-primary/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                aria-label="Previous question"
+              >
+                <ChevronLeft size={16} className="text-muted-foreground" />
+              </button>
+              <span className="text-xs text-muted-foreground tabular-nums min-w-[3ch] text-center">
+                {currentIndex + 1}/{entries.length}
+              </span>
+              <button
+                onClick={() => setCurrentIndex((i) => i + 1)}
+                disabled={!hasNext}
+                className="p-1 rounded-md hover:bg-primary/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                aria-label="Next question"
+              >
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

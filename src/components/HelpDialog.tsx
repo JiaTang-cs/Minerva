@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  BookOpenIcon,
   BugIcon,
   UploadIcon,
   ChevronLeftIcon,
@@ -434,13 +433,6 @@ ${formatLogsSection(debugInfo)}
       <DialogDescription>{t("help.helpOptions")}</DialogDescription>
       <div className="flex flex-col w-full mt-4 space-y-5">
         {/* Self-service help */}
-        <Button
-          variant="outline"
-          onClick={() => setIsHelpBotOpen(true)}
-          className="w-full py-6 bg-(--background-lightest)"
-        >
-          <BookOpenIcon className="mr-2 h-5 w-5" /> {t("help.openDocs")}
-        </Button>
         <Button
           variant="default"
           onClick={() => setIsHelpBotOpen(true)}

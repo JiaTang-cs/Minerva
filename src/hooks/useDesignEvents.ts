@@ -54,7 +54,7 @@ export function useDesignEvents() {
           Notification.permission === "granted" &&
           !document.hasFocus()
         ) {
-          new Notification(app?.name ?? "minerva", {
+          new Notification(app?.name ?? "Minerva", {
             body: "Ask user question needs your input",
           });
         }

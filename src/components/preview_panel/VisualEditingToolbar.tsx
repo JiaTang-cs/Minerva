@@ -75,6 +75,9 @@ export function VisualEditingToolbar({
   isDynamicImage,
   currentImageSrc,
 }: VisualEditingToolbarProps) {
+  const toolbarButtonClass =
+    "p-1 rounded-md transition-colors hover:bg-primary/10 dark:hover:bg-primary/20 text-muted-foreground hover:text-primary dark:hover:text-primary";
+
   const coordinates = useAtomValue(currentComponentCoordinatesAtom);
   const [currentMargin, setCurrentMargin] = useState({ x: "", y: "" });
   const [currentPadding, setCurrentPadding] = useState({ x: "", y: "" });
@@ -371,7 +374,7 @@ export function VisualEditingToolbar({
           render={
             <button
               onClick={handleDeselectComponent}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+              className={toolbarButtonClass}
               aria-label="Deselect Component"
             />
           }

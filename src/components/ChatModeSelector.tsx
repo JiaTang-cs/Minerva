@@ -120,7 +120,7 @@ export function ChatModeSelector() {
                   selectedMode === "build" || selectedMode === "local-agent"
                     ? "text-foreground/80 hover:text-foreground hover:bg-muted/60"
                     : selectedMode === "ask"
-                      ? "bg-purple-500/10 text-purple-600 hover:bg-purple-500/15 dark:bg-purple-500/15 dark:text-purple-400 dark:hover:bg-purple-500/20"
+                      ? "bg-primary/12 text-primary hover:bg-primary/18 dark:bg-primary/18 dark:text-[#9ab0ff] dark:hover:bg-primary/24"
                       : selectedMode === "plan"
                       ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/15 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/20"
                       : selectedMode === "design"
@@ -192,7 +192,7 @@ export function ChatModeSelector() {
           <SelectItem value="ask">
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-1.5">
-                <MessageCircle size={14} className="text-purple-500" />
+                <MessageCircle size={14} className="text-primary" />
                 <span className="font-medium">{t("chatMode.ask")}</span>
               </div>
               <span className="text-xs text-muted-foreground ml-[22px]">
@@ -216,7 +216,7 @@ function McpChip({ count }: { count: number }) {
         render={
           <span
             data-testid="mcp-servers-chip"
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800 cursor-default"
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-primary/12 text-primary dark:bg-primary/20 dark:text-[#a6b9ff] border border-primary/20 dark:border-primary/35 cursor-default"
           />
         }
       >

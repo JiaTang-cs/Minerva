@@ -89,7 +89,7 @@ export function DesignToolbar({
   return (
     <>
       <div className="absolute left-6 top-4 z-20 flex items-center gap-3 rounded-[20px] border border-white/70 bg-white/95 px-3.5 py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.07)] backdrop-blur">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[16px] bg-[#111827] text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-[16px] bg-primary text-primary-foreground">
           <GripHorizontal className="h-[18px] w-[18px]" />
         </div>
         <div className="min-w-0">
@@ -130,8 +130,8 @@ export function DesignToolbar({
             className={cn(
               "flex h-8 items-center gap-1 rounded-[10px] px-3 text-[11px] font-medium transition-colors",
               viewMode === "view"
-                ? "bg-[#f3efe8] text-slate-900"
-                : "text-slate-500 hover:bg-[#f7f4ef]",
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
             <Eye className="h-3 w-3" />
@@ -143,8 +143,8 @@ export function DesignToolbar({
             className={cn(
               "flex h-8 items-center gap-1 rounded-[10px] px-3 text-[11px] font-medium transition-colors",
               viewMode === "edit"
-                ? "bg-[#f3efe8] text-slate-900"
-                : "text-slate-500 hover:bg-[#f7f4ef]",
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
             <Pencil className="h-3 w-3" />
@@ -159,7 +159,7 @@ export function DesignToolbar({
           title={isChatPanelHidden ? "Show chat" : "Hide chat"}
           aria-label={isChatPanelHidden ? "Show chat" : "Hide chat"}
           onClick={onToggleChatPanel}
-          className="rounded-[14px] p-2 text-slate-500 hover:bg-[#f7f4ef]"
+          className="rounded-[14px] p-2 text-muted-foreground hover:bg-muted"
         >
           {isChatPanelHidden ? (
             <Maximize2 className="h-4 w-4" />
@@ -197,9 +197,9 @@ export function DesignToolbar({
               }
             }}
             className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-[16px] text-slate-500 transition-colors hover:bg-[#f7f4ef]",
+              "flex h-10 w-10 items-center justify-center rounded-[16px] text-muted-foreground transition-colors hover:bg-muted",
               (canvasTool === key || inspectorPanel === key) &&
-                "bg-[#f3efe8] text-slate-900",
+                "bg-muted text-foreground",
             )}
           >
             <Icon className="h-[18px] w-[18px]" />
@@ -253,9 +253,9 @@ export function DesignToolbar({
                   onClick={onClick}
                   disabled={disabled}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-[12px] transition-colors hover:bg-[#f7f4ef]",
+                    "flex h-8 w-8 items-center justify-center rounded-[12px] transition-colors hover:bg-muted",
                     inspectorPanel === key
-                      ? "bg-[#f3efe8] text-slate-900"
+                      ? "bg-muted text-foreground"
                       : disabled
                         ? "cursor-not-allowed text-slate-300"
                         : "text-slate-500",
@@ -264,7 +264,7 @@ export function DesignToolbar({
                   <Icon className="h-4 w-4" />
                 </button>
                 {dividerAfter ? (
-                  <div className="mx-1 h-5 w-px rounded-full bg-[#ece6dd]" />
+                  <div className="mx-1 h-5 w-px rounded-full bg-border" />
                 ) : null}
               </React.Fragment>
             ))}
@@ -327,8 +327,8 @@ export function DesignToolbar({
             className={cn(
               "flex items-center gap-2 rounded-[15px] px-4 py-2 text-[14px] font-medium transition-colors",
               deviceMode === key
-                ? "bg-[#111827] text-white"
-                : "text-slate-500 hover:bg-[#f7f4ef]",
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -336,7 +336,7 @@ export function DesignToolbar({
           </button>
         ))}
 
-        <div className="mx-2 h-7 w-px bg-[#ece5da]" />
+        <div className="mx-2 h-7 w-px bg-border" />
 
         {[40, 60, 80, 100].map((value) => (
           <button
@@ -346,8 +346,8 @@ export function DesignToolbar({
             className={cn(
               "rounded-[14px] px-3 py-2 text-[14px] font-medium transition-colors",
               zoomPercent === value
-                ? "bg-[#f3efe8] text-slate-900"
-                : "text-slate-500 hover:bg-[#f7f4ef]",
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
             {value}%
