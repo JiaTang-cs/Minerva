@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Amanrry/minerva.git"
+    "url": "git+ssh://git@github.com/SeassTar-xx/minerva.git"
   },
   "main": ".vite/build/main.js",
   "scripts": {
@@ -20,7 +20,9 @@
     "dev:engine": "cross-env DYAD_ENGINE_URL=http://localhost:8080/v1 npm start",
     "staging:engine": "cross-env DYAD_ENGINE_URL=https://staging---dyad-llm-engine-kq7pivehnq-uc.a.run.app/v1 npm start",
     "package": "npm run clean && electron-forge package",
+    "package:mac": "cross-env E2E_TEST_BUILD=true electron-forge package --platform darwin",
     "make": "npm run clean && electron-forge make",
+    "make:mac": "cross-env E2E_TEST_BUILD=true electron-forge make --platform darwin",
     "publish": "npm run clean && electron-forge publish",
     "verify-release": "node scripts/verify-release-assets.js",
     "ts": "npm run ts:main && npm run ts:workers",
@@ -78,7 +80,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vscode/ripgrep": "^1.17.0",
     "ai": "^6.0.68",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -184,7 +186,7 @@
     }
   },
   "engines": {
-    "node": ">=24"
+    "node": "24.x || 25.x || 26.x"
   },
   "productName": "minerva"
 }

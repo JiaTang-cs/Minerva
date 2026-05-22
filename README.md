@@ -28,13 +28,20 @@ Unlike a hosted SaaS workflow, Minerva keeps the editor on your machine and lets
 
 ### Requirements
 
-- Node.js `>=24`
+- Node.js `24.x`, `25.x`, or `26.x`
 - npm
 
 ### Install dependencies
 
 ```sh
 npm install
+```
+
+On macOS, if your global npm cache has permission problems from an older
+sudo install, use a temporary project cache instead:
+
+```sh
+npm install --cache /private/tmp/minerva-npm-cache
 ```
 
 ### Set up environment variables
@@ -83,12 +90,32 @@ npm test
 # package the app
 npm run package
 
+# package the app locally for macOS without Apple signing/notarization
+npm run package:mac
+
 # create installers / distributables
 npm run make
+
+# create a local macOS zip without Apple signing/notarization
+npm run make:mac
 
 # build packaged app for e2e
 npm run build
 ```
+
+## macOS Builds
+
+For local development on macOS, use `npm run dev` to launch the app and
+`npm run package:mac` or `npm run make:mac` to create a local `.app`/`.zip`.
+These local commands skip Apple code signing and notarization so they work on a
+developer machine without Apple Developer credentials.
+
+Release builds can still be signed and notarized by setting:
+
+- `APPLE_TEAM_ID`
+- `APPLE_ID`
+- `APPLE_PASSWORD`
+- Optional: `MACOS_SIGN_IDENTITY` or `APPLE_SIGNING_IDENTITY`
 
 ## Testing
 

@@ -64,6 +64,13 @@ const ignore = (file: string) => {
 
 const isEndToEndTestBuild = process.env.E2E_TEST_BUILD === "true";
 const isWindowsSigningEnabled = process.env.WINDOWS_SIGN === "true";
+const isMacSigningEnabled =
+  process.platform === "darwin" &&
+  !isEndToEndTestBuild &&
+  Boolean(process.env.APPLE_TEAM_ID);
+const isMacNotarizationEnabled =
+  isMacSigningEnabled &&
+  Boolean(process.env.APPLE_ID && process.env.APPLE_PASSWORD);
 
 if (isWindowsSigningEnabled && !process.env.AZURE_CODE_SIGNING_DLIB) {
   throw new Error(
@@ -98,24 +105,27 @@ const config: ForgeConfig = {
     ],
     icon: "./assets/icon/logo",
 
-    osxSign: isEndToEndTestBuild
-      ? undefined
-      : ({
-          identity: process.env.APPLE_TEAM_ID,
+    osxSign: isMacSigningEnabled
+      ? ({
+          identity:
+            process.env.MACOS_SIGN_IDENTITY ||
+            process.env.APPLE_SIGNING_IDENTITY ||
+            undefined,
           // Surface the actual signing error instead of silently continuing
           // (@electron/packager defaults continueOnError to true, which masks failures)
           continueOnError: false,
           // Skip provisioning profile search (not needed for Developer ID distribution,
           // and the cwd scan crashes on broken symlinks like CLAUDE.md)
           preEmbedProvisioningProfile: false,
-        } as Record<string, unknown>),
-    osxNotarize: isEndToEndTestBuild
-      ? undefined
-      : {
+        } as Record<string, unknown>)
+      : undefined,
+    osxNotarize: isMacNotarizationEnabled
+      ? {
           appleId: process.env.APPLE_ID!,
           appleIdPassword: process.env.APPLE_PASSWORD!,
           teamId: process.env.APPLE_TEAM_ID!,
-        },
+        }
+      : undefined,
     asar: {
       // node-pty loads helper binaries like spawn-helper and winpty-agent from disk.
       unpackDir: "node_modules/node-pty",
@@ -135,12 +145,12 @@ const config: ForgeConfig = {
         ? {
             windowsSign,
             iconUrl:
-              "https://raw.githubusercontent.com/Amanrry/minerva/dev/assets/icon/logo.ico",
+              "https://raw.githubusercontent.com/SeassTar-xx/minerva/dev/assets/icon/logo.ico",
             setupIcon: "./assets/icon/logo.ico",
           }
         : {
             iconUrl:
-              "https://raw.githubusercontent.com/Amanrry/minerva/dev/assets/icon/logo.ico",
+              "https://raw.githubusercontent.com/SeassTar-xx/minerva/dev/assets/icon/logo.ico",
             setupIcon: "./assets/icon/logo.ico",
           },
     ),
@@ -165,8 +175,8 @@ const config: ForgeConfig = {
       name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: "dyad-sh",
-          name: "dyad",
+          owner: "SeassTar-xx",
+          name: "minerva",
         },
         draft: true,
         force: true,
