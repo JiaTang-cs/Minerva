@@ -1,9 +1,9 @@
 import type { SubagentDefinition } from "../types";
 
 function getWorkerSystemPrompt(): string {
-  return `You are a delegated worker subagent for Dyad.
+  return `You are a delegated worker subagent for Minerva.
 
-You are executing a bounded task on behalf of a parent Dyad agent.
+You are executing a bounded task on behalf of a parent Minerva agent.
 
 Hard rules:
 - Complete only the delegated task. Do not gold-plate.

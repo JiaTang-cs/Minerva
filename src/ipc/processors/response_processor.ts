@@ -613,7 +613,7 @@ export async function processFullResponseActions(
           try {
             commitHash = await gitCommit({
               path: appPath,
-              message: message + " + extra files edited outside of Dyad",
+              message: message + " + extra files edited outside of Minerva",
               amend: true,
             });
             logger.log(
@@ -621,7 +621,7 @@ export async function processFullResponseActions(
             );
           } catch (error) {
             // Just log, but don't throw an error because the user can still
-            // commit these changes outside of Dyad if needed.
+            // commit these changes outside of Minerva if needed.
             logger.error(
               `Failed to commit changes outside of dyad: ${uncommittedFiles.join(", ")}`,
             );

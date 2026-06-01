@@ -1,5 +1,5 @@
 import { stepCountIs, streamText } from "ai";
-import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { MinervaError, MinervaErrorKind } from "@/errors/dyad_error";
 import { readSettings } from "@/main/settings";
 import { getModelClient } from "@/ipc/utils/get_model_client";
 import { getProviderOptions, getAiHeaders, DYAD_INTERNAL_REQUEST_ID_HEADER } from "@/ipc/utils/provider_options";
@@ -25,9 +25,9 @@ export async function runSubagentStream(
   });
 
   if (resolved.toolNames.length === 0) {
-    throw new DyadError(
+    throw new MinervaError(
       `Subagent '${definition.name}' has no available tools in this mode.`,
-      DyadErrorKind.Precondition,
+      MinervaErrorKind.Precondition,
     );
   }
 

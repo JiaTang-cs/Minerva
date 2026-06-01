@@ -48,7 +48,7 @@ export function registerProHandlers() {
     const apiKey = settings.providerSettings?.auto?.apiKey?.value;
 
     if (!apiKey) {
-      logger.error("LLM Gateway API key (Dyad Pro) is not configured.");
+      logger.error("LLM Gateway API key (Minerva Pro) is not configured.");
       return null;
     }
 
@@ -110,7 +110,7 @@ export function registerProHandlers() {
 
       if (!apiKey || !settings.enableDyadPro) {
         throw new Error(
-          "Dyad Pro is not enabled. Voice-to-text requires a Pro subscription.",
+          "Minerva Pro is not enabled. Voice-to-text requires a Pro subscription.",
         );
       }
 

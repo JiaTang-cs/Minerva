@@ -1,12 +1,12 @@
-# DyadError and telemetry
+# MinervaError and telemetry
 
-Use `DyadError` from `src/errors/dyad_error.ts` when throwing from **main process / IPC handlers** (or code only called from there) for failures that are **not product bugs**: validation, missing entities, auth/setup prerequisites, user refusal, conflicts, rate limits, etc.
+Use `MinervaError` from `src/errors/dyad_error.ts` when throwing from **main process / IPC handlers** (or code only called from there) for failures that are **not product bugs**: validation, missing entities, auth/setup prerequisites, user refusal, conflicts, rate limits, etc.
 
 ## API
 
-- **`DyadErrorKind`** — enum classifying the failure.
-- **`new DyadError(message, kind)`** — `error.name` is `"DyadError"`; use `error.kind` for branching.
-- **`isDyadError(error)`** — type guard.
+- **`MinervaErrorKind`** — enum classifying the failure.
+- **`new MinervaError(message, kind)`** — `error.name` is `"MinervaError"`; use `error.kind` for branching.
+- **`isMinervaError(error)`** — type guard.
 
 ## Telemetry (PostHog `$exception`)
 
@@ -24,22 +24,22 @@ Use `DyadError` from `src/errors/dyad_error.ts` when throwing from **main proces
 
 **Always sent** (actionable or unknown): `External`, `Internal`, `Unknown`.
 
-Prefer **`DyadError`** over growing `FILTERED_EXCEPTION_MESSAGES` in `telemetry.ts` when the failure is stable and classified.
+Prefer **`MinervaError`** over growing `FILTERED_EXCEPTION_MESSAGES` in `telemetry.ts` when the failure is stable and classified.
 
 ## IPC handlers
 
-- **`createTypedHandler` / `createLoggedTypedHandler`** rethrow the original error after telemetry — `DyadError` is preserved.
-- **`createLoggedHandler` (`safe_handle.ts`)** rethrows `DyadError` unchanged so the renderer keeps `instanceof DyadError`.
+- **`createTypedHandler` / `createLoggedTypedHandler`** rethrow the original error after telemetry — `MinervaError` is preserved.
+- **`createLoggedHandler` (`safe_handle.ts`)** rethrows `MinervaError` unchanged so the renderer keeps `instanceof MinervaError`.
 
 ## Migration
 
-Most IPC/main paths and shared utilities (`git_utils`, Supabase admin, local agent tools, etc.) now use **`DyadError`** with an appropriate kind. Remaining `throw new Error(...)` are usually **dynamic** messages (`throw new Error(err.message || …)`), **multi-line** throws, or **renderer** code where telemetry filtering is less critical.
+Most IPC/main paths and shared utilities (`git_utils`, Supabase admin, local agent tools, etc.) now use **`MinervaError`** with an appropriate kind. Remaining `throw new Error(...)` are usually **dynamic** messages (`throw new Error(err.message || …)`), **multi-line** throws, or **renderer** code where telemetry filtering is less critical.
 
-**Do not** import `DyadError` inside preload (`src/preload.ts`) without verifying the preload bundle; preload continues to use plain `Error` for invalid channels.
+**Do not** import `MinervaError` inside preload (`src/preload.ts`) without verifying the preload bundle; preload continues to use plain `Error` for invalid channels.
 
 **Legacy:** `FILTERED_EXCEPTION_MESSAGES` and `RateLimitError` (429) handling in `telemetry.ts` remain for any plain `Error` paths not yet migrated.
 
 ## Automation pitfalls
 
-- When auto-inserting `import { DyadError, DyadErrorKind } from "@/errors/dyad_error"`, **never** place it inside another `import { ... }` block — it must be its own import statement or TypeScript fails with “Identifier expected” at the next line.
+- When auto-inserting `import { MinervaError, MinervaErrorKind } from "@/errors/dyad_error"`, **never** place it inside another `import { ... }` block — it must be its own import statement or TypeScript fails with “Identifier expected” at the next line.
 - Automated line-based migrations must **not** match strings inside **test fixtures** (e.g. template literals that embed sample source code); that can inject imports into fake file content.

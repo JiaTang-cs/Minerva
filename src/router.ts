@@ -12,6 +12,7 @@ import { skillsCatalogRoute } from "./routes/skills-catalog";
 import { themesRoute } from "./routes/themes";
 import { promptsRoute } from "./routes/prompts";
 import { mediaRoute } from "./routes/media";
+import { minervaRoute } from "./routes/minerva";
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
@@ -22,6 +23,7 @@ const routeTree = rootRoute.addChildren([
   themesRoute,
   promptsRoute,
   mediaRoute,
+  minervaRoute,
   chatRoute,
   appDetailsRoute,
   settingsRoute.addChildren([providerSettingsRoute]),

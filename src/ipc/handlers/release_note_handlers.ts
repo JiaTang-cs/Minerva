@@ -25,7 +25,7 @@ export function registerReleaseNoteHandlers() {
       if (IS_TEST_BUILD) {
         return { exists: false };
       }
-      const releaseNoteUrl = `https://www.dyad.sh/docs/releases/${version}`;
+      const releaseNoteUrl = `https://github.com/SeassTar-xx/minerva/releases/tag/${version}`;
 
       logger.debug(`Checking for release note at: ${releaseNoteUrl}`);
 

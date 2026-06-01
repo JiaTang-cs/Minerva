@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
+import { MinervaError, MinervaErrorKind } from "@/errors/dyad_error";
 import { getInternalAppSubdirPath } from "@/ipc/utils/internal_app_dir";
 import { BUILT_IN_SUBAGENTS } from "./built-in";
 import { parseMarkdownFrontmatter } from "./frontmatter";
@@ -122,9 +122,9 @@ export async function resolveSubagentByName(
   const registry = await loadSubagentRegistry(appPath);
   const subagent = registry.activeSubagents.find((entry) => entry.name === name);
   if (!subagent) {
-    throw new DyadError(
+    throw new MinervaError(
       `Subagent not found: ${name}`,
-      DyadErrorKind.NotFound,
+      MinervaErrorKind.NotFound,
     );
   }
   return { subagent, failedFiles: registry.failedFiles };
@@ -174,7 +174,7 @@ export function getSubagentSystemPrompt(
   options: ResolveSubagentToolsOptions,
 ): string {
   const parentMode = getParentMode(options);
-  const header = `You are a delegated subagent inside Dyad.\nYou are working for a parent agent and your raw transcript is not shown directly to the user.`;
+  const header = `You are a delegated subagent inside Minerva.\nYou are working for a parent agent and your raw transcript is not shown directly to the user.`;
   const guardrails = `\n\nGlobal rules:\n- You must not recursively delegate or attempt to call the task tool.\n- Work only within the tools available in this run.\n- Keep your final answer concise and handoff-oriented.\n- Do not claim work you did not actually complete.`;
   return `${header}${guardrails}\n\n${definition.getSystemPrompt({ parentMode })}`;
 }

@@ -60,7 +60,7 @@ describe("webSearchTool", () => {
             },
             {
               title: "Dyad GitHub",
-              link: "https://github.com/dyad-sh/dyad",
+              link: "https://github.com/SeassTar-xx/minerva",
               snippet: "Open source repository",
             },
           ],

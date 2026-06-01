@@ -67,7 +67,7 @@ const screenTransition = {
 // =============================================================================
 
 const GITHUB_ISSUES_BASE =
-  "https://github.com/dyad-sh/dyad/issues/new" as const;
+  "https://github.com/SeassTar-xx/minerva/issues/new" as const;
 
 function formatSettingsLines(settings: UserSettings | null): string {
   if (!settings) return "Settings not available";
@@ -85,7 +85,7 @@ function formatSettingsLines(settings: UserSettings | null): string {
 
 function formatSystemInfoSection(debugInfo: SystemDebugInfo): string {
   return `## System Information
-- Dyad Version: ${debugInfo.dyadVersion}
+- Minerva Version: ${debugInfo.dyadVersion}
 - Platform: ${debugInfo.platform}
 - Architecture: ${debugInfo.architecture}
 - Node Version: ${debugInfo.nodeVersion || "n/a"}
@@ -687,4 +687,3 @@ ${formatLogsSection(debugInfo)}
     </>
   );
 }
-

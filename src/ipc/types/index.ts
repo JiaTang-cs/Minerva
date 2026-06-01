@@ -55,6 +55,7 @@ export { audioContracts } from "./audio";
 export { mediaContracts } from "./media";
 export { imageGenerationContracts } from "./image_generation";
 export { designContracts, designEvents } from "./design";
+export { minervaContracts } from "./minerva";
 
 // =============================================================================
 // Client Exports
@@ -89,6 +90,7 @@ export { audioClient } from "./audio";
 export { mediaClient } from "./media";
 export { imageGenerationClient } from "./image_generation";
 export { designClient, designEventClient } from "./design";
+export { minervaClient } from "./minerva";
 
 // =============================================================================
 // Type Exports
@@ -147,6 +149,14 @@ export type {
   CreateDraftComponentParams,
   UpdateDraftComponentParams,
 } from "./design";
+export type {
+  MinervaCapability,
+  MinervaAgentTrajectory,
+  MinervaDupoEvaluationResult,
+  MinervaEngineeringLoopState,
+  MinervaDesignQualityReport,
+  MinervaSecurityGateResult,
+} from "./minerva";
 
 // Agent types
 export type {
@@ -408,6 +418,7 @@ import { audioClient } from "./audio";
 import { mediaClient } from "./media";
 import { imageGenerationClient } from "./image_generation";
 import { designClient, designEventClient } from "./design";
+import { minervaClient } from "./minerva";
 
 /**
  * Unified IPC client with all domains organized by namespace.
@@ -468,6 +479,7 @@ export const ipc = {
   media: mediaClient,
   imageGeneration: imageGenerationClient,
   design: designClient,
+  minerva: minervaClient,
 
   // Event clients for main->renderer pub/sub
   events: {

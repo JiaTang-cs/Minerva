@@ -99,7 +99,7 @@ const config: ForgeConfig = {
       : undefined,
     protocols: [
       {
-        name: "Dyad",
+        name: "Minerva",
         schemes: ["dyad"],
       },
     ],

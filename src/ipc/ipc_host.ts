@@ -43,6 +43,7 @@ import { registerPlanHandlers } from "./handlers/plan_handlers";
 import { registerDesignHandlers } from "./handlers/design_handlers";
 import { registerMediaHandlers } from "./handlers/media_handlers";
 import { registerImageGenerationHandlers } from "./handlers/image_generation_handlers";
+import { registerMinervaHandlers } from "./handlers/minerva_handlers";
 
 export function registerIpcHandlers() {
   // Register all IPC handlers by category
@@ -91,4 +92,5 @@ export function registerIpcHandlers() {
   registerDesignHandlers();
   registerMediaHandlers();
   registerImageGenerationHandlers();
+  registerMinervaHandlers();
 }

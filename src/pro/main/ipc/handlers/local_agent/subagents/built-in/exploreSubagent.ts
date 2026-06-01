@@ -1,7 +1,7 @@
 import type { SubagentDefinition } from "../types";
 
 function getExploreSystemPrompt(): string {
-  return `You are a read-only exploration subagent for Dyad.
+  return `You are a read-only exploration subagent for Minerva.
 
 You are delegated to search, trace, and explain codebase behavior without changing state.
 

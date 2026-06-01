@@ -249,7 +249,7 @@ export async function transcribeWithDyadEngine(
   const apiKey = loadApiKey({
     apiKey: options.apiKey,
     environmentVariableName: "DYAD_PRO_API_KEY",
-    description: "Dyad Pro API key",
+    description: "Minerva Pro API key",
   });
   logger.info("transcribing with dyad engine with baseURL", baseURL);
 

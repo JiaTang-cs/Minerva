@@ -44,6 +44,7 @@ import { audioContracts } from "../types/audio";
 import { mediaContracts } from "../types/media";
 import { imageGenerationContracts } from "../types/image_generation";
 import { designContracts, designEvents } from "../types/design";
+import { minervaContracts } from "../types/minerva";
 
 // =============================================================================
 // Invoke Channels (derived from all contracts)
@@ -103,6 +104,7 @@ export const VALID_INVOKE_CHANNELS = [
   ...getInvokeChannels(mediaContracts),
   ...getInvokeChannels(imageGenerationContracts),
   ...getInvokeChannels(designContracts),
+  ...getInvokeChannels(minervaContracts),
 
   // Test-only channels
   ...TEST_INVOKE_CHANNELS,

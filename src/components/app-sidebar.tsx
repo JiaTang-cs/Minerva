@@ -6,6 +6,7 @@ import {
   Store,
   BookOpen,
   Sparkles,
+  CircuitBoard,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useSidebar } from "@/components/ui/sidebar"; // import useSidebar hook
@@ -66,6 +67,12 @@ const items = [
     icon: Sparkles,
   },
   {
+    id: "minerva",
+    title: "Minerva",
+    to: "/minerva",
+    icon: CircuitBoard,
+  },
+  {
     id: "hub",
     title: "Hub",
     to: "/hub",
@@ -79,6 +86,7 @@ const selectedItemByHoverState = {
   "start-hover:settings": "Settings",
   "start-hover:library": "Library",
   "start-hover:skills": "Skills",
+  "start-hover:minerva": "Minerva",
 } as const;
 
 const hoverStateByItemId = {
@@ -87,6 +95,7 @@ const hoverStateByItemId = {
   settings: "start-hover:settings",
   library: "start-hover:library",
   skills: "start-hover:skills",
+  minerva: "start-hover:minerva",
   hub: undefined,
 } as const;
 
@@ -97,6 +106,7 @@ type HoverState =
   | "start-hover:settings"
   | "start-hover:library"
   | "start-hover:skills"
+  | "start-hover:minerva"
   | "clear-hover"
   | "no-hover";
 
@@ -133,6 +143,7 @@ export function AppSidebar() {
   const isSettingsRoute = routerState.location.pathname.startsWith("/settings");
   const isLibraryRoute = routerState.location.pathname.startsWith("/library");
   const isSkillsRoute = routerState.location.pathname.startsWith("/skills");
+  const isMinervaRoute = routerState.location.pathname.startsWith("/minerva");
 
   let selectedItem: string | null = null;
   if (hoverState in selectedItemByHoverState) {
@@ -151,6 +162,8 @@ export function AppSidebar() {
       selectedItem = "Library";
     } else if (isSkillsRoute) {
       selectedItem = "Skills";
+    } else if (isMinervaRoute) {
+      selectedItem = "Minerva";
     }
   }
 
@@ -225,14 +238,13 @@ function AppIcons({
     settings: t("navigation.settings"),
     library: t("navigation.library"),
     skills: tSkills("navigation.title"),
+    minerva: "Minerva",
     hub: t("navigation.hub"),
   } as const;
 
   return (
     // When collapsed: only show the main menu
     <SidebarGroup className="pr-0">
-      {/* <SidebarGroupLabel>Dyad</SidebarGroupLabel> */}
-
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
