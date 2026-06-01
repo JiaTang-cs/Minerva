@@ -116,12 +116,6 @@ Minerva 将安全能力内置到生成流程，而不是等代码上线后再补
 npm install
 ```
 
-如果 macOS 上的全局 npm 缓存存在旧版 `sudo` 安装导致的权限问题，可以使用临时缓存：
-
-```sh
-npm install --cache /private/tmp/minerva-npm-cache
-```
-
 ### 配置环境变量
 
 复制 `.env.example` 为 `.env`，按需填写模型、搜索、GitHub 和部署相关密钥。
@@ -168,32 +162,12 @@ npm test
 # 打包应用
 npm run package
 
-# macOS 本地打包，不进行 Apple 签名和公证
-npm run package:mac
-
 # 生成安装包 / 分发产物
 npm run make
 
 # 构建 e2e 测试所需应用
 npm run build
 ```
-
-## macOS 打包
-
-本地开发时可使用：
-
-```sh
-npm run dev
-npm run package:mac
-npm run make:mac
-```
-
-这些本地命令会跳过 Apple 代码签名和公证，适合没有 Apple Developer 凭证的开发机。正式发布可配置以下变量：
-
-- `APPLE_TEAM_ID`
-- `APPLE_ID`
-- `APPLE_PASSWORD`
-- 可选：`MACOS_SIGN_IDENTITY` 或 `APPLE_SIGNING_IDENTITY`
 
 ## 测试
 
