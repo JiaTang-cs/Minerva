@@ -28,7 +28,9 @@ permissions:
 jobs:
   build-windows:
     name: Build Windows installer
-    runs-on: windows-latest
+    # windows-latest 预装 VS 2026（版本号 18），electron 的 node-gyp 不识别，
+    # 导致找不到 MSVC 编译器。用 windows-2022（VS2022/17.4，node-gyp 完整支持）。
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
