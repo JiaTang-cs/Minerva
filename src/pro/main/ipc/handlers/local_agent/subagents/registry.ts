@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { MinervaError, MinervaErrorKind } from "@/errors/dyad_error";
+import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
 import { getInternalAppSubdirPath } from "@/ipc/utils/internal_app_dir";
 import { BUILT_IN_SUBAGENTS } from "./built-in";
 import { parseMarkdownFrontmatter } from "./frontmatter";
@@ -122,9 +122,9 @@ export async function resolveSubagentByName(
   const registry = await loadSubagentRegistry(appPath);
   const subagent = registry.activeSubagents.find((entry) => entry.name === name);
   if (!subagent) {
-    throw new MinervaError(
+    throw new DyadError(
       `Subagent not found: ${name}`,
-      MinervaErrorKind.NotFound,
+      DyadErrorKind.NotFound,
     );
   }
   return { subagent, failedFiles: registry.failedFiles };
