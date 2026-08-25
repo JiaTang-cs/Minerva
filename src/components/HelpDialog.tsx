@@ -67,7 +67,7 @@ const screenTransition = {
 // =============================================================================
 
 const GITHUB_ISSUES_BASE =
-  "https://github.com/SeassTar-xx/minerva/issues/new" as const;
+  "https://github.com/JiaTang-cs/Minerva/issues/new" as const;
 
 function formatSettingsLines(settings: UserSettings | null): string {
   if (!settings) return "Settings not available";

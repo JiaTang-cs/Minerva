@@ -1,0 +1,63 @@
+# .github/workflows/release-windows.yml
+#
+# 构建 Windows 安装包 (Squirrel .exe) 并上传到 GitHub Release。
+# 触发方式：
+#   1. push 一个 v* 标签（例如 v0.43.2）→ 自动构建并发布 release
+#   2. 手动到 Actions 页面 Run workflow，填 tag（例如 v0.43.2）
+#
+# 说明：本 workflow 不进行代码签名（未配置签名 secrets），
+# 生成的 exe 首次运行时 Windows SmartScreen 会提示"未知发布者"，
+# 点"更多信息"→"仍要运行"即可安装。
+
+name: Release Windows exe
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.43.2, 需与 package.json 的 version 一致)"
+        required: true
+        default: v0.43.2
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          # 避免 @vscode/ripgrep 下载二进制时触发 GitHub API 限流
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Windows installer (squirrel)
+        run: npx electron-forge make --platform=win32
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+          name: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+          files: |
+            out/make/squirrel.windows/x64/*-Setup.exe
+            out/make/squirrel.windows/x64/*.exe
+          fail_on_unmatched_files: true
+          generate_release_notes: true

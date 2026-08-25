@@ -145,12 +145,12 @@ const config: ForgeConfig = {
         ? {
             windowsSign,
             iconUrl:
-              "https://raw.githubusercontent.com/SeassTar-xx/minerva/dev/assets/icon/logo.ico",
+              "https://raw.githubusercontent.com/JiaTang-cs/Minerva/main/assets/icon/logo.ico",
             setupIcon: "./assets/icon/logo.ico",
           }
         : {
             iconUrl:
-              "https://raw.githubusercontent.com/SeassTar-xx/minerva/dev/assets/icon/logo.ico",
+              "https://raw.githubusercontent.com/JiaTang-cs/Minerva/main/assets/icon/logo.ico",
             setupIcon: "./assets/icon/logo.ico",
           },
     ),
@@ -175,7 +175,7 @@ const config: ForgeConfig = {
       name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: "SeassTar-xx",
+          owner: "JiaTang-cs",
           name: "minerva",
         },
         draft: true,

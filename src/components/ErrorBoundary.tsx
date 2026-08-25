@@ -59,14 +59,14 @@ ${debugInfo.logs.slice(-3_500) || "No logs available"}
       const encodedTitle = encodeURIComponent(
         "[bug] Error in Minerva application",
       );
-      const githubIssueUrl = `https://github.com/SeassTar-xx/minerva/issues/new?title=${encodedTitle}&labels=bug,filed-from-app,client-error&body=${encodedBody}`;
+      const githubIssueUrl = `https://github.com/JiaTang-cs/Minerva/issues/new?title=${encodedTitle}&labels=bug,filed-from-app,client-error&body=${encodedBody}`;
 
       // Open the pre-filled GitHub issue page
       await ipc.system.openExternalUrl(githubIssueUrl);
     } catch (err) {
       console.error("Failed to prepare bug report:", err);
       // Fallback to opening the regular GitHub issue page
-      ipc.system.openExternalUrl("https://github.com/SeassTar-xx/minerva/issues/new");
+      ipc.system.openExternalUrl("https://github.com/JiaTang-cs/Minerva/issues/new");
     } finally {
       setIsLoading(false);
     }

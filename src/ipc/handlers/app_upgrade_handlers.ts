@@ -21,14 +21,14 @@ const availableUpgrades: Omit<AppUpgrade, "isNeeded">[] = [
     title: "Enable select component to edit",
     description:
       "Installs the Minerva component tagger Vite plugin and its dependencies.",
-    manualUpgradeUrl: "https://github.com/SeassTar-xx/minerva",
+    manualUpgradeUrl: "https://github.com/JiaTang-cs/Minerva",
   },
   {
     id: "capacitor",
     title: "Upgrade to hybrid mobile app with Capacitor",
     description:
       "Adds Capacitor to your app lets it run on iOS and Android in addition to the web.",
-    manualUpgradeUrl: "https://github.com/SeassTar-xx/minerva",
+    manualUpgradeUrl: "https://github.com/JiaTang-cs/Minerva",
   },
 ];
 

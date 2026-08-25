@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/SeassTar-xx/minerva.git"
+    "url": "git+https://github.com/JiaTang-cs/Minerva.git"
   },
   "main": ".vite/build/main.js",
   "scripts": {
