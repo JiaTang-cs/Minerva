@@ -58,8 +58,9 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
           name: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+          # 用宽泛 glob 覆盖 Squirrel 产出的实际 exe 文件名
+          # （e.g. "Minerva-0.43.2 Setup.exe" / "minerva-setup.exe" 等）
           files: |
-            out/make/squirrel.windows/x64/*-Setup.exe
-            out/make/squirrel.windows/x64/*.exe
+            out/make/**/*.exe
           fail_on_unmatched_files: true
           generate_release_notes: true
