@@ -177,7 +177,7 @@ export function HelpBotDialog({ isOpen, onClose }: HelpBotDialogProps) {
                   onClick={() => setError(null)}
                   className="text-destructive hover:text-destructive/80 text-xs"
                 >
-                  âœ?
+                  âœ•
                 </button>
               </div>
             </div>
