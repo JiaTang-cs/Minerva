@@ -160,6 +160,15 @@ jobs:
         env:
           # Required for @vscode/ripgrep to download binaries without hitting GitHub API rate limits
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Electron Forge rebuilds native modules (better-sqlite3) via @electron/node-gyp
+      # during packaging. On GitHub-hosted Windows runners it fails to detect VS 2026
+      # (parses version as "undefined" and rejects it). Injecting the MSVC toolchain
+      # env (INCLUDE/LIB/PATH) lets node-gyp skip auto-detection and compile directly.
+      - name: Set up MSVC build tools (Windows)
+        if: contains(matrix.os.name, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
       - name: Presubmit check (e.g. lint, format)
         # do not run this on Windows (it fails and not necessary)
         if: contains(matrix.os.name, 'macos')
