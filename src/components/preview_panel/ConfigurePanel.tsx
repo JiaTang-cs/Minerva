@@ -30,7 +30,6 @@ import { useTranslation } from "react-i18next";
 
 const AppCommandsTitle = () => {
   const { t } = useTranslation("home");
-  const { t: tc } = useTranslation("common");
 
   return (
     <div className="flex items-center gap-2">

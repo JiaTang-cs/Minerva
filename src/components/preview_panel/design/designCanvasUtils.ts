@@ -381,7 +381,6 @@ export function buildDesignCanvasGraph({
     return { nodes: [], edges: [] };
   }
 
-  const pageByDraftId = new Map(flowPages.map((page) => [page.draftId, page]));
   const orderedPages =
     flowPages.length > 0
       ? [...flowPages].sort((left, right) => left.order - right.order)

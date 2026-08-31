@@ -74,7 +74,6 @@ function FooterComponent({ context }: { context?: FooterContext }) {
     selectedChatId,
     appId,
     setMessagesById,
-    settings,
     renderSetupBanner,
   } = context;
 
