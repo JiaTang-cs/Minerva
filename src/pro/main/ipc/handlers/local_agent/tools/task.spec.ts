@@ -7,7 +7,8 @@ const resolveSubagentByNameMock = vi.fn();
 const runSubagentStreamMock = vi.fn();
 
 vi.mock("../subagents/registry", () => ({
-  resolveSubagentByName: (...args: unknown[]) => resolveSubagentByNameMock(...args),
+  resolveSubagentByName: (...args: unknown[]) =>
+    resolveSubagentByNameMock(...args),
 }));
 
 vi.mock("../subagents/runner", () => ({
@@ -128,13 +129,19 @@ describe("taskTool", () => {
     const parsed = JSON.parse(result);
     expect(parsed.status).toBe("async_launched");
     expect(parsed.taskId).toBeTruthy();
-    expect(sent.some((entry) => entry.channel === "agent-tool:subagent-task-created")).toBe(true);
+    expect(
+      sent.some(
+        (entry) => entry.channel === "agent-tool:subagent-task-created",
+      ),
+    ).toBe(true);
 
     await Promise.resolve();
     await Promise.resolve();
 
     expect(
-      sent.some((entry) => entry.channel === "agent-tool:subagent-task-completed"),
+      sent.some(
+        (entry) => entry.channel === "agent-tool:subagent-task-completed",
+      ),
     ).toBe(true);
   });
 
@@ -206,7 +213,9 @@ describe("taskTool", () => {
     await Promise.resolve();
 
     expect(
-      sent.some((entry) => entry.channel === "agent-tool:subagent-task-completed"),
+      sent.some(
+        (entry) => entry.channel === "agent-tool:subagent-task-completed",
+      ),
     ).toBe(false);
     expect(
       sent.some((entry) => entry.channel === "agent-tool:subagent-task-failed"),

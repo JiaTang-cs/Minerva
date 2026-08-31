@@ -411,7 +411,8 @@ export function registerChatStreamHandlers() {
       let userPrompt = req.prompt + (attachmentInfo ? attachmentInfo : "");
       // Build the display prompt (with <dyad-attachment> tags for inline rendering)
       // This separates what the user sees from what the AI receives.
-      let displayUserPrompt = req.prompt + (displayAttachmentInfo ? displayAttachmentInfo : "");
+      let displayUserPrompt =
+        req.prompt + (displayAttachmentInfo ? displayAttachmentInfo : "");
       // Inline referenced prompt contents for mentions like @prompt:<id>
       try {
         const matches = Array.from(userPrompt.matchAll(/@prompt:(\d+)/g));
@@ -541,7 +542,9 @@ You may update the plan at \`${planPath}\` to mark your progress.`;
         }
       }
 
-      const buildFromDesignMatch = userPrompt.match(/^\/build-from-design=(.+)$/);
+      const buildFromDesignMatch = userPrompt.match(
+        /^\/build-from-design=(.+)$/,
+      );
       if (buildFromDesignMatch) {
         try {
           buildFromDesignDisplayPrompt = "/build";

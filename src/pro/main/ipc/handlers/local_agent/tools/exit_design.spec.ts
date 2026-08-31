@@ -62,10 +62,14 @@ describe("exitDesignTool", () => {
     );
 
     expect(getDesignDraftForChatFileMock).toHaveBeenCalledWith(5, 22);
-    expect(safeSendMock).toHaveBeenCalledWith(mockContext.event.sender, "design:exit", {
-      chatId: 22,
-      draftId: "draft-1",
-    });
+    expect(safeSendMock).toHaveBeenCalledWith(
+      mockContext.event.sender,
+      "design:exit",
+      {
+        chatId: 22,
+        draftId: "draft-1",
+      },
+    );
     expect(result).toContain("Switching to Agent mode");
   });
 });

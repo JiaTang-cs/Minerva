@@ -64,7 +64,9 @@ describe("createBuildFromDesignPrompt", () => {
     expect(prompt).toContain(".minerva/designs/drafts/draft-123.json");
     expect(prompt).toContain(".minerva/designs/flows/flow-123.json");
     expect(prompt).toContain(".minerva/designs/components/component-1.json");
-    expect(prompt).toContain("Read the design data from the project's .minerva directory");
+    expect(prompt).toContain(
+      "Read the design data from the project's .minerva directory",
+    );
     expect(prompt).toContain("Build a complete application");
   });
 

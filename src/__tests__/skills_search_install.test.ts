@@ -7,14 +7,18 @@ import { loadCatalogSkillPreview } from "@/ipc/utils/skills/search_install";
 const tempDirs: string[] = [];
 
 async function createTempDir(): Promise<string> {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "dyad-skill-preview-test-"));
+  const dir = await fs.mkdtemp(
+    path.join(os.tmpdir(), "dyad-skill-preview-test-"),
+  );
   tempDirs.push(dir);
   return dir;
 }
 
 afterEach(async () => {
   await Promise.all(
-    tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+    tempDirs
+      .splice(0)
+      .map((dir) => fs.rm(dir, { recursive: true, force: true })),
   );
 });
 

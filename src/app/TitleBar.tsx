@@ -223,4 +223,3 @@ function TitleBarActions() {
     </div>
   );
 }
-

@@ -109,12 +109,14 @@ export async function installSkillToUserDirectory(params: {
       snapshot.skills.find(
         (candidate) =>
           candidate.sourceType === "user" &&
-          normalizeSkillName(candidate.name) === normalizeSkillName(installName),
+          normalizeSkillName(candidate.name) ===
+            normalizeSkillName(installName),
       ) ??
       snapshot.skills.find(
         (candidate) =>
           candidate.sourceType === "user" &&
-          normalizeSkillName(candidate.name) === normalizeSkillName(params.skillId),
+          normalizeSkillName(candidate.name) ===
+            normalizeSkillName(params.skillId),
       );
 
     if (!skill) {
@@ -129,7 +131,9 @@ export async function installSkillToUserDirectory(params: {
       installedTo: targetDir,
     };
   } finally {
-    await fs.rm(preview.tempDir, { recursive: true, force: true }).catch(() => {});
+    await fs
+      .rm(preview.tempDir, { recursive: true, force: true })
+      .catch(() => {});
   }
 }
 
@@ -142,8 +146,13 @@ export async function loadCatalogSkillPreview(params: {
 
   try {
     const localSourceDir = await materializeSource(tempDir, parsedSource);
-    const skillDir = await discoverRequestedSkill(localSourceDir, params.skillId);
-    const parsedSkill = await parseSkillMarkdown(path.join(skillDir, "SKILL.md"));
+    const skillDir = await discoverRequestedSkill(
+      localSourceDir,
+      params.skillId,
+    );
+    const parsedSkill = await parseSkillMarkdown(
+      path.join(skillDir, "SKILL.md"),
+    );
 
     return {
       skillId: params.skillId,
@@ -273,7 +282,10 @@ async function validateSkillDirectory(skillDir: string): Promise<void> {
 
   await walk(skillDir);
 
-  if (fileCount > MAX_INSTALL_FILE_COUNT || totalBytes > MAX_INSTALL_TOTAL_BYTES) {
+  if (
+    fileCount > MAX_INSTALL_FILE_COUNT ||
+    totalBytes > MAX_INSTALL_TOTAL_BYTES
+  ) {
     throw new DyadError(
       "Skill payload is too large to install safely",
       DyadErrorKind.Validation,
@@ -327,14 +339,20 @@ function ensurePathIsSafe(baseDir: string, targetPath: string): void {
 }
 
 function sanitizeInstallName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^[.-]+|[.-]+$/g, "") || "skill";
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/^[.-]+|[.-]+$/g, "") || "skill"
+  );
 }
 
 function buildSourceUrl(source: string): string {
-  if (path.isAbsolute(source) || source.startsWith("./") || source.startsWith("../")) {
+  if (
+    path.isAbsolute(source) ||
+    source.startsWith("./") ||
+    source.startsWith("../")
+  ) {
     return source;
   }
   return source.startsWith("http://") || source.startsWith("https://")

@@ -9,8 +9,9 @@ import {
  * The subdirectory within each app where uploaded media files are stored.
  */
 export const INTERNAL_MEDIA_SUBDIR = "media";
-export const INTERNAL_MEDIA_DIR_NAME =
-  getInternalRelativeSubdirPath(INTERNAL_MEDIA_SUBDIR);
+export const INTERNAL_MEDIA_DIR_NAME = getInternalRelativeSubdirPath(
+  INTERNAL_MEDIA_SUBDIR,
+);
 
 /**
  * Check if an absolute path falls within the app's internal media directory.

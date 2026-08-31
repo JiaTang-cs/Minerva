@@ -540,7 +540,9 @@ export const ConfigurePanel = () => {
           {isAddingNew ? (
             <div className="space-y-3 p-3 border rounded-md bg-muted/50">
               <div className="space-y-2">
-                <Label htmlFor="new-key">{t("toolsMcp.key", { ns: "settings" })}</Label>
+                <Label htmlFor="new-key">
+                  {t("toolsMcp.key", { ns: "settings" })}
+                </Label>
                 <Input
                   id="new-key"
                   placeholder={t("preview.configure_panel.keyPlaceholder")}

@@ -105,10 +105,7 @@ function SpacingSideIcon({ side }: { side: SpacingSide }) {
   return (
     <div className="relative h-4 w-4">
       <div
-        className={cn(
-          "absolute rounded-full bg-slate-400",
-          indicatorClass,
-        )}
+        className={cn("absolute rounded-full bg-slate-400", indicatorClass)}
       />
       <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-[2px] border border-slate-300 bg-white" />
     </div>
@@ -191,11 +188,7 @@ function HorizontalAlignIcon({
   );
 }
 
-function VerticalAlignIcon({
-  align,
-}: {
-  align: "start" | "center" | "end";
-}) {
+function VerticalAlignIcon({ align }: { align: "start" | "center" | "end" }) {
   const wrapperClass =
     align === "start"
       ? "items-start"
@@ -232,7 +225,9 @@ function GridIcon() {
   );
 }
 
-function getSpacingMode(styles: SelectedElementStyles | undefined): SpacingMode {
+function getSpacingMode(
+  styles: SelectedElementStyles | undefined,
+): SpacingMode {
   const top = styles?.paddingTop ?? "";
   const right = styles?.paddingRight ?? "";
   const bottom = styles?.paddingBottom ?? "";
@@ -272,7 +267,11 @@ export function LayoutInspector({
         return "all";
       }
 
-      if ((left || right || top || bottom) && left === right && top === bottom) {
+      if (
+        (left || right || top || bottom) &&
+        left === right &&
+        top === bottom
+      ) {
         return "axis";
       }
 
@@ -378,7 +377,9 @@ export function LayoutInspector({
           />
           <div className="rounded-[18px] border border-border bg-muted/30 p-2">
             <div className="mb-2 flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
-              <div className="text-[13px] font-medium text-slate-600">Padding</div>
+              <div className="text-[13px] font-medium text-slate-600">
+                Padding
+              </div>
               <div className="flex items-center gap-1 rounded-[12px] bg-muted p-1">
                 <button
                   type="button"
@@ -512,7 +513,9 @@ export function LayoutInspector({
           </div>
           <div className="rounded-[18px] border border-border bg-muted/30 p-2">
             <div className="mb-2 flex items-center justify-between rounded-[14px] border border-border bg-white px-3 py-1.5 shadow-xs">
-              <div className="text-[13px] font-medium text-slate-600">Margin</div>
+              <div className="text-[13px] font-medium text-slate-600">
+                Margin
+              </div>
               <div className="flex items-center gap-1 rounded-[12px] bg-muted p-1">
                 <button
                   type="button"
@@ -682,14 +685,19 @@ export function StyleInspector({
               htmlFor="design-text-color"
               className="relative block size-8 cursor-pointer overflow-hidden rounded-full border border-border shadow-[0_6px_16px_rgba(15,23,42,0.10)]"
               style={{
-                backgroundColor: toEditableColor(styles?.color ?? "", "#111827"),
+                backgroundColor: toEditableColor(
+                  styles?.color ?? "",
+                  "#111827",
+                ),
               }}
             >
               <input
                 id="design-text-color"
                 type="color"
                 value={toEditableColor(styles?.color ?? "", "#111827")}
-                onChange={(event) => onApplyStyles({ color: event.target.value })}
+                onChange={(event) =>
+                  onApplyStyles({ color: event.target.value })
+                }
                 className="absolute inset-0 cursor-pointer opacity-0"
               />
             </label>
@@ -724,7 +732,10 @@ export function StyleInspector({
               <input
                 id="design-background-color"
                 type="color"
-                value={toEditableColor(styles?.backgroundColor ?? "", "#ffffff")}
+                value={toEditableColor(
+                  styles?.backgroundColor ?? "",
+                  "#ffffff",
+                )}
                 onChange={(event) =>
                   onApplyStyles({ backgroundColor: event.target.value })
                 }

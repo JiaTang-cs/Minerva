@@ -254,7 +254,7 @@ export function registerMediaHandlers() {
       );
     }
 
-      await withMediaLock([params.sourceAppId, params.targetAppId], async () => {
+    await withMediaLock([params.sourceAppId, params.targetAppId], async () => {
       const sourceApp = await getAppOrThrow(params.sourceAppId);
       const targetApp = await getAppOrThrow(params.targetAppId);
 

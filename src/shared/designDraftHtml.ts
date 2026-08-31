@@ -2,14 +2,8 @@ const RUNTIME_TAG_PATTERN =
   /<(style|script)\b[^>]*\sdata-dyad-design-runtime(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?[^>]*>[\s\S]*?<\/\1>/gi;
 
 function stripAttribute(html: string, attributeName: string): string {
-  const doubleQuoted = new RegExp(
-    `\\s${attributeName}="[^"]*"`,
-    "gi",
-  );
-  const singleQuoted = new RegExp(
-    `\\s${attributeName}='[^']*'`,
-    "gi",
-  );
+  const doubleQuoted = new RegExp(`\\s${attributeName}="[^"]*"`, "gi");
+  const singleQuoted = new RegExp(`\\s${attributeName}='[^']*'`, "gi");
   const bare = new RegExp(`\\s${attributeName}(?=[\\s>])`, "gi");
 
   return html

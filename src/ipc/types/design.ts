@@ -30,7 +30,9 @@ export const AskUserQuestionPayloadSchema = z.object({
   questions: z.array(AskUserQuestionSchema).min(1).max(4),
 });
 
-export type AskUserQuestionPayload = z.infer<typeof AskUserQuestionPayloadSchema>;
+export type AskUserQuestionPayload = z.infer<
+  typeof AskUserQuestionPayloadSchema
+>;
 
 export const AskUserQuestionResponseSchema = z.object({
   requestId: z.string(),

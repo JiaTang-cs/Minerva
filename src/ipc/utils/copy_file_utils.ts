@@ -80,10 +80,10 @@ export async function executeCopyFile({
       path.isAbsolute(from) &&
       !isWithinDyadMediaDir(realFromPath, resolvedAppPath)
     ) {
-        throw new Error(
-          `Source path resolves to a location outside the .minerva/media directory (possible symlink traversal)`,
-        );
-      }
+      throw new Error(
+        `Source path resolves to a location outside the .minerva/media directory (possible symlink traversal)`,
+      );
+    }
     if (
       !path.isAbsolute(from) &&
       !realFromPath.startsWith(resolvedAppPath + path.sep) &&

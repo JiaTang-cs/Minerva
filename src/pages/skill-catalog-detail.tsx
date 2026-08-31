@@ -11,11 +11,17 @@ import { useTranslation } from "react-i18next";
 export default function SkillCatalogDetailPage() {
   const { t } = useTranslation("skills");
   const search = useSearch({ from: "/skills/catalog" });
-  const { data, isLoading } = useCatalogSkillDetail(search.source, search.skillId);
+  const { data, isLoading } = useCatalogSkillDetail(
+    search.source,
+    search.skillId,
+  );
 
   const detail = data ?? null;
   const title = detail?.name ?? search.name ?? search.skillId;
-  const sourceUrl = detail?.sourceUrl ?? search.sourceUrl ?? `https://github.com/${search.source}`;
+  const sourceUrl =
+    detail?.sourceUrl ??
+    search.sourceUrl ??
+    `https://github.com/${search.source}`;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col px-4 py-6 sm:px-6 lg:px-8">

@@ -19,7 +19,10 @@ const logger = log.scope("todo_persistence");
  * Layout: `<appPath>/.minerva/todos/<chatId>.json`
  */
 export function getTodosFilePath(appPath: string, chatId: number): string {
-  return getInternalAppSubdirPath(appPath, path.join("todos", `${chatId}.json`));
+  return getInternalAppSubdirPath(
+    appPath,
+    path.join("todos", `${chatId}.json`),
+  );
 }
 
 /**

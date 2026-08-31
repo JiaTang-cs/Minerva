@@ -322,7 +322,9 @@ export default function HomePage() {
                     key={index}
                     onClick={() =>
                       setInputValue(
-                        t("buildMeA", { label: getInspirationLabel(item.label) }),
+                        t("buildMeA", {
+                          label: getInspirationLabel(item.label),
+                        }),
                       )
                     }
                     className="flex items-center gap-3 px-4 py-2 rounded-xl border border-gray-200

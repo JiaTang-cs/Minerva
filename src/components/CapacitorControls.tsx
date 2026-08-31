@@ -243,4 +243,3 @@ export function CapacitorControls({ appId }: CapacitorControlsProps) {
     </>
   );
 }
-

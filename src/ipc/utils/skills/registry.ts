@@ -61,7 +61,9 @@ export function getProjectSkillsDir(appPath: string): string {
   return getInternalAppSubdirPath(appPath, "skills");
 }
 
-export function getSkillRoots(appPath?: string | null): Record<SkillSourceType, string> {
+export function getSkillRoots(
+  appPath?: string | null,
+): Record<SkillSourceType, string> {
   return {
     bundled: getBundledSkillsDir(),
     user: getUserSkillsDir(),
@@ -155,7 +157,8 @@ export async function resolveSkillByName(params: {
   const snapshot = await loadSkillsSnapshot({ appPath: params.appPath });
   return (
     snapshot.skills.find(
-      (skill) => normalizeSkillName(skill.name) === normalizeSkillName(params.skillName),
+      (skill) =>
+        normalizeSkillName(skill.name) === normalizeSkillName(params.skillName),
     ) ?? null
   );
 }
@@ -297,7 +300,9 @@ async function discoverSkillsInRoot(
   return skills;
 }
 
-export async function parseSkillMarkdown(skillFilePath: string): Promise<ParsedSkill> {
+export async function parseSkillMarkdown(
+  skillFilePath: string,
+): Promise<ParsedSkill> {
   let rawContent: string;
   try {
     rawContent = await fs.readFile(skillFilePath, "utf-8");
@@ -328,7 +333,10 @@ export async function parseSkillMarkdown(skillFilePath: string): Promise<ParsedS
     allowedTools: readStringArray(data["allowed-tools"]),
     model: readString(data.model),
     userInvocable: readBoolean(data["user-invocable"], true),
-    disableModelInvocation: readBoolean(data["disable-model-invocation"], false),
+    disableModelInvocation: readBoolean(
+      data["disable-model-invocation"],
+      false,
+    ),
     rawContent,
     body: content.trim(),
   };
@@ -370,7 +378,9 @@ function readStringArray(value: unknown): string[] {
   return [];
 }
 
-export function resolveAppPathForSkills(appPathOrRelative?: string | null): string | null {
+export function resolveAppPathForSkills(
+  appPathOrRelative?: string | null,
+): string | null {
   if (!appPathOrRelative) {
     return null;
   }

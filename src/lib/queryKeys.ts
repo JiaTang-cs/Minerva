@@ -253,13 +253,8 @@ export const queryKeys = {
       ["skills", "list", appId] as const,
     search: ({ query }: { query: string }) =>
       ["skills", "search", query] as const,
-    detailCatalog: ({
-      source,
-      skillId,
-    }: {
-      source: string;
-      skillId: string;
-    }) => ["skills", "detail-catalog", source, skillId] as const,
+    detailCatalog: ({ source, skillId }: { source: string; skillId: string }) =>
+      ["skills", "detail-catalog", source, skillId] as const,
   },
 
   // ─────────────────────────────────────────────────────────────────────────────

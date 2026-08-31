@@ -95,9 +95,8 @@ function MetricCard({
 export default function MinervaPage() {
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const [capabilities, setCapabilities] = useState<MinervaCapability[]>([]);
-  const [loopState, setLoopState] = useState<MinervaEngineeringLoopState | null>(
-    null,
-  );
+  const [loopState, setLoopState] =
+    useState<MinervaEngineeringLoopState | null>(null);
   const [dupo, setDupo] = useState<MinervaDupoEvaluationResult | null>(null);
   const [securityGate, setSecurityGate] =
     useState<MinervaSecurityGateResult | null>(null);
@@ -209,9 +208,7 @@ export default function MinervaPage() {
           />
           <MetricCard
             title="Design score"
-            value={
-              designQuality ? `${designQuality.score}/100` : "loading"
-            }
+            value={designQuality ? `${designQuality.score}/100` : "loading"}
             description="Static quality checks for design drafts."
           />
           <MetricCard
@@ -236,10 +233,7 @@ export default function MinervaPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {capabilities.map((capability) => (
-                <div
-                  key={capability.id}
-                  className="rounded-md border p-4"
-                >
+                <div key={capability.id} className="rounded-md border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h2 className="font-medium">{capability.name}</h2>
@@ -264,7 +258,8 @@ export default function MinervaPage() {
                 Delivery loop
               </CardTitle>
               <CardDescription>
-                Current app: {selectedAppId ? `#${selectedAppId}` : "none selected"}
+                Current app:{" "}
+                {selectedAppId ? `#${selectedAppId}` : "none selected"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -358,7 +353,10 @@ export default function MinervaPage() {
               </div>
               <div className="space-y-2">
                 {dupo?.groups.map((group) => (
-                  <div key={group.taskGroupId} className="rounded-md border p-4">
+                  <div
+                    key={group.taskGroupId}
+                    className="rounded-md border p-4"
+                  >
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{group.taskGroupId}</p>
                       <Badge variant="outline">{group.classification}</Badge>

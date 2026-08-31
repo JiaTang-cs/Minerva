@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, FileStack, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  FileStack,
+  TriangleAlert,
+} from "lucide-react";
 import { unescapeXmlAttr, unescapeXmlContent } from "../../../shared/xmlEscape";
 
 interface PageEntry {
@@ -63,7 +69,9 @@ export function DyadDesignFlowPages({
     [children],
   );
   const action =
-    node?.properties?.action === "generated" ? "Generated pages" : "Planned pages";
+    node?.properties?.action === "generated"
+      ? "Generated pages"
+      : "Planned pages";
   const count =
     Number(node?.properties?.count) > 0
       ? Number(node?.properties?.count)

@@ -735,14 +735,17 @@ export function DesignCanvas({
                 }}
               >
                 {(() => {
-                  const previewSizing = getPagePreviewNodeSize(pageData.deviceMode);
+                  const previewSizing = getPagePreviewNodeSize(
+                    pageData.deviceMode,
+                  );
                   const previewScale = Math.min(
                     previewSizing.previewWidth /
                       DEVICE_DIMENSIONS[pageData.deviceMode].width,
                     previewSizing.previewHeight /
                       DEVICE_DIMENSIONS[pageData.deviceMode].height,
                   );
-                  const chromeHeight = node.height - previewSizing.previewHeight;
+                  const chromeHeight =
+                    node.height - previewSizing.previewHeight;
 
                   return (
                     <>

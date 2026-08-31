@@ -31,9 +31,7 @@ export function StylePopover({
       </PopoverTrigger>
       <PopoverContent side={side} className="w-64">
         <div className="space-y-3">
-          <h4 className="font-medium text-sm text-foreground">
-            {title}
-          </h4>
+          <h4 className="font-medium text-sm text-foreground">{title}</h4>
           {children}
         </div>
       </PopoverContent>

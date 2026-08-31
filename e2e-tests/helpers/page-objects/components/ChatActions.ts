@@ -124,4 +124,3 @@ export class ChatActions {
     await expect(this.getChatInputContainer()).toMatchAriaSnapshot();
   }
 }
-

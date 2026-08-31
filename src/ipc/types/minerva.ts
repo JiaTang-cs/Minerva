@@ -40,7 +40,12 @@ export const MinervaDupoGroupResultSchema = z.object({
   trajectoryCount: z.number().int().nonnegative(),
   meanReward: z.number(),
   rewardVariance: z.number(),
-  classification: z.enum(["useful-gradient", "all-pass", "all-fail", "unstable"]),
+  classification: z.enum([
+    "useful-gradient",
+    "all-pass",
+    "all-fail",
+    "unstable",
+  ]),
   sampleWeight: z.number(),
 });
 

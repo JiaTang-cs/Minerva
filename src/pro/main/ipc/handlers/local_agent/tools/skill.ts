@@ -4,11 +4,7 @@ import {
   buildInjectedSkillPrompt,
   resolveSkillByName,
 } from "@/ipc/utils/skills/registry";
-import {
-  escapeXmlAttr,
-  escapeXmlContent,
-  type ToolDefinition,
-} from "./types";
+import { escapeXmlAttr, escapeXmlContent, type ToolDefinition } from "./types";
 
 const skillSchema = z.object({
   skill: z.string().min(1).describe("The skill name to invoke"),

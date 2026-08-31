@@ -122,10 +122,10 @@ export function ChatModeSelector() {
                     : selectedMode === "ask"
                       ? "bg-primary/12 text-primary hover:bg-primary/18 dark:bg-primary/18 dark:text-[#9ab0ff] dark:hover:bg-primary/24"
                       : selectedMode === "plan"
-                      ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/15 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/20"
-                      : selectedMode === "design"
-                        ? "bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/20"
-                      : "text-foreground/80 hover:text-foreground hover:bg-muted/60",
+                        ? "bg-blue-500/10 text-blue-600 hover:bg-blue-500/15 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                        : selectedMode === "design"
+                          ? "bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                          : "text-foreground/80 hover:text-foreground hover:bg-muted/60",
                 )}
                 size="sm"
               />

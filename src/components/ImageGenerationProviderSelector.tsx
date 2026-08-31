@@ -27,7 +27,8 @@ export const ImageGenerationProviderSelector: React.FC = () => {
     const provider = value as ImageGenerationProvider;
     void updateSettings({
       imageGenerationProvider: provider,
-      imageGenerationModel: DEFAULT_IMAGE_GENERATION_MODEL_BY_PROVIDER[provider],
+      imageGenerationModel:
+        DEFAULT_IMAGE_GENERATION_MODEL_BY_PROVIDER[provider],
     });
   };
 

@@ -34,8 +34,7 @@ export const updateDraftComponentTool: ToolDefinition<
   defaultConsent: "always",
   modifiesState: true,
 
-  getConsentPreview: (args) =>
-    `Update reusable component ${args.componentId}`,
+  getConsentPreview: (args) => `Update reusable component ${args.componentId}`,
 
   execute: async (args, ctx) => {
     const component = await updateDraftComponentFile({

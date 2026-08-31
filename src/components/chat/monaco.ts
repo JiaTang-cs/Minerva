@@ -205,9 +205,7 @@ function loadLoaderScript(vsPath: string): Promise<void> {
     const script = document.createElement("script");
     const timeout = window.setTimeout(() => {
       script.remove();
-      reject(
-        new Error(`Timed out while loading Monaco loader from ${vsPath}`),
-      );
+      reject(new Error(`Timed out while loading Monaco loader from ${vsPath}`));
     }, MONACO_SCRIPT_TIMEOUT_MS);
 
     script.setAttribute(MONACO_LOADER_SCRIPT_ATTR, "true");
@@ -239,7 +237,9 @@ function loadMonacoFromVsPath(vsPath: string): Promise<MonacoInstance> {
         const requireFn = window.require;
 
         if (!requireFn) {
-          reject(new Error("Monaco loader script did not expose window.require"));
+          reject(
+            new Error("Monaco loader script did not expose window.require"),
+          );
           return;
         }
 

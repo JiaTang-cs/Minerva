@@ -103,7 +103,11 @@ function evaluateDupo(
       ) / Math.max(1, rewards.length);
     const successes = rewards.filter((reward) => reward >= 0.75).length;
     const failures = rewards.length - successes;
-    const classification: "useful-gradient" | "all-pass" | "all-fail" | "unstable" =
+    const classification:
+      | "useful-gradient"
+      | "all-pass"
+      | "all-fail"
+      | "unstable" =
       successes === rewards.length
         ? "all-pass"
         : failures === rewards.length
@@ -179,7 +183,8 @@ function evaluateDesignQuality(html: string): MinervaDesignQualityReport {
         /\b(primary|secondary|accent|muted|background|foreground|card|border|ring)\b/i.test(
           html,
         ),
-      message: "Draft should prefer semantic tokens over one-off color choices.",
+      message:
+        "Draft should prefer semantic tokens over one-off color choices.",
     },
     {
       id: "accessible-media",
@@ -210,7 +215,9 @@ function parseSecurityFindings(content: string) {
     /<dyad-security-finding\s+title="([^"]+)"\s+level="(critical|high|medium|low)">([\s\S]*?)<\/dyad-security-finding>/g;
   let match;
   while ((match = regex.exec(content)) !== null) {
-    findings.push({ level: match[2] as "critical" | "high" | "medium" | "low" });
+    findings.push({
+      level: match[2] as "critical" | "high" | "medium" | "low",
+    });
   }
   return findings;
 }
@@ -239,13 +246,14 @@ async function getSecurityGate(
   appId?: number | null,
 ): Promise<MinervaSecurityGateResult> {
   const findings = await getLatestSecurityFindingLevels(appId);
-  const blockedLevels: Array<"critical" | "high" | "medium" | "low"> = Array.from(
-    new Set(
-      findings
-        .map((finding) => finding.level)
-        .filter((level) => level === "critical" || level === "high"),
-    ),
-  );
+  const blockedLevels: Array<"critical" | "high" | "medium" | "low"> =
+    Array.from(
+      new Set(
+        findings
+          .map((finding) => finding.level)
+          .filter((level) => level === "critical" || level === "high"),
+      ),
+    );
 
   return {
     passed: blockedLevels.length === 0,
@@ -329,13 +337,18 @@ function buildDemoTrajectories(): MinervaAgentTrajectory[] {
 }
 
 export function registerMinervaHandlers() {
-  createTypedHandler(minervaContracts.getInnovationAudit, async () => CAPABILITIES);
-  createTypedHandler(minervaContracts.evaluateDupoTrajectories, async (_, input) =>
-    evaluateDupo(
-      input.trajectories && input.trajectories.length > 0
-        ? input.trajectories
-        : buildDemoTrajectories(),
-    ),
+  createTypedHandler(
+    minervaContracts.getInnovationAudit,
+    async () => CAPABILITIES,
+  );
+  createTypedHandler(
+    minervaContracts.evaluateDupoTrajectories,
+    async (_, input) =>
+      evaluateDupo(
+        input.trajectories && input.trajectories.length > 0
+          ? input.trajectories
+          : buildDemoTrajectories(),
+      ),
   );
   createTypedHandler(minervaContracts.evaluateDesignQuality, async (_, input) =>
     evaluateDesignQuality(input.html),

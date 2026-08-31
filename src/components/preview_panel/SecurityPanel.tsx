@@ -1014,7 +1014,9 @@ ${issuesList}`;
         <Dialog open={isEditRulesOpen} onOpenChange={setIsEditRulesOpen}>
           <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
             <DialogHeader>
-              <DialogTitle>{t("preview.security_panel.editRulesTitle")}</DialogTitle>
+              <DialogTitle>
+                {t("preview.security_panel.editRulesTitle")}
+              </DialogTitle>
             </DialogHeader>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {t("preview.security_panel.editRulesDescription")}
@@ -1024,7 +1026,9 @@ ${issuesList}`;
                 className="w-full h-72 rounded-md border border-gray-300 dark:border-gray-700 bg-transparent p-3 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 value={rulesContent}
                 onChange={(e) => setRulesContent(e.target.value)}
-                placeholder={t("preview.security_panel.securityRulesPlaceholder")}
+                placeholder={t(
+                  "preview.security_panel.securityRulesPlaceholder",
+                )}
               />
             </div>
             <DialogFooter>
@@ -1046,4 +1050,3 @@ ${issuesList}`;
     </div>
   );
 };
-

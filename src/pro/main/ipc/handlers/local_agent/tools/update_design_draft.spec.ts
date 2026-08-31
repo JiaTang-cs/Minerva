@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { updateDesignDraftTool } from "./update_design_draft";
 import type { AgentContext } from "./types";
 
-const { getDesignDraftForChatFileMock, updateDesignDraftFileMock } =
-  vi.hoisted(() => ({
+const { getDesignDraftForChatFileMock, updateDesignDraftFileMock } = vi.hoisted(
+  () => ({
     getDesignDraftForChatFileMock: vi.fn(),
     updateDesignDraftFileMock: vi.fn(),
-  }));
+  }),
+);
 
 vi.mock("@/ipc/handlers/design_handlers", () => ({
   getDesignDraftForChatFile: getDesignDraftForChatFileMock,
@@ -44,10 +45,7 @@ describe("updateDesignDraftTool", () => {
     getDesignDraftForChatFileMock.mockResolvedValue(null);
 
     await expect(
-      updateDesignDraftTool.execute(
-        { title: "Revise hero" },
-        mockContext,
-      ),
+      updateDesignDraftTool.execute({ title: "Revise hero" }, mockContext),
     ).rejects.toThrow(
       "No design draft exists yet for this chat. Use create_design_draft first.",
     );

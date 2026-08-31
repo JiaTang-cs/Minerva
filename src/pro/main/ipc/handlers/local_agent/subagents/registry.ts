@@ -30,7 +30,9 @@ const BACKGROUND_UNSAFE_TOOL_NAMES = new Set([
   "exit_design",
 ]);
 
-function getParentMode(options: ResolveSubagentToolsOptions): "ask" | "plan" | "design" | "build" {
+function getParentMode(
+  options: ResolveSubagentToolsOptions,
+): "ask" | "plan" | "design" | "build" {
   if (options.readOnly) return "ask";
   if (options.planModeOnly) return "plan";
   if (options.designModeOnly) return "design";
@@ -120,12 +122,11 @@ export async function resolveSubagentByName(
   failedFiles: SubagentLoadError[];
 }> {
   const registry = await loadSubagentRegistry(appPath);
-  const subagent = registry.activeSubagents.find((entry) => entry.name === name);
+  const subagent = registry.activeSubagents.find(
+    (entry) => entry.name === name,
+  );
   if (!subagent) {
-    throw new DyadError(
-      `Subagent not found: ${name}`,
-      DyadErrorKind.NotFound,
-    );
+    throw new DyadError(`Subagent not found: ${name}`, DyadErrorKind.NotFound);
   }
   return { subagent, failedFiles: registry.failedFiles };
 }

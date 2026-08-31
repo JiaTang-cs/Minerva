@@ -140,6 +140,8 @@ describe("webSearchTool", () => {
       mockContext,
     );
 
-    expect(result).toBe('No web search results found for "no matches expected".');
+    expect(result).toBe(
+      'No web search results found for "no matches expected".',
+    );
   });
 });

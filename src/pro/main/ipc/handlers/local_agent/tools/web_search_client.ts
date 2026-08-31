@@ -75,7 +75,8 @@ export async function searchWeb(query: string): Promise<WebSearchResult> {
   const results: WebSearchResultItem[] = [];
 
   const answerTitle =
-    cleanText(parsed.answerBox?.title) ?? cleanText(parsed.knowledgeGraph?.title);
+    cleanText(parsed.answerBox?.title) ??
+    cleanText(parsed.knowledgeGraph?.title);
   const answerUrl =
     cleanText(parsed.answerBox?.link) ??
     cleanText(parsed.knowledgeGraph?.website);

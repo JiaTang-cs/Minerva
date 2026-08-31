@@ -82,13 +82,16 @@ export function AskUserQuestionInput() {
 
   useEffect(() => {
     if (!askUserQuestion) return;
-    const timeout = setTimeout(() => {
-      designClient.respondToAskUserQuestion({
-        requestId: askUserQuestion.requestId,
-        answers: null,
-      });
-      clearAskUserQuestion();
-    }, 5 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        designClient.respondToAskUserQuestion({
+          requestId: askUserQuestion.requestId,
+          answers: null,
+        });
+        clearAskUserQuestion();
+      },
+      5 * 60 * 1000,
+    );
 
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,7 +212,9 @@ export function AskUserQuestionInput() {
             ) : (
               <>
                 <Circle className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span className="text-sm truncate">{currentQuestion.question}</span>
+                <span className="text-sm truncate">
+                  {currentQuestion.question}
+                </span>
                 <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
                   ({currentIndex + 1}/{askUserQuestion.questions.length})
                 </span>
@@ -256,11 +261,11 @@ export function AskUserQuestionInput() {
                   {currentQuestion.options
                     .slice(0, MAX_DISPLAYED_OPTIONS)
                     .map((option) => {
-                      const selected =
-                        ((responses[currentQuestion.id] as
+                      const selected = (
+                        (responses[currentQuestion.id] as
                           | string[]
                           | undefined) ?? []
-                        ).includes(option.label);
+                      ).includes(option.label);
 
                       return (
                         <div
@@ -402,7 +407,11 @@ export function AskUserQuestionInput() {
                 <ArrowLeft size={14} className="mr-1.5" />
                 Back
               </Button>
-              <Button onClick={handleNext} disabled={isNextDisabled()} size="sm">
+              <Button
+                onClick={handleNext}
+                disabled={isNextDisabled()}
+                size="sm"
+              >
                 {isLastQuestion ? (
                   <>
                     <Send size={14} className="mr-1.5" />

@@ -14,7 +14,9 @@ async function makeTempApp(): Promise<string> {
 
 afterEach(async () => {
   await Promise.all(
-    createdDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+    createdDirs
+      .splice(0)
+      .map((dir) => fs.rm(dir, { recursive: true, force: true })),
   );
 });
 
@@ -34,7 +36,9 @@ You are the custom worker prompt.`,
     );
 
     const registry = await loadSubagentRegistry(appPath);
-    const worker = registry.activeSubagents.find((agent) => agent.name === "worker");
+    const worker = registry.activeSubagents.find(
+      (agent) => agent.name === "worker",
+    );
     const explore = registry.activeSubagents.find(
       (agent) => agent.name === "explore",
     );

@@ -30,7 +30,8 @@ function getImageGenerationApiKey(
   settings: UserSettings,
   provider: ImageGenerationProvider,
 ): string | undefined {
-  const settingsKey = settings.providerSettings?.[provider]?.apiKey?.value?.trim();
+  const settingsKey =
+    settings.providerSettings?.[provider]?.apiKey?.value?.trim();
   if (settingsKey) return settingsKey;
 
   switch (provider) {
@@ -40,7 +41,8 @@ function getImageGenerationApiKey(
       return getEnvVar("OPENROUTER_API_KEY")?.trim();
     case "google":
       return (
-        getEnvVar("GEMINI_API_KEY")?.trim() || getEnvVar("GOOGLE_API_KEY")?.trim()
+        getEnvVar("GEMINI_API_KEY")?.trim() ||
+        getEnvVar("GOOGLE_API_KEY")?.trim()
       );
     case "minimax":
       return getEnvVar("MINIMAX_API_KEY")?.trim();
@@ -222,20 +224,23 @@ async function generateWithOpenRouter({
   prompt,
   signal,
 }: GenerateImageRequest & { apiKey: string }) {
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
+        stream: false,
+      }),
+      signal,
     },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: "user", content: prompt }],
-      modalities: ["image", "text"],
-      stream: false,
-    }),
-    signal,
-  });
+  );
 
   const data = (await response.json()) as {
     choices?: Array<{

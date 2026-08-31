@@ -16,4 +16,3 @@ export function getInternalAppSubdirPath(
 export function getInternalRelativeSubdirPath(subdir: string): string {
   return `${INTERNAL_APP_DIR_NAME}/${subdir}`;
 }
-

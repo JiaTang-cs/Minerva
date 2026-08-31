@@ -14,8 +14,7 @@ function makeSettings(partial: Partial<UserSettings> = {}): UserSettings {
     enableProLazyEditsMode: true,
     enableProSmartFilesContextMode: true,
     imageGenerationProvider: "openai",
-    imageGenerationModel:
-      DEFAULT_IMAGE_GENERATION_MODEL_BY_PROVIDER.openai,
+    imageGenerationModel: DEFAULT_IMAGE_GENERATION_MODEL_BY_PROVIDER.openai,
     selectedChatMode: "build",
     enableAutoFixProblems: false,
     enableAutoUpdate: true,

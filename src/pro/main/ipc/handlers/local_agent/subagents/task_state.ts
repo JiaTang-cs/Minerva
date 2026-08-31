@@ -1,11 +1,7 @@
 import { safeSend } from "@/ipc/utils/safe_sender";
 import type { WebContents } from "electron";
 
-export type SubagentTaskStatus =
-  | "running"
-  | "completed"
-  | "failed"
-  | "killed";
+export type SubagentTaskStatus = "running" | "completed" | "failed" | "killed";
 
 export interface SubagentTaskRecord {
   taskId: string;
@@ -37,7 +33,9 @@ export function registerSubagentTask(
   taskAbortControllers.set(task.taskId, abortController);
 }
 
-export function getSubagentTask(taskId: string): SubagentTaskRecord | undefined {
+export function getSubagentTask(
+  taskId: string,
+): SubagentTaskRecord | undefined {
   const task = tasks.get(taskId);
   return task ? cloneTask(task) : undefined;
 }

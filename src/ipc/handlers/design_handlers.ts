@@ -80,7 +80,9 @@ function validateHtmlDocument(html: string) {
   }
 }
 
-async function getDesignStoragePaths(appId: number): Promise<DesignStoragePaths> {
+async function getDesignStoragePaths(
+  appId: number,
+): Promise<DesignStoragePaths> {
   const app = await db.query.apps.findFirst({ where: eq(apps.id, appId) });
   if (!app) {
     throw new DyadError(`App not found: ${appId}`, DyadErrorKind.NotFound);
@@ -129,7 +131,10 @@ async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
   await fs.promises.writeFile(filePath, JSON.stringify(value, null, 2), "utf8");
 }
 
-async function readJsonFile<T>(filePath: string, notFoundLabel: string): Promise<T> {
+async function readJsonFile<T>(
+  filePath: string,
+  notFoundLabel: string,
+): Promise<T> {
   try {
     const raw = await fs.promises.readFile(filePath, "utf8");
     return JSON.parse(raw) as T;
@@ -155,7 +160,10 @@ async function readJsonFilesInDir<T>(dirPath: string): Promise<T[]> {
   const jsonFiles = fileNames.filter((fileName) => fileName.endsWith(".json"));
   return Promise.all(
     jsonFiles.map(async (fileName) => {
-      const raw = await fs.promises.readFile(path.join(dirPath, fileName), "utf8");
+      const raw = await fs.promises.readFile(
+        path.join(dirPath, fileName),
+        "utf8",
+      );
       return JSON.parse(raw) as T;
     }),
   );
@@ -170,7 +178,10 @@ async function readDraftFile(
   try {
     return await readJsonFile<StoredDesignDraft>(nextPath, "Design draft");
   } catch (error) {
-    if (!(error instanceof DyadError) || error.kind !== DyadErrorKind.NotFound) {
+    if (
+      !(error instanceof DyadError) ||
+      error.kind !== DyadErrorKind.NotFound
+    ) {
       throw error;
     }
   }
@@ -192,7 +203,10 @@ async function readFlowFile(
   paths: DesignStoragePaths,
   flowId: string,
 ): Promise<StoredDesignFlow> {
-  return readJsonFile<StoredDesignFlow>(getFlowFilePath(paths, flowId), "Design flow");
+  return readJsonFile<StoredDesignFlow>(
+    getFlowFilePath(paths, flowId),
+    "Design flow",
+  );
 }
 
 async function writeFlowFile(
@@ -245,7 +259,9 @@ async function writeDraftComponentFileInternal(
   await writeJsonFile(getComponentFilePath(paths, component.id), component);
 }
 
-async function readAllDrafts(paths: DesignStoragePaths): Promise<StoredDesignDraft[]> {
+async function readAllDrafts(
+  paths: DesignStoragePaths,
+): Promise<StoredDesignDraft[]> {
   const [newDrafts, legacyDrafts] = await Promise.all([
     readJsonFilesInDir<StoredDesignDraft>(paths.draftsDir),
     readJsonFilesInDir<StoredDesignDraft>(paths.root),
@@ -258,7 +274,9 @@ async function readAllDrafts(paths: DesignStoragePaths): Promise<StoredDesignDra
   return [...deduped.values()];
 }
 
-async function readAllFlows(paths: DesignStoragePaths): Promise<StoredDesignFlow[]> {
+async function readAllFlows(
+  paths: DesignStoragePaths,
+): Promise<StoredDesignFlow[]> {
   return readJsonFilesInDir<StoredDesignFlow>(paths.flowsDir);
 }
 
@@ -281,7 +299,9 @@ async function getFlowPagesByFlowId(
   const pages = await readAllFlowPages(paths);
   return pages
     .filter((page) => page.flowId === flowId)
-    .sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt));
+    .sort(
+      (a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt),
+    );
 }
 
 async function getFlowByRootDraftId(
@@ -372,7 +392,10 @@ async function getFlowForDraft(
     try {
       return await readFlowFile(paths, draft.flowId);
     } catch (error) {
-      if (!(error instanceof DyadError) || error.kind !== DyadErrorKind.NotFound) {
+      if (
+        !(error instanceof DyadError) ||
+        error.kind !== DyadErrorKind.NotFound
+      ) {
         throw error;
       }
     }
@@ -533,7 +556,10 @@ export async function updateDesignDraftFile(
         updatedAt: updated.updatedAt,
       });
     } catch (error) {
-      if (!(error instanceof DyadError) || error.kind !== DyadErrorKind.NotFound) {
+      if (
+        !(error instanceof DyadError) ||
+        error.kind !== DyadErrorKind.NotFound
+      ) {
         throw error;
       }
     }
@@ -628,12 +654,17 @@ export async function updateDraftComponentFile(
   params: UpdateDraftComponentParams,
 ): Promise<StoredDraftComponent> {
   const paths = await getDesignStoragePaths(params.appId);
-  const current = await readDraftComponentFileInternal(paths, params.componentId);
+  const current = await readDraftComponentFileInternal(
+    paths,
+    params.componentId,
+  );
   const updated: StoredDraftComponent = {
     ...current,
     name: params.name ?? current.name,
     description:
-      params.description !== undefined ? params.description : current.description,
+      params.description !== undefined
+        ? params.description
+        : current.description,
     htmlTemplate: params.htmlTemplate ?? current.htmlTemplate,
     previewHtml: params.previewHtml ?? current.previewHtml,
     props: params.props ?? current.props,
@@ -650,9 +681,12 @@ export function registerDesignHandlers() {
     return draft.id;
   });
 
-  createTypedHandler(designContracts.getDraft, async (_, { appId, draftId }) => {
-    return getDesignDraftFile(appId, draftId);
-  });
+  createTypedHandler(
+    designContracts.getDraft,
+    async (_, { appId, draftId }) => {
+      return getDesignDraftFile(appId, draftId);
+    },
+  );
 
   createTypedHandler(
     designContracts.getDraftForChat,
@@ -693,13 +727,19 @@ export function registerDesignHandlers() {
     },
   );
 
-  createTypedHandler(designContracts.createDraftComponent, async (_, params) => {
-    return createDraftComponentFile(params);
-  });
+  createTypedHandler(
+    designContracts.createDraftComponent,
+    async (_, params) => {
+      return createDraftComponentFile(params);
+    },
+  );
 
-  createTypedHandler(designContracts.updateDraftComponent, async (_, params) => {
-    return updateDraftComponentFile(params);
-  });
+  createTypedHandler(
+    designContracts.updateDraftComponent,
+    async (_, params) => {
+      return updateDraftComponentFile(params);
+    },
+  );
 
   createTypedHandler(
     designContracts.respondToAskUserQuestion,

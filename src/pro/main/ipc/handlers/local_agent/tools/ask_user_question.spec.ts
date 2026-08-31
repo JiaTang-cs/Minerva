@@ -53,7 +53,9 @@ describe("askUserQuestionTool", () => {
   });
 
   it("requires 1-4 questions", () => {
-    expect(() => askUserQuestionTool.inputSchema.parse({ questions: [] })).toThrow();
+    expect(() =>
+      askUserQuestionTool.inputSchema.parse({ questions: [] }),
+    ).toThrow();
 
     expect(() =>
       askUserQuestionTool.inputSchema.parse({
@@ -143,7 +145,7 @@ describe("askUserQuestionTool", () => {
     );
 
     expect(mockContext.onXmlComplete).toHaveBeenCalledWith(
-      expect.stringContaining("<dyad-ask-user-question count=\"1\">"),
+      expect.stringContaining('<dyad-ask-user-question count="1">'),
     );
     expect(mockContext.onXmlComplete).toHaveBeenCalledWith(
       expect.stringContaining('header="Platform"'),

@@ -410,9 +410,7 @@ app.post("/engine/v1/tools/code-search", (req: Request, res: Response) => {
 });
 
 // Dyad Engine image generation endpoint for generate_image tool
-app.post(
-  "/engine/v1/images/generations",
-  (req: Request, res: Response) => {
+app.post("/engine/v1/images/generations", (req: Request, res: Response) => {
   const { prompt, model } = req.body;
   console.log(
     `* images/generations: model=${model}, prompt="${prompt?.slice(0, 50)}..."`,
@@ -435,8 +433,7 @@ app.post(
     console.error(`* images/generations error:`, error);
     res.status(400).json({ error: String(error) });
   }
-  },
-);
+});
 
 // Dyad Engine web-crawl endpoint for web_fetch tool
 app.post("/engine/v1/tools/web-crawl", (req: Request, res: Response) => {

@@ -14,48 +14,51 @@ import {
 export function registerImageGenerationHandlers() {
   const pendingRequests = new Map<string, AbortController>();
 
-  createTypedHandler(imageGenerationContracts.generateImage, async (_, input) => {
-    const app = await db.query.apps.findFirst({
-      where: eq(apps.id, input.targetAppId),
-    });
-
-    if (!app) {
-      throw new DyadError("App not found.", DyadErrorKind.NotFound);
-    }
-
-    const settings = readSettings();
-    const config = resolveImageGenerationConfig(settings);
-    const controller = new AbortController();
-    pendingRequests.set(input.requestId, controller);
-
-    try {
-      const image = await generateImageWithProvider(settings, {
-        provider: config.provider,
-        model: config.model,
-        prompt: input.prompt,
-        signal: controller.signal,
+  createTypedHandler(
+    imageGenerationContracts.generateImage,
+    async (_, input) => {
+      const app = await db.query.apps.findFirst({
+        where: eq(apps.id, input.targetAppId),
       });
-      const saved = await saveGeneratedImageToMedia(image, app.path);
 
-      return {
-        fileName: saved.fileName,
-        filePath: saved.filePath,
-        appPath: app.path,
-        appId: app.id,
-        appName: app.name,
-      };
-    } catch (error) {
-      if (controller.signal.aborted) {
-        throw new DyadError(
-          "Image generation was cancelled.",
-          DyadErrorKind.UserCancelled,
-        );
+      if (!app) {
+        throw new DyadError("App not found.", DyadErrorKind.NotFound);
       }
-      throw error;
-    } finally {
-      pendingRequests.delete(input.requestId);
-    }
-  });
+
+      const settings = readSettings();
+      const config = resolveImageGenerationConfig(settings);
+      const controller = new AbortController();
+      pendingRequests.set(input.requestId, controller);
+
+      try {
+        const image = await generateImageWithProvider(settings, {
+          provider: config.provider,
+          model: config.model,
+          prompt: input.prompt,
+          signal: controller.signal,
+        });
+        const saved = await saveGeneratedImageToMedia(image, app.path);
+
+        return {
+          fileName: saved.fileName,
+          filePath: saved.filePath,
+          appPath: app.path,
+          appId: app.id,
+          appName: app.name,
+        };
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw new DyadError(
+            "Image generation was cancelled.",
+            DyadErrorKind.UserCancelled,
+          );
+        }
+        throw error;
+      } finally {
+        pendingRequests.delete(input.requestId);
+      }
+    },
+  );
 
   createTypedHandler(
     imageGenerationContracts.cancelImageGeneration,

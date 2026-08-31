@@ -8,7 +8,11 @@ export interface ParsedSkillSource {
 }
 
 export function parseSkillSource(input: string): ParsedSkillSource {
-  if (path.isAbsolute(input) || input.startsWith("./") || input.startsWith("../")) {
+  if (
+    path.isAbsolute(input) ||
+    input.startsWith("./") ||
+    input.startsWith("../")
+  ) {
     return {
       type: "local",
       url: path.resolve(input),
@@ -27,7 +31,9 @@ export function parseSkillSource(input: string): ParsedSkillSource {
     };
   }
 
-  const githubRepoMatch = input.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/);
+  const githubRepoMatch = input.match(
+    /^https:\/\/github\.com\/([^/]+)\/([^/]+)$/,
+  );
   if (githubRepoMatch) {
     return {
       type: "github",

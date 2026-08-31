@@ -315,7 +315,9 @@ export function useDesignDraftSession({
       );
 
       if (typeof payload.requestId === "string") {
-        const resolver = serializedHtmlResolversRef.current.get(payload.requestId);
+        const resolver = serializedHtmlResolversRef.current.get(
+          payload.requestId,
+        );
         if (resolver) {
           serializedHtmlResolversRef.current.delete(payload.requestId);
           resolver(normalizedHtml);

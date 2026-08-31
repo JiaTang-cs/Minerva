@@ -75,7 +75,9 @@ export default function SkillsPage() {
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">{t("page.title")}</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              {t("page.title")}
+            </h1>
           </div>
           <Button
             variant="outline"
@@ -124,9 +126,13 @@ export default function SkillsPage() {
                 {t("page.typeToSearch")}
               </p>
             ) : isSearching ? (
-              <p className="text-sm text-muted-foreground">{t("page.searching")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("page.searching")}
+              </p>
             ) : searchError ? (
-              <p className="text-sm text-destructive">{t("page.searchError")}</p>
+              <p className="text-sm text-destructive">
+                {t("page.searchError")}
+              </p>
             ) : searchResults?.length ? (
               <div className="space-y-3">
                 <div className="text-sm text-muted-foreground">
@@ -182,7 +188,9 @@ export default function SkillsPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">{t("page.noResults")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("page.noResults")}
+              </p>
             )}
           </div>
         </section>
@@ -212,7 +220,10 @@ export default function SkillsPage() {
             ) : (
               <div className="grid gap-4 lg:grid-cols-2">
                 {skillsBySource[section.key].map((skill) => (
-                  <SkillCard key={`${skill.sourceType}:${skill.name}`} skill={skill} />
+                  <SkillCard
+                    key={`${skill.sourceType}:${skill.name}`}
+                    skill={skill}
+                  />
                 ))}
               </div>
             )}
@@ -225,7 +236,10 @@ export default function SkillsPage() {
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
               <div className="space-y-3">
                 {loadErrors.map((error, index) => (
-                  <div key={`${error.directoryPath}:${index}`} className="text-sm">
+                  <div
+                    key={`${error.directoryPath}:${index}`}
+                    className="text-sm"
+                  >
                     <div className="font-medium">
                       {error.sourceType} skill at {error.directoryPath}
                     </div>
@@ -273,7 +287,8 @@ function SkillCard({ skill }: { skill: Skill }) {
       <p className="mt-2 text-sm text-muted-foreground">{skill.description}</p>
       {skill.whenToUse ? (
         <p className="mt-3 text-sm">
-          <span className="font-medium">{t("card.whenToUse")}</span> {skill.whenToUse}
+          <span className="font-medium">{t("card.whenToUse")}</span>{" "}
+          {skill.whenToUse}
         </p>
       ) : null}
       <div className="mt-4 space-y-2 text-xs text-muted-foreground">
@@ -282,12 +297,16 @@ function SkillCard({ skill }: { skill: Skill }) {
           <span className="break-all font-mono">{skill.sourcePath}</span>
         </div>
         <div>
-          <span className="font-medium text-foreground">{t("card.invocation")}</span>{" "}
+          <span className="font-medium text-foreground">
+            {t("card.invocation")}
+          </span>{" "}
           /{skill.name}
         </div>
         {skill.allowedTools.length > 0 ? (
           <div>
-            <span className="font-medium text-foreground">{t("card.allowedTools")}</span>{" "}
+            <span className="font-medium text-foreground">
+              {t("card.allowedTools")}
+            </span>{" "}
             {skill.allowedTools.join(", ")}
           </div>
         ) : null}

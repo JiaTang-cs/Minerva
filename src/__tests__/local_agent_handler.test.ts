@@ -270,15 +270,15 @@ vi.mock("@/ipc/utils/provider_options", () => ({
 }));
 
 const { mockLoadSkillsSnapshot } = vi.hoisted(() => ({
-  mockLoadSkillsSnapshot: vi.fn<() => Promise<SkillsSnapshot>>(
-    async () => buildMockSkillsSnapshot(),
+  mockLoadSkillsSnapshot: vi.fn<() => Promise<SkillsSnapshot>>(async () =>
+    buildMockSkillsSnapshot(),
   ),
 }));
 
 vi.mock("@/ipc/utils/skills/registry", async () => {
-  const actual = await vi.importActual<typeof import("@/ipc/utils/skills/registry")>(
-    "@/ipc/utils/skills/registry",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/ipc/utils/skills/registry")
+  >("@/ipc/utils/skills/registry");
   return {
     ...actual,
     loadSkillsSnapshot: mockLoadSkillsSnapshot,
@@ -504,29 +504,33 @@ describe("handleLocalAgentStream", () => {
       const { event } = createFakeEvent();
       mockSettings = buildTestSettings({ enableDyadPro: true });
       mockChatData = buildTestChat();
-      mockLoadSkillsSnapshot.mockResolvedValue(buildMockSkillsSnapshot({
-        skills: [
-          {
-            name: "verify",
-            displayName: "verify",
-            description: "Verify the current app flow before shipping.",
-            whenToUse: "Before reporting completion to the user",
-            allowedTools: ["read_file", "run_command"],
-            model: null,
-            userInvocable: true,
-            disableModelInvocation: false,
-            rawContent: "",
-            body: "Check the app flow.",
-            sourceType: "user",
-            sourcePath: "/mock/skills/verify",
-            skillFilePath: "/mock/skills/verify/SKILL.md",
-            baseDir: "/mock/skills/verify",
-            overriddenBy: [],
-            overrides: [],
-          },
-        ],
-      }));
-      mockStreamResult = createFakeStream([{ type: "text-delta", text: "Done" }]);
+      mockLoadSkillsSnapshot.mockResolvedValue(
+        buildMockSkillsSnapshot({
+          skills: [
+            {
+              name: "verify",
+              displayName: "verify",
+              description: "Verify the current app flow before shipping.",
+              whenToUse: "Before reporting completion to the user",
+              allowedTools: ["read_file", "run_command"],
+              model: null,
+              userInvocable: true,
+              disableModelInvocation: false,
+              rawContent: "",
+              body: "Check the app flow.",
+              sourceType: "user",
+              sourcePath: "/mock/skills/verify",
+              skillFilePath: "/mock/skills/verify/SKILL.md",
+              baseDir: "/mock/skills/verify",
+              overriddenBy: [],
+              overrides: [],
+            },
+          ],
+        }),
+      );
+      mockStreamResult = createFakeStream([
+        { type: "text-delta", text: "Done" },
+      ]);
 
       await handleLocalAgentStream(
         event,
@@ -541,10 +545,14 @@ describe("handleLocalAgentStream", () => {
 
       expect(streamText).toHaveBeenCalled();
       const firstCallArgs = vi.mocked(streamText).mock.calls[0]?.[0];
-      expect(firstCallArgs?.system).toContain("The following are the only valid skills");
+      expect(firstCallArgs?.system).toContain(
+        "The following are the only valid skills",
+      );
       expect(firstCallArgs?.system).toContain("Never guess a skill name");
       expect(firstCallArgs?.system).toContain("- skill: verify");
-      expect(firstCallArgs?.system).toContain("description: Verify the current app flow before shipping.");
+      expect(firstCallArgs?.system).toContain(
+        "description: Verify the current app flow before shipping.",
+      );
       expect(firstCallArgs?.system).toContain("slash_command: /verify");
     });
   });

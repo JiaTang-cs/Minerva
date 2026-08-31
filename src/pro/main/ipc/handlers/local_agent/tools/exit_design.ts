@@ -34,46 +34,47 @@ Do NOT use this tool if:
 - No design draft exists yet
 `;
 
-export const exitDesignTool: ToolDefinition<z.infer<typeof exitDesignSchema>> = {
-  name: "exit_design",
-  description: DESCRIPTION,
-  inputSchema: exitDesignSchema,
-  defaultConsent: "always",
-  modifiesState: true,
+export const exitDesignTool: ToolDefinition<z.infer<typeof exitDesignSchema>> =
+  {
+    name: "exit_design",
+    description: DESCRIPTION,
+    inputSchema: exitDesignSchema,
+    defaultConsent: "always",
+    modifiesState: true,
 
-  getConsentPreview: () => "Exit design mode and start building",
+    getConsentPreview: () => "Exit design mode and start building",
 
-  buildXml: (args) => {
-    if (!args.confirmation) return undefined;
-    return `<dyad-exit-design></dyad-exit-design>`;
-  },
+    buildXml: (args) => {
+      if (!args.confirmation) return undefined;
+      return `<dyad-exit-design></dyad-exit-design>`;
+    },
 
-  execute: async (args, ctx: AgentContext) => {
-    if (!args.confirmation) {
-      throw new DyadError(
-        "User must confirm the build handoff before exiting design mode",
-        DyadErrorKind.Precondition,
-      );
-    }
+    execute: async (args, ctx: AgentContext) => {
+      if (!args.confirmation) {
+        throw new DyadError(
+          "User must confirm the build handoff before exiting design mode",
+          DyadErrorKind.Precondition,
+        );
+      }
 
-    const draft = await getDesignDraftForChatFile(ctx.appId, ctx.chatId);
-    if (!draft) {
-      throw new DyadError(
-        "No design draft exists yet for this chat. Create or update the design draft before building.",
-        DyadErrorKind.Precondition,
-      );
-    }
+      const draft = await getDesignDraftForChatFile(ctx.appId, ctx.chatId);
+      if (!draft) {
+        throw new DyadError(
+          "No design draft exists yet for this chat. Create or update the design draft before building.",
+          DyadErrorKind.Precondition,
+        );
+      }
 
-    logger.log("Exiting design mode, transitioning to build", {
-      chatId: ctx.chatId,
-      draftId: draft.id,
-    });
+      logger.log("Exiting design mode, transitioning to build", {
+        chatId: ctx.chatId,
+        draftId: draft.id,
+      });
 
-    safeSend(ctx.event.sender, "design:exit", {
-      chatId: ctx.chatId,
-      draftId: draft.id,
-    });
+      safeSend(ctx.event.sender, "design:exit", {
+        chatId: ctx.chatId,
+        draftId: draft.id,
+      });
 
-    return "Design approved. Switching to Agent mode to build from the current design draft.";
-  },
-};
+      return "Design approved. Switching to Agent mode to build from the current design draft.";
+    },
+  };

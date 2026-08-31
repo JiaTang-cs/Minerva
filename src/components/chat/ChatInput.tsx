@@ -539,7 +539,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         selectedComponents: componentsToSend,
         selectedDesignElements: designElementsToSend,
         currentDesignDraftHtml: isDesignMode
-          ? currentDesignDraftHtml ?? undefined
+          ? (currentDesignDraftHtml ?? undefined)
           : undefined,
       });
       resetEditingState();
@@ -554,7 +554,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         selectedComponents: componentsToSend,
         selectedDesignElements: designElementsToSend,
         currentDesignDraftHtml: isDesignMode
-          ? currentDesignDraftHtml ?? undefined
+          ? (currentDesignDraftHtml ?? undefined)
           : undefined,
       });
       if (queued) {
@@ -611,7 +611,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       selectedComponents: componentsToSend,
       selectedDesignElements: isDesignMode ? designElementsToSend : [],
       currentDesignDraftHtml: isDesignMode
-        ? currentDesignDraftHtml ?? undefined
+        ? (currentDesignDraftHtml ?? undefined)
         : undefined,
     });
     clearAttachments();

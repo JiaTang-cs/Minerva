@@ -29,10 +29,11 @@ export function DyadSubagentResult({
     ) : (
       <CircleX size={15} />
     );
-  const accentColor = status === "completed" || status === "async_launched" ? "green" : "red";
-  const content = typeof children === "string" ? children : String(children ?? "");
-  const statusLabel =
-    status === "completed" ? "finished" : status;
+  const accentColor =
+    status === "completed" || status === "async_launched" ? "green" : "red";
+  const content =
+    typeof children === "string" ? children : String(children ?? "");
+  const statusLabel = status === "completed" ? "finished" : status;
 
   return (
     <DyadCard accentColor={accentColor} showAccent>
@@ -54,7 +55,10 @@ export function DyadSubagentResult({
         {durationMs > 0 ? ` ${Math.round(durationMs / 100) / 10}s.` : ""}
       </DyadDescription>
       {content.trim() ? (
-        <DyadCardContent isExpanded={true} className="opacity-100 grid-rows-[1fr]">
+        <DyadCardContent
+          isExpanded={true}
+          className="opacity-100 grid-rows-[1fr]"
+        >
           <VanillaMarkdownParser content={content} />
         </DyadCardContent>
       ) : null}

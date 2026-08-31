@@ -1160,9 +1160,7 @@ export const PreviewIframe = ({ loading }: { loading: boolean }) => {
                   <button
                     onClick={handleActivateComponentSelector}
                     className={`p-1 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      isPicking
-                        ? previewToolActiveClass
-                        : previewToolIdleClass
+                      isPicking ? previewToolActiveClass : previewToolIdleClass
                     }`}
                     disabled={
                       loading ||

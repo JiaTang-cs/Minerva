@@ -66,7 +66,10 @@ export function SelectedDesignElementsDisplay() {
         </Tooltip>
       </div>
       {selectedDesignElements.map((element, index) => (
-        <div key={`${element.draftId}:${element.dyadId}`} className="mb-1 last:mb-0">
+        <div
+          key={`${element.draftId}:${element.dyadId}`}
+          className="mb-1 last:mb-0"
+        >
           <div className="flex items-center justify-between rounded-md bg-sky-600/10 px-2 py-1 text-sm">
             <div className="flex items-center gap-2 overflow-hidden">
               <MousePointerSquareDashed

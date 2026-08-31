@@ -35,10 +35,8 @@ const ACCENT_BORDER: Record<DyadAccentColor, string> = {
 
 const ACCENT_ICON_BG: Record<DyadAccentColor, string> = {
   blue: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
-  purple:
-    "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
-  violet:
-    "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
+  purple: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
+  violet: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
   red: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400",
   amber: "bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400",
   green: "bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400",
@@ -46,8 +44,7 @@ const ACCENT_ICON_BG: Record<DyadAccentColor, string> = {
     "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400",
   teal: "bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400",
   sky: "bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400",
-  indigo:
-    "bg-[#e8edff] dark:bg-[#1b2450] text-[#4b68ea] dark:text-[#9ab0ff]",
+  indigo: "bg-[#e8edff] dark:bg-[#1b2450] text-[#4b68ea] dark:text-[#9ab0ff]",
   slate: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
 };
 

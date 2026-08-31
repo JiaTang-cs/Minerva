@@ -17,9 +17,6 @@ test("release channel - change from stable to beta and back", async ({
   // Change back to stable channel
   const beforeSettings2 = po.settings.recordSettings();
   await po.settings.changeReleaseChannel("stable");
-  await expect(
-    po.page.getByText("Using Stable release channel"),
-  ).toBeVisible();
+  await expect(po.page.getByText("Using Stable release channel")).toBeVisible();
   po.settings.snapshotSettingsDelta(beforeSettings2);
 });
-

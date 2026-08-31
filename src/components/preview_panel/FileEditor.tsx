@@ -141,7 +141,9 @@ export const FileEditor = ({
       .catch((error) => {
         console.error("Monaco initialization error:", error);
         if (!cancelled) {
-          setMonacoError(error instanceof Error ? error.message : String(error));
+          setMonacoError(
+            error instanceof Error ? error.message : String(error),
+          );
         }
       });
 

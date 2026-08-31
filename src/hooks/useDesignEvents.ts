@@ -2,10 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAtomValue, useSetAtom } from "jotai";
-import {
-  previewModeAtom,
-  selectedAppIdAtom,
-} from "@/atoms/appAtoms";
+import { previewModeAtom, selectedAppIdAtom } from "@/atoms/appAtoms";
 import {
   designHandoffStateAtom,
   pendingAskUserQuestionAtom,

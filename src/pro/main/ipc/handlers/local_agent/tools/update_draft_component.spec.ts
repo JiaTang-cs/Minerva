@@ -47,7 +47,7 @@ describe("updateDraftComponentTool", () => {
     const result = await updateDraftComponentTool.execute(
       {
         componentId: "component-1",
-        htmlTemplate: "<nav :href=\"homeHref\"></nav>",
+        htmlTemplate: '<nav :href="homeHref"></nav>',
       },
       mockContext,
     );
@@ -57,7 +57,7 @@ describe("updateDraftComponentTool", () => {
       componentId: "component-1",
       name: undefined,
       description: undefined,
-      htmlTemplate: "<nav :href=\"homeHref\"></nav>",
+      htmlTemplate: '<nav :href="homeHref"></nav>',
       previewHtml: undefined,
       props: undefined,
     });

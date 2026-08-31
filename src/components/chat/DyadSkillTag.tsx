@@ -22,7 +22,10 @@ interface DyadSkillTagProps {
   children?: React.ReactNode;
 }
 
-export const DyadSkillTag: React.FC<DyadSkillTagProps> = ({ children, node }) => {
+export const DyadSkillTag: React.FC<DyadSkillTagProps> = ({
+  children,
+  node,
+}) => {
   const skill = node?.properties?.skill || "unknown-skill";
   const source = node?.properties?.source || "";
   const state = node?.properties?.state as CustomTagState;
@@ -48,7 +51,9 @@ export const DyadSkillTag: React.FC<DyadSkillTagProps> = ({ children, node }) =>
         <DyadBadge color="indigo">
           {mode === "call" ? "Skill Call" : "Skill Loaded"}
         </DyadBadge>
-        <span className="truncate text-sm font-medium text-foreground">{skill}</span>
+        <span className="truncate text-sm font-medium text-foreground">
+          {skill}
+        </span>
         {source ? (
           <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
             {source}

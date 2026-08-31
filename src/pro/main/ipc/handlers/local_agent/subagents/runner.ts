@@ -2,7 +2,11 @@ import { stepCountIs, streamText } from "ai";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
 import { readSettings } from "@/main/settings";
 import { getModelClient } from "@/ipc/utils/get_model_client";
-import { getProviderOptions, getAiHeaders, DYAD_INTERNAL_REQUEST_ID_HEADER } from "@/ipc/utils/provider_options";
+import {
+  getProviderOptions,
+  getAiHeaders,
+  DYAD_INTERNAL_REQUEST_ID_HEADER,
+} from "@/ipc/utils/provider_options";
 import { getMaxTokens, getTemperature } from "@/ipc/utils/token_utils";
 import { getSubagentSystemPrompt, resolveSubagentTools } from "./registry";
 import type { SubagentRunParams, SubagentRunResult } from "./types";
@@ -79,12 +83,12 @@ export async function runSubagentStream(
     maxOutputTokens,
     temperature,
     system: getSubagentSystemPrompt(definition, {
-    availableToolDefinitions: TOOL_DEFINITIONS,
-    readOnly: ctx.readOnly,
-    planModeOnly: ctx.planModeOnly,
-    designModeOnly: ctx.designModeOnly,
-    background,
-  }),
+      availableToolDefinitions: TOOL_DEFINITIONS,
+      readOnly: ctx.readOnly,
+      planModeOnly: ctx.planModeOnly,
+      designModeOnly: ctx.designModeOnly,
+      background,
+    }),
     messages: [
       {
         role: "user",

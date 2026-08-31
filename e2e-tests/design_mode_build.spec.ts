@@ -50,9 +50,9 @@ testSkipIfWindows(
 
     const designDir = path.join(appPath!, ".minerva", "designs");
     await expect(async () => {
-      const files = fs.readdirSync(designDir).filter((file) =>
-        file.endsWith(".json"),
-      );
+      const files = fs
+        .readdirSync(designDir)
+        .filter((file) => file.endsWith(".json"));
       expect(files.length).toBeGreaterThan(0);
 
       const draft = JSON.parse(

@@ -183,7 +183,8 @@ export const taskTool: ToolDefinition<z.infer<typeof taskSchema>> = {
           if (!currentTask || currentTask.status !== "running") {
             return;
           }
-          const message = error instanceof Error ? error.message : String(error);
+          const message =
+            error instanceof Error ? error.message : String(error);
           const status = abortController.signal.aborted ? "killed" : "failed";
           const updated = updateSubagentTask(taskId, (current) => ({
             ...current,

@@ -47,9 +47,11 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("./ProviderSettingsHeader", () => ({
-  ProviderSettingsHeader: ({ providerDisplayName }: { providerDisplayName: string }) => (
-    <div>{providerDisplayName}</div>
-  ),
+  ProviderSettingsHeader: ({
+    providerDisplayName,
+  }: {
+    providerDisplayName: string;
+  }) => <div>{providerDisplayName}</div>,
 }));
 
 vi.mock("./ApiKeyConfiguration", () => ({

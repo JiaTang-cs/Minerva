@@ -356,7 +356,10 @@ export async function handleLocalAgentStream(
     const skillsSnapshot = await loadSkillsSnapshot({ appPath });
     effectiveSystemPrompt = `${systemPrompt}\n\n${buildSkillRegistryPrompt(skillsSnapshot.skills)}`;
   } catch (error) {
-    logger.warn("Failed to load skills for local-agent prompt injection:", error);
+    logger.warn(
+      "Failed to load skills for local-agent prompt injection:",
+      error,
+    );
   }
 
   const maybePerformPendingCompaction = async (options?: {

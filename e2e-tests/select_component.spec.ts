@@ -187,4 +187,3 @@ testSkipIfWindows("select component next.js", async ({ po }) => {
 
   await po.snapshotServerDump("all-messages");
 });
-
