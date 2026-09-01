@@ -1,4 +1,4 @@
-import { Link, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, ExternalLink } from "lucide-react";
@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 
 export default function SkillCatalogDetailPage() {
   const { t } = useTranslation("skills");
+  const navigate = useNavigate();
   const search = useSearch({ from: "/skills/catalog" });
   const { data, isLoading } = useCatalogSkillDetail(
     search.source,
@@ -27,11 +28,14 @@ export default function SkillCatalogDetailPage() {
     <div className="flex h-full min-h-0 w-full flex-col px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col space-y-6">
         <Button
-          as={Link}
-          to="/skills"
-          search={search.query ? { q: search.query } : {}}
           variant="ghost"
           className="-ml-3 w-fit"
+          onClick={() =>
+            navigate({
+              to: "/skills",
+              search: search.query ? { q: search.query } : {},
+            })
+          }
         >
           <ArrowLeft className="size-4" />
           {t("detail.back")}
