@@ -59,8 +59,8 @@ describe("webSearchTool", () => {
               snippet: "Official documentation",
             },
             {
-              title: "Dyad GitHub",
-              link: "https://github.com/SeassTar-xx/minerva",
+              title: "Minerva GitHub",
+              link: "https://github.com/JiaTang-cs/Minerva",
               snippet: "Open source repository",
             },
           ],

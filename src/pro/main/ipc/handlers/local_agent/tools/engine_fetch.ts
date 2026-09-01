@@ -7,8 +7,11 @@ import { readSettings } from "@/main/settings";
 import type { AgentContext } from "./types";
 import { DyadError, DyadErrorKind } from "@/errors/dyad_error";
 
-export const DYAD_ENGINE_URL =
-  process.env.DYAD_ENGINE_URL ?? "https://engine.dyad.sh/v1";
+// MINERVA_ENGINE_URL is application-owned; DYAD_ENGINE_URL remains a legacy fallback.
+export const MINERVA_ENGINE_URL =
+  process.env.MINERVA_ENGINE_URL ??
+  process.env.DYAD_ENGINE_URL ??
+  "https://engine.dyad.sh/v1";
 
 export interface EngineFetchOptions extends Omit<RequestInit, "headers"> {
   /** Additional headers to include */
@@ -39,7 +42,7 @@ export async function engineFetch(
 
   const { headers: extraHeaders, ...restOptions } = options;
 
-  return fetch(`${DYAD_ENGINE_URL}${endpoint}`, {
+  return fetch(`${MINERVA_ENGINE_URL}${endpoint}`, {
     ...restOptions,
     headers: {
       "Content-Type": "application/json",

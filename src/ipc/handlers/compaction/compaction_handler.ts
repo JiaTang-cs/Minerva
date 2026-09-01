@@ -3,7 +3,7 @@
  * Orchestrates the compaction of long conversations to stay within context limits.
  */
 
-import { IpcMainInvokeEvent } from "electron";
+import type { IpcMainInvokeEvent } from "electron";
 import { streamText, ModelMessage } from "ai";
 import log from "electron-log";
 import { eq } from "drizzle-orm";

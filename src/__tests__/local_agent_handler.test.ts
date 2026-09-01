@@ -377,7 +377,7 @@ describe("handleLocalAgentStream", () => {
       expect(errorMessages).toHaveLength(1);
       expect(errorMessages[0].args[0]).toMatchObject({
         chatId: 1,
-        error: expect.stringContaining("Agent v2 requires Dyad Pro"),
+        error: expect.stringContaining("Agent v2 requires Minerva Pro"),
       });
     });
 

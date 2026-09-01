@@ -2,6 +2,9 @@ import fs from "node:fs/promises";
 
 const GITHUB_API_VERSION = "2022-11-28";
 const MAILGUN_API_BASE_URL = "https://api.mailgun.net/v3";
+const repositoryOwner = (
+  process.env.GITHUB_REPOSITORY || "JiaTang-cs/Minerva"
+).split("/")[0];
 
 const requireEnv = (name) => {
   const value = process.env[name]?.trim();
@@ -55,7 +58,7 @@ const appendStepSummary = async (summary) => {
 };
 
 const fetchPRsNeedingReview = async ({ apiBaseUrl, token, username }) => {
-  const query = `is:open is:pr review-requested:${username} org:dyad-sh`;
+  const query = `is:open is:pr review-requested:${username} user:${repositoryOwner}`;
   const allPRs = [];
   let page = 1;
 

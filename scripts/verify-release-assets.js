@@ -16,9 +16,10 @@ async function verifyReleaseAssets() {
 
     console.log(`🔍 Verifying release assets for version ${version}...`);
 
-    // GitHub API configuration
-    const owner = "SeassTar-xx";
-    const repo = "minerva";
+    // GitHub Actions provides the authoritative repository name.
+    const [owner, repo] = (
+      process.env.GITHUB_REPOSITORY || "JiaTang-cs/Minerva"
+    ).split("/");
     const token = process.env.GITHUB_TOKEN;
 
     if (!token) {
@@ -59,36 +60,10 @@ async function verifyReleaseAssets() {
     console.log(`📦 Found ${assets.length} assets in release ${tagName}`);
     console.log(`📄 Release status: ${release.draft ? "DRAFT" : "PUBLISHED"}`);
 
-    // Handle different beta naming conventions across platforms
-    const normalizeVersionForPlatform = (version, platform) => {
-      if (!version.includes("beta")) {
-        return version;
-      }
-
-      switch (platform) {
-        case "rpm":
-        case "deb":
-          // RPM and DEB use dots: 0.14.0-beta.1 -> 0.14.0.beta.1
-          return version.replace("-beta.", ".beta.");
-        case "nupkg":
-          // NuGet removes the dot: 0.14.0-beta.1 -> 0.14.0-beta1
-          return version.replace("-beta.", "-beta");
-        default:
-          // Windows installer and macOS zips keep original format
-          return version;
-      }
-    };
-
-    // Define expected assets with platform-specific version handling
+    // Release publishes one installer per supported desktop platform.
     const expectedAssets = [
-      `minerva-${normalizeVersionForPlatform(version, "rpm")}-1.x86_64.rpm`,
-      `minerva-${normalizeVersionForPlatform(version, "nupkg")}-full.nupkg`,
       `minerva-${version}.Setup.exe`,
       `minerva-darwin-arm64-${version}.zip`,
-      `minerva-darwin-x64-${version}.zip`,
-      `minerva_${normalizeVersionForPlatform(version, "deb")}_amd64.deb`,
-      `minerva_${version}_x86_64.AppImage`,
-      "RELEASES",
     ];
 
     console.log("📋 Expected assets:");

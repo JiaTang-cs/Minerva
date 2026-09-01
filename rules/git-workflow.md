@@ -3,10 +3,10 @@
 When pushing changes and creating PRs:
 
 1. If the branch already has an associated PR, push to whichever remote the branch is tracking.
-2. If the branch hasn't been pushed before, default to pushing to `origin` (the fork `wwwillchen/dyad`), then create a PR from the fork to the upstream repo (`SeassTar-xx/minerva`).
-3. If you cannot push to the fork due to permissions, push directly to `upstream` (`SeassTar-xx/minerva`) as a last resort.
+2. If the branch hasn't been pushed before, default to pushing to `origin`, then create a PR from the fork to the upstream repo (`JiaTang-cs/Minerva`).
+3. If you cannot push to the fork due to permissions, push directly to `upstream` (`JiaTang-cs/Minerva`) as a last resort.
 
-**Bot account push permissions:** The `keppo-bot` account does NOT have write access to `upstream` (`SeassTar-xx/minerva`). If a branch tracks `upstream` (e.g., `upstream/claude/...`), pushing will fail with a permission error. In this case, push to `origin` (the bot's fork at `keppo-bot/dyad`) instead:
+**Bot account push permissions:** The `keppo-bot` account does NOT have write access to `upstream` (`JiaTang-cs/Minerva`). If a branch tracks `upstream` (e.g., `upstream/claude/...`), pushing will fail with a permission error. In this case, push to `origin` instead:
 
 ```bash
 git push --force-with-lease -u origin HEAD
@@ -74,7 +74,7 @@ When using `gh api` to post comments or replies containing backticks, `$()`, or 
 # File: .claude/tmp/reply_body.json
 # {"body": "Your comment with `backticks` and special chars"}
 
-gh api repos/SeassTar-xx/minerva/pulls/123/comments/456/replies --input .claude/tmp/reply_body.json
+gh api repos/JiaTang-cs/Minerva/pulls/123/comments/456/replies --input .claude/tmp/reply_body.json
 ```
 
 Similarly for GraphQL mutations, write the full query + variables as JSON and use `--input`:
@@ -91,10 +91,10 @@ gh api graphql --input .claude/tmp/resolve_thread.json
 1. **GraphQL "Projects (classic)" deprecation error** on repos that had classic projects. Use the REST API instead:
 
 ```bash
-gh api repos/SeassTar-xx/minerva/issues/{PR_NUMBER}/labels -f "labels[]=label-name"
+gh api repos/JiaTang-cs/Minerva/issues/{PR_NUMBER}/labels -f "labels[]=label-name"
 ```
 
-2. **Bot account permission errors:** The `keppo-bot` account (and similar bot/fork accounts) may not have permission to add labels on the upstream repo (`SeassTar-xx/minerva`). Both `gh pr edit --add-label` and the REST API will fail with 403/permission errors. In this case, skip label addition and note it in the PR summary rather than failing the workflow. Labels can be added later by a maintainer with appropriate permissions.
+2. **Bot account permission errors:** The `keppo-bot` account (and similar bot/fork accounts) may not have permission to add labels on the upstream repo (`JiaTang-cs/Minerva`). Both `gh pr edit --add-label` and the REST API will fail with 403/permission errors. In this case, skip label addition and note it in the PR summary rather than failing the workflow. Labels can be added later by a maintainer with appropriate permissions.
 
 ## CI file access (claude-code-action)
 
@@ -102,7 +102,7 @@ In CI, `claude-code-action` restricts file access to the repo working directory 
 
 ## Force-pushing after rebase with split-remote origin
 
-When `origin` has separate fetch and push URLs (e.g., fetch → `SeassTar-xx/minerva`, push → `keppo-bot/dyad`), `git push --force-with-lease` fails with **"stale info"** after a rebase because the local tracking ref was refreshed from the fetch URL but does not reflect the push URL's state. In this specific split-remote configuration, use `git push --force origin HEAD`:
+When `origin` has separate fetch and push URLs, `git push --force-with-lease` fails with **"stale info"** after a rebase because the local tracking ref was refreshed from the fetch URL but does not reflect the push URL's state. In this specific split-remote configuration, use `git push --force origin HEAD`:
 
 ```bash
 git push --force origin HEAD

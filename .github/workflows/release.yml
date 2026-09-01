@@ -15,11 +15,9 @@ jobs:
       # Continue building other platforms even if one fails
       fail-fast: false
       matrix:
-        os: [
-            { name: "windows", image: "windows-latest" },
-            # See https://github.com/dyad-sh/dyad/issues/96
-            { name: "linux", image: "ubuntu-22.04" },
-            { name: "macos-intel", image: "macos-15-intel" },
+        os:
+          [
+            { name: "windows", image: "windows-2022" },
             { name: "macos", image: "macos-latest" },
           ]
     runs-on: ${{ matrix.os.image }}
@@ -172,4 +170,5 @@ jobs:
       - name: Verify all release assets are uploaded
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/verify-release-assets.js

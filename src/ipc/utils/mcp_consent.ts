@@ -1,7 +1,7 @@
 import { db } from "../../db";
 import { mcpToolConsents } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
-import { IpcMainInvokeEvent } from "electron";
+import type { IpcMainInvokeEvent } from "electron";
 import crypto from "node:crypto";
 
 export type Consent = "ask" | "always" | "denied";

@@ -26,7 +26,7 @@ jobs:
         with:
           app-id: ${{ vars.DYAD_GITHUB_APP_ID }}
           private-key: ${{ secrets.DYAD_GITHUB_APP_PRIVATE_KEY }}
-          owner: dyad-sh
+          owner: JiaTang-cs
 
       - name: Checkout repository
         uses: actions/checkout@v5

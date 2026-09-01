@@ -271,7 +271,7 @@ export async function onReady() {
       logger,
       updateSource: {
         type: UpdateSourceType.ElectronPublicUpdateService,
-        repo: "dyad-sh/dyad",
+        repo: "JiaTang-cs/Minerva",
         host,
       },
     }); // additional configuration options available

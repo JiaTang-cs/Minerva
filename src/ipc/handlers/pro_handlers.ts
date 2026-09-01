@@ -23,7 +23,8 @@ const logger = log.scope("pro_handlers");
 const handle = createLoggedHandler(logger);
 const typedHandle = createLoggedTypedHandler(logger);
 
-const dyadEngineUrl = process.env.DYAD_ENGINE_URL;
+const minervaEngineUrl =
+  process.env.MINERVA_ENGINE_URL ?? process.env.DYAD_ENGINE_URL;
 
 export function registerProHandlers() {
   // This method should try to avoid throwing errors because this is auxiliary
@@ -122,7 +123,7 @@ export function registerProHandlers() {
         input.requestId,
         {
           apiKey,
-          baseURL: dyadEngineUrl ?? "https://engine.dyad.sh/v1",
+          baseURL: minervaEngineUrl ?? "https://engine.dyad.sh/v1",
           dyadOptions: {},
           settings,
         },

@@ -43,9 +43,9 @@ const ALLOWED_EXTENSIONS = [
   ".gradle",
   ".swift",
   // Edge cases
-  // https://github.com/SeassTar-xx/minerva/issues/880
+  // https://github.com/JiaTang-cs/Minerva/issues/880
   ".py",
-  // https://github.com/SeassTar-xx/minerva/issues/1221
+  // https://github.com/JiaTang-cs/Minerva/issues/1221
   ".php",
 ];
 
@@ -54,7 +54,7 @@ const ALLOWED_EXTENSIONS = [
 // people don't have their gitignore setup correctly so we want to
 // be conservative and never include these directories.
 //
-// ex: https://github.com/SeassTar-xx/minerva/issues/727
+// ex: https://github.com/JiaTang-cs/Minerva/issues/727
 const EXCLUDED_DIRS = [
   "node_modules",
   ".git",

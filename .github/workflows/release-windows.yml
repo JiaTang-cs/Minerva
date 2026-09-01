@@ -1,6 +1,6 @@
 # .github/workflows/release-windows.yml
 #
-# 构建 Windows 安装包 (Squirrel .exe) 并上传到 GitHub Release。
+# 构建 Windows 安装包和 macOS zip，并上传到 GitHub Release。
 # 触发方式：
 #   1. push 一个 v* 标签（例如 v0.43.2）→ 自动构建并发布 release
 #   2. 手动到 Actions 页面 Run workflow，填 tag（例如 v0.43.2）
@@ -9,7 +9,7 @@
 # 生成的 exe 首次运行时 Windows SmartScreen 会提示"未知发布者"，
 # 点"更多信息"→"仍要运行"即可安装。
 
-name: Release Windows exe
+name: Release Minerva desktop packages
 
 on:
   workflow_dispatch:
@@ -26,11 +26,23 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
-    name: Build Windows installer
+  build:
+    name: Build ${{ matrix.platform }} package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-2022
+            make_platform: win32
+            asset: out/make/**/*.exe
+          - platform: macos
+            runner: macos-latest
+            make_platform: darwin
+            asset: out/make/**/*.zip
     # windows-latest 预装 VS 2026（版本号 18），electron 的 node-gyp 不识别，
     # 导致找不到 MSVC 编译器。用 windows-2022（VS2022/17.4，node-gyp 完整支持）。
-    runs-on: windows-2022
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,8 +59,8 @@ jobs:
           # 避免 @vscode/ripgrep 下载二进制时触发 GitHub API 限流
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Windows installer (squirrel)
-        run: npx electron-forge make --platform=win32
+      - name: Build desktop package
+        run: npx electron-forge make --platform=${{ matrix.make_platform }}
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,6 +73,6 @@ jobs:
           # 用宽泛 glob 覆盖 Squirrel 产出的实际 exe 文件名
           # （e.g. "Minerva-0.43.2 Setup.exe" / "minerva-setup.exe" 等）
           files: |
-            out/make/**/*.exe
+            ${{ matrix.asset }}
           fail_on_unmatched_files: true
           generate_release_notes: true

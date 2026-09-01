@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import path from "node:path";
 
 const fsMocks = vi.hoisted(() => {
   return {
@@ -49,7 +50,7 @@ vi.mock("@/db/schema", () => ({
 }));
 
 vi.mock("@/ipc/utils/media_path_utils", () => ({
-  DYAD_MEDIA_DIR_NAME: ".dyad/media",
+  INTERNAL_MEDIA_DIR_NAME: ".minerva/media",
 }));
 
 import {
@@ -87,7 +88,9 @@ describe("cleanupOldMediaFiles", () => {
     dbMocks.from.mockResolvedValue([{ path: "my-app" }]);
 
     fsMocks.readdir.mockImplementation((dirPath: string) => {
-      if (dirPath === "/home/user/dyad-apps/my-app/.dyad/media") {
+      if (
+        dirPath === path.join("/home/user/dyad-apps/my-app", ".minerva/media")
+      ) {
         return Promise.resolve(["old-image.png", "recent-image.png"]);
       }
       return Promise.reject(new Error("ENOENT"));
@@ -112,7 +115,11 @@ describe("cleanupOldMediaFiles", () => {
 
     expect(fsMocks.unlink).toHaveBeenCalledTimes(1);
     expect(fsMocks.unlink).toHaveBeenCalledWith(
-      "/home/user/dyad-apps/my-app/.dyad/media/old-image.png",
+      path.join(
+        "/home/user/dyad-apps/my-app",
+        ".minerva/media",
+        "old-image.png",
+      ),
     );
     expect(logMocks.log).toHaveBeenCalledWith("Cleaned up 1 old media files");
     expect(logMocks.warn).not.toHaveBeenCalled();
@@ -214,7 +221,10 @@ describe("cleanupOldMediaFiles", () => {
     ]);
 
     fsMocks.readdir.mockImplementation((dirPath: string) => {
-      if (dirPath === "/external/projects/my-imported-app/.dyad/media") {
+      if (
+        dirPath ===
+        path.join("/external/projects/my-imported-app", ".minerva/media")
+      ) {
         return Promise.resolve(["old-image.png"]);
       }
       return Promise.reject(new Error("ENOENT"));
@@ -227,7 +237,11 @@ describe("cleanupOldMediaFiles", () => {
 
     expect(fsMocks.unlink).toHaveBeenCalledTimes(1);
     expect(fsMocks.unlink).toHaveBeenCalledWith(
-      "/external/projects/my-imported-app/.dyad/media/old-image.png",
+      path.join(
+        "/external/projects/my-imported-app",
+        ".minerva/media",
+        "old-image.png",
+      ),
     );
   });
 });

@@ -3,7 +3,7 @@
  * Main orchestrator for tool-based agent mode with parallel execution
  */
 
-import { IpcMainInvokeEvent } from "electron";
+import type { IpcMainInvokeEvent } from "electron";
 import {
   streamText,
   ToolSet,
@@ -294,6 +294,21 @@ export async function handleLocalAgentStream(
   },
 ): Promise<boolean> {
   const settings = readSettings();
+  const hasProApiKey = Boolean(settings.providerSettings?.auto?.apiKey?.value);
+  if (!settings.enableDyadPro) {
+    safeSend(event.sender, "chat:response:error", {
+      chatId: req.chatId,
+      error: "Agent v2 requires Minerva Pro to be enabled.",
+    });
+    return false;
+  }
+  if (!hasProApiKey) {
+    safeSend(event.sender, "chat:response:error", {
+      chatId: req.chatId,
+      error: "Agent v2 requires a Minerva Pro API key.",
+    });
+    return false;
+  }
   const maxToolCallSteps =
     settings.maxToolCallSteps ?? DEFAULT_MAX_TOOL_CALL_STEPS;
   let fullResponse = "";

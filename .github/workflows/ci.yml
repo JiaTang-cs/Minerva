@@ -351,15 +351,29 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
 
-      - name: Debug - List downloaded blob reports
+      - name: Prepare valid blob reports
         run: |
-          echo "Contents of all-blob-reports directory:"
-          ls -la all-blob-reports/
-          echo "File sizes and details:"
-          find all-blob-reports/ -type f -exec ls -lh {} \; || echo "No files found"
+          set -euo pipefail
+          mkdir -p valid-blob-reports
+          for blob in $(find all-blob-reports -type f -name "*.zip" -size +0c 2>/dev/null); do
+            if unzip -t "$blob" >/dev/null 2>&1; then
+              cp "$blob" "valid-blob-reports/$(basename "$blob")"
+            else
+              echo "Ignoring invalid blob report: $blob"
+            fi
+          done
+          find valid-blob-reports -type f -name "*.zip" | wc -l > valid-blob-reports/count
 
       - name: Merge into HTML Report
-        run: PLAYWRIGHT_HTML_OUTPUT_DIR=playwright-report npx playwright merge-reports --config=merge.config.ts ./all-blob-reports
+        run: |
+          set -euo pipefail
+          count=$(cat valid-blob-reports/count)
+          if [ "$count" -eq 0 ]; then
+            mkdir -p playwright-report
+            touch playwright-report/index.html
+          else
+            PLAYWRIGHT_HTML_OUTPUT_DIR=playwright-report npx playwright merge-reports --config=merge.config.ts ./valid-blob-reports
+          fi
 
       - name: Debug - List playwright-report contents
         run: |
